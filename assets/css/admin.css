@@ -1,0 +1,36 @@
+:root {
+    --wp-admin-menu-width: 160px;
+    --wp-admin-bar-height: 32px;
+    --asf-sidebar-width: 280px;
+    --asf-header-height: 60px;
+    --asf-border-color: #e0e0e0;
+}
+html { background-color: #f0f1f1; }
+#wpbody-content { padding-bottom: 0; }
+.asf-settings-page { margin: 0; }
+[x-cloak] { display: none !important; }
+
+/* Layout Structure */
+.asf-sidebar { position: fixed; top: var(--wp-admin-bar-height); left: var(--wp-admin-menu-width); width: var(--asf-sidebar-width); height: calc(100vh - var(--wp-admin-bar-height)); background-color: #fff; border-right: 1px solid var(--asf-border-color); z-index: 900; }
+.asf-header { position: fixed; top: var(--wp-admin-bar-height); left: calc(var(--wp-admin-menu-width) + var(--asf-sidebar-width)); right: 0; height: var(--asf-header-height); background-color: #fff; border-bottom: 1px solid var(--asf-border-color); z-index: 950; }
+.asf-content { margin-top: var(--asf-header-height); margin-left: calc(var(--wp-admin-menu-width) + var(--asf-sidebar-width)); padding: 2rem; background-color: #f0f1f1; min-height: calc(100vh - var(--wp-admin-bar-height) - var(--asf-header-height)); padding-bottom: 100px; /* Space for save bar */ }
+.asf-save-bar { position: fixed; bottom: 0; left: calc(var(--wp-admin-menu-width) + var(--asf-sidebar-width)); right: 0; z-index: 950; }
+
+/* WP Admin Integration */
+body.folded .asf-sidebar { left: 36px; }
+body.folded .asf-header, body.folded .asf-content, body.folded .asf-save-bar { left: calc(36px + var(--asf-sidebar-width)); }
+
+/* Mobile */
+@media (max-width: 960px) {
+    .asf-sidebar { left: 0; }
+    .asf-header, .asf-content, .asf-save-bar { left: var(--asf-sidebar-width); }
+    body.folded .asf-header, body.folded .asf-content, body.folded .asf-save-bar { left: var(--asf-sidebar-width); }
+}
+@media (max-width: 782px) {
+    :root { --wp-admin-bar-height: 46px; }
+    .asf-sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
+    .asf-sidebar.is-open { transform: translateX(0); }
+    .asf-header, .asf-content, .asf-save-bar { left: 0; }
+}
+/* Custom Sidebar Styles */
+.sidebar-nav-section > a { background-color: #f8f9fa; }
