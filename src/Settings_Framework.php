@@ -89,7 +89,7 @@ class Settings_Framework {
 
         // Parse arguments with defaults
         $defaults = array(
-            'page_slug'    => $this->option_name . '_settings',
+            'page_slug'    => $this->option_name,
             'plugin_name'  => 'Plugin Settings',
             'menu_title'   => 'Settings',
             'page_title'   => 'Settings',
@@ -102,7 +102,7 @@ class Settings_Framework {
         $args = wp_parse_args($args, $defaults);
 
         $this->page_slug = sanitize_key($args['page_slug']);
-        $this->plugin_name = sanitize_text_field($args['plugin_name']);
+        $this->plugin_name = wp_kses_post($args['plugin_name']);
 
         // Store args for later use
         $this->args = $args;
@@ -293,6 +293,12 @@ class Settings_Framework {
                 )
             )
         );
+
+
+
+
+
+
     }
 
     /**
@@ -363,21 +369,48 @@ class Settings_Framework {
     }
 
     /**
-     * Save settings to database
+     * Save settings to database using a "whitelist" approach.
      *
-     * @param array $settings Settings to save
+     * This method only updates settings that are explicitly defined in the
+     * framework's configuration, preserving all other legacy settings.
+     *
+     * @param array $new_settings Settings to save from the form.
      * @return bool Success
      */
-    public function save_settings($settings) {
+    public function save_settings($new_settings) {
+        // 1. Get the full array of existing settings from the database.
+        $current_settings = $this->get_settings();
+//        print_r($current_settings);
+        // 2. Get the "whitelist" of all valid field IDs defined in the UI config.
+        $field_map = $this->get_field_map();
 
-        // Sanitize settings before saving
-        $sanitized_settings = $this->sanitize_settings($settings);
+        // 3. Loop through the whitelist of allowed fields.
+        foreach ($field_map as $key => $field_config) {
 
-        // Save to database
-        $result = update_option($this->option_name, $sanitized_settings);
+            // Check if a new value for this key was submitted from the form.
+            if (isset($new_settings[$key])) {
+                // If yes, sanitize it and update it in our settings array.
+                $current_settings[$key] = $this->sanitize_field_value($new_settings[$key], $field_config['type']);
+            } else {
+                // If the key is not in the submitted data, it could be an unchecked box.
+                // We must set it to a "false" or empty value to ensure it's saved as "off".
+                $type = $field_config['type'];
+                if ($type === 'checkbox' || $type === 'toggle') {
+                    $current_settings[$key] = 0;
+                } elseif ($type === 'multiselect' || $type === 'checkbox_group') {
+                    $current_settings[$key] = array();
+                }
+            }
+        }
 
-        // Fire action after settings are saved
-        do_action('ayecode_settings_framework_saved', $sanitized_settings, $this->option_name);
+//        print_r($current_settings);
+//        exit;
+
+        // 4. Save the modified array back to the database. Legacy keys are untouched.
+        $result = update_option($this->option_name, $current_settings);
+
+        // 5. Fire action after settings are saved.
+        do_action('ayecode_settings_framework_saved', $current_settings, $this->option_name);
 
         return $result;
     }
@@ -478,7 +511,7 @@ class Settings_Framework {
 
             case 'checkbox':
             case 'toggle':
-                return (bool) $value;
+                return !empty($value) ? 1 : 0;
 
             case 'select':
             case 'radio':

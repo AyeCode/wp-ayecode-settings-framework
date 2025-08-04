@@ -61,6 +61,251 @@ function ayecodeSettingsApp() {
         },
 
         /**
+         * Determines if a field should be visible based on its 'show_if' rule.
+         * @param {object} field - The field configuration object.
+         * @returns {boolean} True if the field should be shown, false otherwise.
+         */
+        shouldShowField(field) {
+            if (!field.show_if) {
+                return true; // Always show if no rule is defined.
+            }
+            try {
+                return this.evaluateCondition(field.show_if);
+            } catch (e) {
+                console.error(`Error evaluating show_if condition for field "${field.id}":`, e);
+                return true; // Default to showing the field if the rule is broken.
+            }
+        },
+
+        /**
+         * Safely evaluates a condition string without using eval().
+         * @param {string} rule - The condition string, e.g., "[%uploads_enabled%] && [%max_uploads%] > 10".
+         * @returns {boolean} The result of the evaluation.
+         */
+        evaluateCondition(rule) {
+            // Replace [%field_id%] placeholders with their actual values.
+            const populatedRule = rule.replace(/\[%(\w+)%\]/g, (match, fieldId) => {
+                const value = this.settings[fieldId];
+                if (typeof value === 'string') {
+                    // Escape single quotes within the string and wrap the whole thing in single quotes.
+                    return `'${value.replace(/'/g, "\\'")}'`;
+                }
+                if (typeof value === 'boolean' || typeof value === 'number') {
+                    return value;
+                }
+                return 'null'; // Default for undefined or other types.
+            });
+
+            // Split the rule by || (OR) operators first.
+            const orGroups = populatedRule.split('||');
+            for (const orGroup of orGroups) {
+                // Within each OR group, split by && (AND) operators.
+                const andConditions = orGroup.split('&&');
+                let isAndGroupTrue = true;
+                for (const condition of andConditions) {
+                    if (!this.evaluateSimpleComparison(condition.trim())) {
+                        isAndGroupTrue = false;
+                        break;
+                    }
+                }
+                // If any OR group is true, the whole rule is true.
+                if (isAndGroupTrue) {
+                    return true;
+                }
+            }
+            // If no OR groups were true, the whole rule is false.
+            return false;
+        },
+
+        /**
+         * Evaluates a simple comparison like "10 > 5" or "'a' == 'a'".
+         * @param {string} expression - The simple expression string.
+         * @returns {boolean} The result of the comparison.
+         */
+        evaluateSimpleComparison(expression) {
+            // Handle simple truthy/falsy checks for single values (e.g., a toggle).
+            if (!['==', '!=', '>', '<', '>=', '<='].some(op => expression.includes(op))) {
+                // Attempt to parse the value.
+                let value;
+                try {
+                    // This will handle 'true', 'false', numbers, and quoted strings.
+                    value = JSON.parse(expression.toLowerCase());
+                } catch (e) {
+                    // If it fails, it's a non-quoted string, which is truthy if not empty.
+                    value = expression.trim() !== '';
+                }
+                return !!value;
+            }
+
+            const match = expression.match(/^(.*?)\s*(==|!=|>|<|>=|<=)\s*(.*)$/);
+            if (!match) {
+                throw new Error(`Invalid comparison format: "${expression}"`);
+            }
+
+            let [, left, op, right] = match;
+
+            // A simple function to parse values from the string.
+            const parseValue = (val) => {
+                val = val.trim();
+                // Handle quoted strings
+                if ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith('"') && val.endsWith('"'))) {
+                    return val.slice(1, -1);
+                }
+                // Handle numbers
+                if (!isNaN(val) && val !== '') {
+                    return parseFloat(val);
+                }
+                // Handle booleans and null
+                if (val === 'true') return true;
+                if (val === 'false') return false;
+                if (val === 'null') return null;
+                return val; // Should not happen if substitution is correct, but as a fallback.
+            };
+
+            const leftVal = parseValue(left);
+            const rightVal = parseValue(right);
+
+            switch (op) {
+                case '==': return leftVal == rightVal;
+                case '!=': return leftVal != rightVal;
+                case '>':  return leftVal > rightVal;
+                case '<':  return leftVal < rightVal;
+                case '>=': return leftVal >= rightVal;
+                case '<=': return leftVal <= rightVal;
+                default:   throw new Error(`Unsupported operator: "${op}"`);
+            }
+        },
+
+
+        /**
+         * Initializes a GeoDirectory map for a settings field.
+         * Called via x-init from the field renderer.
+         */
+        initGdMap(fieldId, latField, lngField) {
+            // Robustness check: ensure GD scripts are loaded before trying to use them.
+            if (typeof window.GeoDirectoryMapManager === 'undefined' || typeof window.geodirMapData === 'undefined') {
+                console.error(`Cannot initialize GD Map for '${fieldId}': GeoDirectory map scripts are not loaded on this page.`);
+                const container = this.$refs[fieldId + '_map_canvas'];
+                if (container) {
+                    container.innerHTML = '<div class="alert alert-danger m-3">Error: GeoDirectory map scripts are not available.</div>';
+                }
+                return;
+            }
+
+            this.$nextTick(() => {
+                const container = this.$refs[fieldId + '_map_canvas'];
+                if (!container) {
+                    console.error(`Map container not found for field '${fieldId}'.`);
+                    return;
+                }
+
+                // Create a unique copy of the global map data for this specific instance
+                const mapData = JSON.parse(JSON.stringify(window.geodirMapData));
+
+                // Override lat/lng with values from our settings object
+                mapData.lat = this.settings[latField] || mapData.default_lat;
+                mapData.lng = this.settings[lngField] || mapData.default_lng;
+                mapData.lat_lng_blank = !this.settings[latField] && !this.settings[lngField];
+
+                // Give the map a unique prefix to avoid conflicts with other maps
+                mapData.prefix = `${fieldId}_`;
+
+                // Define the callback to update Alpine's state when the marker moves
+                const callbacks = {
+                    onMarkerUpdate: (coords) => {
+                        // Using toFixed to avoid long decimal strings
+                        this.settings[latField] = parseFloat(coords.lat).toFixed(6);
+                        this.settings[lngField] = parseFloat(coords.lng).toFixed(6);
+                        this.markChanged();
+                    }
+                };
+
+                // Tell the manager to build the map!
+                window.GeoDirectoryMapManager.initMap(container.id, mapData, callbacks);
+            });
+        },
+
+        /**
+         * Initializes and syncs a Choices.js instance for a SINGLE select field, if required.
+         */
+        initChoice(fieldId) {
+            const el = this.$refs[fieldId];
+            if (!el) {
+                console.error(`Choices.js init failed: element with x-ref="${fieldId}" not found.`);
+                return;
+            }
+
+            // ONLY proceed if the element has the required class.
+            if (!el.classList.contains('aui-select2')) {
+                return; // Do nothing, let x-model handle it.
+            }
+
+            // Call the factory function to get the custom configuration.
+            const config = aui_get_choices_config(el);
+
+            // Create the new Choices.js instance.
+            const choicesInstance = new Choices(el, config);
+
+            // Set the initial selected value from the settings data.
+            choicesInstance.setChoiceByValue(String(this.settings[fieldId]));
+
+            // Listen for changes FROM the Choices.js UI.
+            el.addEventListener('change', () => {
+                // For single select, getValue(true) returns a string.
+                this.settings[fieldId] = choicesInstance.getValue(true);
+                this.markChanged();
+            });
+
+            // Watch for changes TO the Alpine settings data.
+            this.$watch(`settings['${fieldId}']`, (newValue) => {
+                const currentValue = choicesInstance.getValue(true);
+                if (newValue !== currentValue) {
+                    choicesInstance.setChoiceByValue(String(newValue));
+                }
+            });
+        },
+
+        /**
+         * Initializes and syncs a Choices.js instance for a MULTI-select field.
+         */
+        initChoices(fieldId) {
+            const el = this.$refs[fieldId];
+            if (!el) {
+                console.error(`Choices.js init failed: element with x-ref="${fieldId}" not found.`);
+                return;
+            }
+
+            // Safety check: ensure the setting is an array before we begin.
+            if (!Array.isArray(this.settings[fieldId])) {
+                this.settings[fieldId] = [];
+            }
+
+            // Call your factory function to get the custom configuration.
+            const config = aui_get_choices_config(el);
+
+            // Create the new Choices.js instance with your custom config.
+            const choicesInstance = new Choices(el, config);
+
+            // Set the initial selected values from your settings data.
+            choicesInstance.setChoiceByValue(this.settings[fieldId]);
+
+            // Listen for changes FROM the Choices.js UI.
+            el.addEventListener('change', () => {
+                // When the user makes a change, update the Alpine settings data.
+                this.settings[fieldId] = choicesInstance.getValue(true);
+                this.markChanged();
+            });
+
+            // Watch for changes TO the Alpine settings data (e.g., clicking "Discard").
+            this.$watch(`settings['${fieldId}']`, (newValue) => {
+                // To prevent infinite loops, only update the UI if it's out of sync.
+                if (JSON.stringify(newValue) !== JSON.stringify(choicesInstance.getValue(true))) {
+                    choicesInstance.setChoiceByValue(newValue);
+                }
+            });
+        },
+
+        /**
          * Initializes the light/dark mode theme
          */
         initTheme() {
@@ -94,7 +339,7 @@ function ayecodeSettingsApp() {
             this.$nextTick(() => {
                 console.log('Re-initializing...');
                 if (typeof aui_init === 'function') {
-                    aui_init();
+                    // aui_init();
                 }
             });
         },
@@ -385,7 +630,6 @@ function ayecodeSettingsApp() {
             }
         },
 
-        // ✨ --- RENDERER PROXY --- ✨
         /**
          * Renders a field by calling the global field renderer.
          */
@@ -396,7 +640,6 @@ function ayecodeSettingsApp() {
             return '<div class="alert alert-danger">Error: Field renderer not found.</div>';
         },
 
-        // ✨ --- IMAGE-SPECIFIC METHODS --- ✨
         /**
          * Opens the WordPress Media Library to select an image.
          */

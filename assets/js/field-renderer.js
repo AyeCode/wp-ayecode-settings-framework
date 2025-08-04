@@ -14,13 +14,21 @@ window.asfFieldRenderer = {
             return '<div class="alert alert-warning">Invalid field configuration</div>';
         }
 
+        // This function now returns the raw field HTML without any extra wrappers.
         switch (field.type) {
+            // Handle the custom renderer type
+            case 'custom_renderer':
+                return this.renderCustomField(field);
             case 'text':
             case 'email':
             case 'url':
                 return this.renderTextField(field);
+            case 'alert':
+                return this.renderAlertField(field);
             case 'password':
                 return this.renderPasswordField(field);
+            case 'google_api_key':
+                return this.renderGoogleApiKeyField(field);
             case 'number':
                 return this.renderNumberField(field);
             case 'textarea':
@@ -45,9 +53,107 @@ window.asfFieldRenderer = {
                 return this.renderGroupField(field);
             case 'image':
                 return this.renderImageField(field);
+            case 'font-awesome':
+                return this.renderIconField(field);
+            case 'gd_map':
+                return this.renderGdMapField(field);
             default:
                 return `<div class="alert alert-info">Unsupported field type: ${field.type}</div>`;
         }
+    },
+
+    /**
+     * Helper function to render extra HTML attributes from an object.
+     * The `extra_attributes` property on a field should be an object like:
+     * { 'readonly': true, 'data-foo': 'bar' }
+     * @param {object} field - The field configuration object.
+     * @returns {string} A string of HTML attributes.
+     */
+    _renderExtraAttributes(field) {
+        if (!field.extra_attributes || typeof field.extra_attributes !== 'object') {
+            return '';
+        }
+
+        const attributes = [];
+        for (const [key, value] of Object.entries(field.extra_attributes)) {
+            // Basic sanitization for the attribute name.
+            const saneKey = key.replace(/[^a-zA-Z0-9-]/g, '');
+            if (!saneKey) continue;
+
+            // For boolean attributes (e.g., readonly), the presence of the attribute is enough.
+            if (value === true) {
+                attributes.push(saneKey);
+            } else {
+                // Escape the attribute value to prevent issues.
+                const saneValue = String(value)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+                attributes.push(`${saneKey}="${saneValue}"`);
+            }
+        }
+        return attributes.join(' ');
+    },
+
+    /**
+     * Renders a field by calling a globally accessible external function.
+     * The function name must be provided in the 'renderer_function' property of the field config.
+     */
+    renderCustomField(field) {
+        // Check if the renderer function name is provided
+        if (!field.renderer_function || typeof field.renderer_function !== 'string') {
+            return `<div class="alert alert-danger">Error: 'custom_renderer' field type requires a 'renderer_function' property specifying the function name.</div>`;
+        }
+
+        // Check if the function exists on the window object
+        if (typeof window[field.renderer_function] !== 'function') {
+            return `<div class="alert alert-danger">Error: The specified renderer function '${field.renderer_function}' was not found or is not a function.</div>`;
+        }
+
+        // Call the external function and pass the entire field configuration to it
+        return window[field.renderer_function](field);
+    },
+
+    /**
+     * Renders a GeoDirectory Map component.
+     * This requires `lat_field` and `lng_field` to be defined in the field config.
+     */
+    renderGdMapField(field) {
+        if (!field.lat_field || !field.lng_field) {
+            return `<div class="alert alert-danger">Error: 'gd_map' field type requires 'lat_field' and 'lng_field' properties.</div>`;
+        }
+
+        const mapContainerId = `${field.id}_map_canvas`;
+        const extraAttrs = this._renderExtraAttributes(field);
+
+        // This component calls `initGdMap` in the main Alpine app when it's added to the DOM.
+        return `
+            <div x-init="initGdMap('${field.id}', '${field.lat_field}', '${field.lng_field}')">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold mb-0">${field.label || field.id}</label>
+                        ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
+                    </div>
+                    <div class="col-md-8">
+                        <div class="row g-3 mb-3">
+                            <div class="col">
+                                <label for="${field.lat_field}" class="form-label small">Latitude</label>
+                                <input type="text" class="form-control" id="${field.lat_field}" x-model="settings.${field.lat_field}" @input="markChanged()" ${extraAttrs}>
+                            </div>
+                            <div class="col">
+                                <label for="${field.lng_field}" class="form-label small">Longitude</label>
+                                <input type="text" class="form-control" id="${field.lng_field}" x-model="settings.${field.lng_field}" @input="markChanged()" ${extraAttrs}>
+                            </div>
+                        </div>
+                        
+                        <div id="${mapContainerId}" x-ref="${field.id}_map_canvas" style="height: 350px; width: 100%;" class="border rounded bg-light">
+                            </div>
+                    </div>
+                </div>
+            </div>
+        `;
     },
 
     /**
@@ -57,11 +163,20 @@ window.asfFieldRenderer = {
         let innerFieldsHtml = '';
 
         if (field.fields) {
-            field.fields.forEach((subField, index) => {
-                const isLast = index === field.fields.length - 1;
-                const wrapperClass = isLast ? '' : 'mb-4';
-                // Note the change here: calling this.renderField to stay within the object
-                innerFieldsHtml += `<div class="${wrapperClass}">${this.renderField(subField)}</div>`;
+            // This now correctly replicates the structure from the main PHP template.
+            field.fields.forEach((subField) => {
+                // We must stringify the sub-field object to pass it to the Alpine function.
+                // To prevent breaking the HTML attribute, we must escape the double quotes.
+                const safeSubFieldJson = JSON.stringify(subField).replace(/"/g, '&quot;');
+
+                innerFieldsHtml += `
+                    <div class="py-4" 
+                         x-show="shouldShowField(${safeSubFieldJson})" 
+                         x-transition 
+                         x-cloak>
+                        ${this.renderField(subField)}
+                    </div>
+                `;
             });
         }
 
@@ -80,11 +195,19 @@ window.asfFieldRenderer = {
 
     /**
      * The functions below create the full two-column row for each field type.
-     * The generated HTML uses Alpine.js directives that will be interpreted
-     * by the component that calls these functions (e.g., ayecodeSettingsApp).
      */
     renderTextField(field) {
         const customClass = field.class || '';
+        const extraAttrs = this._renderExtraAttributes(field);
+
+        const inputHtml = `<input type="${field.type || 'text'}" class="form-control ${customClass}" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" placeholder="${field.placeholder || ''}" ${extraAttrs}>`;
+
+        // Conditionally wrap in an input group, injecting the raw HTML from `input_group_right`.
+        // The developer is responsible for providing safe and valid HTML for the addon.
+        const finalInputHtml = field.input_group_right
+            ? `<div class="input-group">${inputHtml}${field.input_group_right}</div>`
+            : inputHtml;
+
         return `
             <div class="row align-items-center">
                 <div class="col-md-4">
@@ -92,7 +215,7 @@ window.asfFieldRenderer = {
                     ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
                 </div>
                 <div class="col-md-8">
-                    <input type="${field.type || 'text'}" class="form-control ${customClass}" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" placeholder="${field.placeholder || ''}">
+                    ${finalInputHtml}
                 </div>
             </div>
         `;
@@ -100,6 +223,14 @@ window.asfFieldRenderer = {
 
     renderPasswordField(field) {
         const customClass = field.class || '';
+        const extraAttrs = this._renderExtraAttributes(field);
+
+        const inputHtml = `<input type="password" autocomplete="new-password" class="form-control ${customClass}" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" placeholder="${field.placeholder || ''}" ${extraAttrs}>`;
+
+        const finalInputHtml = field.input_group_right
+            ? `<div class="input-group">${inputHtml}${field.input_group_right}</div>`
+            : inputHtml;
+
         return `
             <div class="row align-items-center">
                 <div class="col-md-4">
@@ -107,7 +238,30 @@ window.asfFieldRenderer = {
                     ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
                 </div>
                 <div class="col-md-8">
-                    <input type="password" class="form-control ${customClass}" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" placeholder="${field.placeholder || ''}">
+                    ${finalInputHtml}
+                </div>
+            </div>
+        `;
+    },
+
+    renderGoogleApiKeyField(field) {
+        const customClass = field.class || '';
+        const extraAttrs = this._renderExtraAttributes(field);
+
+        const inputHtml = `<input type="password" autocomplete="new-password" class="form-control ${customClass}" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" @focus="$event.target.type = 'text'" @blur="$event.target.type = 'password'" placeholder="${field.placeholder || '••••••••••••••••••••••••••••'}" ${extraAttrs}>`;
+
+        const finalInputHtml = field.input_group_right
+            ? `<div class="input-group">${inputHtml}${field.input_group_right}</div>`
+            : inputHtml;
+
+        return `
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <label for="${field.id}" class="form-label fw-bold mb-0">${field.label || field.id}</label>
+                    ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
+                </div>
+                <div class="col-md-8">
+                    ${finalInputHtml}
                 </div>
             </div>
         `;
@@ -118,6 +272,14 @@ window.asfFieldRenderer = {
         const max = field.max !== undefined ? `max="${field.max}"` : '';
         const step = field.step !== undefined ? `step="${field.step}"` : '';
         const customClass = field.class || '';
+        const extraAttrs = this._renderExtraAttributes(field);
+
+        const inputHtml = `<input type="number" class="form-control ${customClass}" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" ${min} ${max} ${step} placeholder="${field.placeholder || ''}" ${extraAttrs}>`;
+
+        const finalInputHtml = field.input_group_right
+            ? `<div class="input-group">${inputHtml}${field.input_group_right}</div>`
+            : inputHtml;
+
         return `
             <div class="row align-items-center">
                 <div class="col-md-4">
@@ -125,7 +287,7 @@ window.asfFieldRenderer = {
                     ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
                 </div>
                 <div class="col-md-8">
-                    <input type="number" class="form-control ${customClass}" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" ${min} ${max} ${step} placeholder="${field.placeholder || ''}">
+                    ${finalInputHtml}
                 </div>
             </div>
         `;
@@ -134,6 +296,7 @@ window.asfFieldRenderer = {
     renderTextareaField(field) {
         const rows = field.rows || 5;
         const customClass = field.class || '';
+        const extraAttrs = this._renderExtraAttributes(field);
         return `
             <div class="row">
                 <div class="col-md-4">
@@ -141,13 +304,14 @@ window.asfFieldRenderer = {
                     ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
                 </div>
                 <div class="col-md-8">
-                    <textarea class="form-control ${customClass}" id="${field.id}" rows="${rows}" x-model="settings.${field.id}" @input="markChanged()" placeholder="${field.placeholder || ''}"></textarea>
+                    <textarea class="form-control ${customClass}" id="${field.id}" rows="${rows}" x-model="settings.${field.id}" @input="markChanged()" placeholder="${field.placeholder || ''}" ${extraAttrs}></textarea>
                 </div>
             </div>
         `;
     },
 
     renderToggleField(field) {
+        const extraAttrs = this._renderExtraAttributes(field);
         return `
             <div class="row align-items-center">
                 <div class="col-md-4">
@@ -156,7 +320,16 @@ window.asfFieldRenderer = {
                 </div>
                 <div class="col-md-8">
                     <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" role="switch" id="${field.id}" x-model="settings.${field.id}" @change="markChanged()">
+                        <input 
+                        class="form-check-input" 
+                        type="checkbox" 
+                        role="switch" 
+                        id="${field.id}" 
+                        x-model="settings.${field.id}" 
+                        :checked="settings.${field.id} == '1' || settings.${field.id} === true"
+                        @change="markChanged()"
+                        ${extraAttrs}
+                        >
                     </div>
                 </div>
             </div>
@@ -176,6 +349,13 @@ window.asfFieldRenderer = {
 
         const placeholderAttr = field.placeholder ? `data-placeholder="${field.placeholder}"` : '';
         const customClass = field.class || '';
+        const extraAttrs = this._renderExtraAttributes(field);
+
+        // We use x-model for standard selects, but the initChoice function for enhanced ones.
+        const modelOrInit = (field.class && field.class.includes('aui-select2'))
+            ? `x-ref="${field.id}" x-init="initChoice('${field.id}')"`
+            : `x-model="settings.${field.id}" @change="markChanged()"`;
+
         return `
             <div class="row align-items-center">
                 <div class="col-md-4">
@@ -183,7 +363,13 @@ window.asfFieldRenderer = {
                     ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
                 </div>
                 <div class="col-md-8">
-                    <select class="form-select w-100 mw-100 ${customClass}" id="${field.id}" x-model="settings.${field.id}" @change="markChanged()" ${placeholderAttr}>
+                    <select 
+                        class="form-select w-100 mw-100 ${customClass}" 
+                        id="${field.id}" 
+                        ${modelOrInit}
+                        ${placeholderAttr} 
+                        ${extraAttrs}
+                    >
                         ${optionsHtml}
                     </select>
                 </div>
@@ -192,6 +378,7 @@ window.asfFieldRenderer = {
     },
 
     renderColorField(field) {
+        const extraAttrs = this._renderExtraAttributes(field);
         return `
             <div class="row align-items-center">
                 <div class="col-md-4">
@@ -201,7 +388,7 @@ window.asfFieldRenderer = {
                 <div class="col-md-8">
                      <div class="d-flex align-items-center">
                         <input type="color" class="form-control form-control-color me-2" id="${field.id}-color" x-model="settings.${field.id}" @input="markChanged()">
-                        <input type="text" class="form-control" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" style="max-width: 120px;" pattern="^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$">
+                        <input type="text" class="form-control" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" style="max-width: 120px;" pattern="^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$" ${extraAttrs}>
                     </div>
                 </div>
             </div>
@@ -212,6 +399,7 @@ window.asfFieldRenderer = {
         const min = field.min || 0;
         const max = field.max || 100;
         const step = field.step || 1;
+        const extraAttrs = this._renderExtraAttributes(field);
         return `
             <div class="row align-items-center">
                 <div class="col-md-4">
@@ -220,7 +408,7 @@ window.asfFieldRenderer = {
                 </div>
                 <div class="col-md-8">
                     <div class="d-flex align-items-center">
-                        <input type="range" class="form-range" id="${field.id}" min="${min}" max="${max}" step="${step}" x-model="settings.${field.id}" @input="markChanged()">
+                        <input type="range" class="form-range" id="${field.id}" min="${min}" max="${max}" step="${step}" x-model="settings.${field.id}" @input="markChanged()" ${extraAttrs}>
                         <span class="badge bg-secondary ms-3" x-text="settings.${field.id}"></span>
                     </div>
                 </div>
@@ -229,6 +417,7 @@ window.asfFieldRenderer = {
     },
 
     renderCheckboxField(field) {
+        const extraAttrs = this._renderExtraAttributes(field);
         return `
             <div class="row">
                 <div class="col-md-4">
@@ -236,7 +425,14 @@ window.asfFieldRenderer = {
                 </div>
                 <div class="col-md-8">
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="${field.id}" x-model="settings.${field.id}" @change="markChanged()">
+                        <input 
+                        class="form-check-input" 
+                        type="checkbox" id="${field.id}" 
+                        x-model="settings.${field.id}" 
+                        :checked="settings.${field.id} == '1' || settings.${field.id} === true"
+                        @change="markChanged()"
+                        ${extraAttrs}
+                        >
                         <label class="form-check-label" for="${field.id}">${field.description || ''}</label>
                     </div>
                 </div>
@@ -246,11 +442,12 @@ window.asfFieldRenderer = {
 
     renderRadioField(field) {
         let optionsHtml = '';
+        const extraAttrs = this._renderExtraAttributes(field);
         if (field.options) {
             for (const [optValue, optLabel] of Object.entries(field.options)) {
                 optionsHtml += `
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="${field.id}" id="${field.id}_${optValue}" value="${optValue}" x-model="settings.${field.id}" @change="markChanged()">
+                        <input class="form-check-input" type="radio" name="${field.id}" id="${field.id}_${optValue}" value="${optValue}" x-model="settings.${field.id}" @change="markChanged()" ${extraAttrs}>
                         <label class="form-check-label" for="${field.id}_${optValue}">${optLabel}</label>
                     </div>
                 `;
@@ -270,37 +467,48 @@ window.asfFieldRenderer = {
     },
 
     renderMultiselectField(field) {
+        const placeholderAttr = field.placeholder ? `data-placeholder="${field.placeholder}"` : '';
+        const customClass = field.class || '';
+        const extraAttrs = this._renderExtraAttributes(field);
         let optionsHtml = '';
+
         if (field.options) {
             for (const [optValue, optLabel] of Object.entries(field.options)) {
                 optionsHtml += `<option value="${optValue}">${optLabel}</option>`;
             }
         }
 
-        const placeholderAttr = field.placeholder ? `data-placeholder="${field.placeholder}"` : '';
-        const customClass = field.class || '';
         return `
-            <div class="row">
-                <div class="col-md-4">
-                    <label for="${field.id}" class="form-label fw-bold mb-0">${field.label || field.id}</label>
-                    ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
-                </div>
-                <div class="col-md-8">
-                    <select class="form-select w-100 mw-100 ${customClass}" id="${field.id}" multiple x-model="settings.${field.id}" @change="markChanged()" ${placeholderAttr}>
-                        ${optionsHtml}
-                    </select>
-                </div>
+        <div class="row">
+            <div class="col-md-4">
+                <label for="${field.id}" class="form-label fw-bold mb-0">${field.label || field.id}</label>
+                ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
             </div>
-        `;
+            <div class="col-md-8">
+                <select 
+                    class="form-select w-100 mw-100 ${customClass}" 
+                    id="${field.id}" 
+                    multiple 
+                    x-ref="${field.id}"
+                    x-init="initChoices('${field.id}')"
+                    ${placeholderAttr}
+                    ${extraAttrs}
+                >
+                    ${optionsHtml}
+                </select>
+            </div>
+        </div>
+    `;
     },
 
     renderCheckboxGroupField(field) {
         let optionsHtml = '';
+        const extraAttrs = this._renderExtraAttributes(field);
         if (field.options) {
             for (const [optValue, optLabel] of Object.entries(field.options)) {
                 optionsHtml += `
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" value="${optValue}" id="${field.id}_${optValue}" x-model="settings.${field.id}" @change="markChanged()">
+                        <input class="form-check-input" type="checkbox" value="${optValue}" id="${field.id}_${optValue}" x-model="settings.${field.id}" @change="markChanged()" ${extraAttrs}>
                         <label class="form-check-label" for="${field.id}_${optValue}">${optLabel}</label>
                     </div>
                 `;
@@ -328,19 +536,53 @@ window.asfFieldRenderer = {
                 </div>
                 <div class="col-md-8">
                     <div class="asf-image-uploader">
-                        <div class="asf-image-preview mb-2 border rounded" style="width: 150px; height: 150px; background-color: #f8f9fa; display: flex; align-items: center; justify-content: center;" x-show="settings.${field.id}">
+                        <div class="asf-image-preview mb-2 border rounded d-flex justify-content-center bg-secondary-subtle" style="width: 150px; height: 150px; display: flex; align-items: center; justify-content: center;" x-show="settings.${field.id}">
                             <img x-bind:src="imagePreviews[field.id]" style="max-width: 100%; max-height: 100%; object-fit: cover;" alt="Preview">
                         </div>
                         <div>
                             <button type="button" class="btn btn-sm btn-secondary" @click.prevent="selectImage('${field.id}')">
                                 <i class="fa-solid fa-pen-to-square me-1"></i> Select Image
                             </button>
-                            <button type="button" class="btn btn-sm btn-danger" @click.prevent="removeImage('${field.id}')" x-show="settings.${field.id}" x-cloak>
+                            <button type="button" class="btn btn-sm btn-danger ms-2" @click.prevent="removeImage('${field.id}')" x-show="settings.${field.id}" x-cloak>
                                 <i class="fa-solid fa-trash-can me-1"></i> Remove
                             </button>
                         </div>
                     </div>
                 </div>
+            </div>
+        `;
+    },
+
+    renderIconField(field) {
+        const customClass = field.class || '';
+        const extraAttrs = this._renderExtraAttributes(field);
+
+        // The raw HTML for the addon is injected directly. You are responsible for providing valid addon HTML.
+        const textAddon = field.input_group_right || '';
+
+        return `
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <label for="${field.id}" class="form-label fw-bold mb-0">${field.label || field.id}</label>
+                    ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
+                </div>
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <input data-aui-init="iconpicker" type="text" class="form-control ${customClass}" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" placeholder="${field.placeholder || ''}" ${extraAttrs}>
+                        ${textAddon}
+                        <span class="input-group-addon input-group-text top-0 end-0 c-pointer"><i class="fas fa-icons"></i></span>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    renderAlertField(field) {
+        const type = field.alert_type || 'info';
+        return `
+            <div class="alert alert-${type} mb-0">
+                ${field.label ? `<h6 class="alert-heading">${field.label}</h6>` : ''}
+                ${field.description || ''}
             </div>
         `;
     },

@@ -48,6 +48,7 @@ class WP_AyeCode_Settings_Framework {
      * Get single instance
      */
     public static function instance() {
+
         if (is_null(self::$instance)) {
             self::$instance = new self();
         }
@@ -58,6 +59,13 @@ class WP_AyeCode_Settings_Framework {
      * Constructor
      */
     private function __construct() {
+
+        // added to make it work in GD whule not in vendor folder @todo remove
+        add_action( 'plugins_loaded', function () {
+            $this->load_framework();
+        },1 );
+
+
         add_action('init', array($this, 'init'));
         register_activation_hook(__FILE__, array($this, 'activate'));
         register_deactivation_hook(__FILE__, array($this, 'deactivate'));
@@ -79,7 +87,7 @@ class WP_AyeCode_Settings_Framework {
         $this->load_framework();
 
         // Initialize demo settings
-        $this->init_demo_settings();
+//$this->init_demo_settings();
 
         // Add admin notices
         add_action('admin_notices', array($this, 'admin_notices'));
