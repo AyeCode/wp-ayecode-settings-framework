@@ -339,7 +339,7 @@ function ayecodeSettingsApp() {
             this.$nextTick(() => {
                 console.log('Re-initializing...');
                 if (typeof aui_init === 'function') {
-                    // aui_init();
+                    aui_init();
                 }
             });
         },

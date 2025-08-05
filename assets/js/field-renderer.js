@@ -57,9 +57,83 @@ window.asfFieldRenderer = {
                 return this.renderIconField(field);
             case 'gd_map':
                 return this.renderGdMapField(field);
+            case 'helper_tags':
+                return this.renderHelperTagsField(field);
             default:
                 return `<div class="alert alert-info">Unsupported field type: ${field.type}</div>`;
         }
+    },
+
+    /**
+     * Renders a full-width block of helper tags that can be copied to the clipboard.
+     * Each tag has a tooltip with more information.
+     */
+    renderHelperTagsField(field) {
+        if (!field.options || typeof field.options !== 'object') {
+            return '<div class="alert alert-warning">Helper tags field requires an "options" object.</div>';
+        }
+
+        let tagsHtml = '';
+        for (const [key, value] of Object.entries(field.options)) {
+            // Sanitize value for the HTML attribute to prevent breaking the HTML.
+            const escapedValue = String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+
+            // Sanitize key for the JavaScript call.
+            const escapedKey = String(key).replace(/'/g, "\\'");
+
+            tagsHtml += `
+                <div class="d-inline-flex align-items-center border rounded-pill px-2 py-1 me-2 mb-2 bg-light-subtle text-body fs-xs">
+                    <span 
+                        class="c-pointer" 
+                        @click="navigator.clipboard.writeText('${escapedKey}'); aui_toast('aui-settings-tag-copied','success','Copied to Clipboard');"
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="top"
+                        title="Click to copy"
+                    >
+                        ${key}
+                    </span>
+                    <i 
+                        class="fa-solid fa-circle-question ms-2 text-muted c-pointer" 
+                        data-bs-toggle="tooltip" 
+                        data-bs-placement="top"
+                        title="${escapedValue}"
+                    ></i>
+                </div>
+            `;
+        }
+
+        const customDescHtml = this._renderCustomDescription(field);
+
+        return `
+            <div class="row">
+                <div class="col-12">
+                    <label class="form-label fw-bold mb-2">${field.label || field.id}</label>
+                    ${field.description ? `<p class="form-text text-muted mt-0 mb-2">${field.description}</p>` : ''}
+                    <div class="d-flex flex-wrap align-items-center">
+                        ${tagsHtml}
+                    </div>
+                    ${customDescHtml}
+                </div>
+            </div>
+        `;
+    },
+
+    /**
+     * Helper function to render a custom description with HTML support.
+     * @param {object} field - The field configuration object.
+     * @returns {string} A string of HTML for the custom description.
+     */
+    _renderCustomDescription(field) {
+        if (!field.custom_desc) {
+            return '';
+        }
+        // This allows for raw HTML. Ensure it's sanitized on the backend.
+        return `<div class="form-text mt-2">${field.custom_desc}</div>`;
     },
 
     /**
@@ -127,6 +201,7 @@ window.asfFieldRenderer = {
 
         const mapContainerId = `${field.id}_map_canvas`;
         const extraAttrs = this._renderExtraAttributes(field);
+        const customDescHtml = this._renderCustomDescription(field);
 
         // This component calls `initGdMap` in the main Alpine app when it's added to the DOM.
         return `
@@ -149,7 +224,8 @@ window.asfFieldRenderer = {
                         </div>
                         
                         <div id="${mapContainerId}" x-ref="${field.id}_map_canvas" style="height: 350px; width: 100%;" class="border rounded bg-light">
-                            </div>
+                        </div>
+                        ${customDescHtml}
                     </div>
                 </div>
             </div>
@@ -199,14 +275,23 @@ window.asfFieldRenderer = {
     renderTextField(field) {
         const customClass = field.class || '';
         const extraAttrs = this._renderExtraAttributes(field);
+        const escapedPlaceholder = (field.placeholder || '').replace(/"/g, '&quot;');
+        let activePlaceholderAttrs = '';
+        if (field.active_placeholder && field.placeholder) {
+            const placeholderJson = JSON.stringify(field.placeholder);
+            activePlaceholderAttrs = `
+                @focus='if (!settings.${field.id}) { settings.${field.id} = ${placeholderJson}; }'
+                @blur='if (settings.${field.id} === ${placeholderJson}) { settings.${field.id} = ""; }'
+            `;
+        }
 
-        const inputHtml = `<input type="${field.type || 'text'}" class="form-control ${customClass}" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" placeholder="${field.placeholder || ''}" ${extraAttrs}>`;
+        const inputHtml = `<input type="${field.type || 'text'}" class="form-control ${customClass}" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" placeholder="${escapedPlaceholder}" ${extraAttrs} ${activePlaceholderAttrs}>`;
 
-        // Conditionally wrap in an input group, injecting the raw HTML from `input_group_right`.
-        // The developer is responsible for providing safe and valid HTML for the addon.
         const finalInputHtml = field.input_group_right
             ? `<div class="input-group">${inputHtml}${field.input_group_right}</div>`
             : inputHtml;
+
+        const customDescHtml = this._renderCustomDescription(field);
 
         return `
             <div class="row align-items-center">
@@ -216,6 +301,7 @@ window.asfFieldRenderer = {
                 </div>
                 <div class="col-md-8">
                     ${finalInputHtml}
+                    ${customDescHtml}
                 </div>
             </div>
         `;
@@ -224,7 +310,7 @@ window.asfFieldRenderer = {
     renderPasswordField(field) {
         const customClass = field.class || '';
         const extraAttrs = this._renderExtraAttributes(field);
-
+        const customDescHtml = this._renderCustomDescription(field);
         const inputHtml = `<input type="password" autocomplete="new-password" class="form-control ${customClass}" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" placeholder="${field.placeholder || ''}" ${extraAttrs}>`;
 
         const finalInputHtml = field.input_group_right
@@ -239,6 +325,7 @@ window.asfFieldRenderer = {
                 </div>
                 <div class="col-md-8">
                     ${finalInputHtml}
+                    ${customDescHtml}
                 </div>
             </div>
         `;
@@ -247,7 +334,7 @@ window.asfFieldRenderer = {
     renderGoogleApiKeyField(field) {
         const customClass = field.class || '';
         const extraAttrs = this._renderExtraAttributes(field);
-
+        const customDescHtml = this._renderCustomDescription(field);
         const inputHtml = `<input type="password" autocomplete="new-password" class="form-control ${customClass}" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" @focus="$event.target.type = 'text'" @blur="$event.target.type = 'password'" placeholder="${field.placeholder || '••••••••••••••••••••••••••••'}" ${extraAttrs}>`;
 
         const finalInputHtml = field.input_group_right
@@ -262,6 +349,7 @@ window.asfFieldRenderer = {
                 </div>
                 <div class="col-md-8">
                     ${finalInputHtml}
+                    ${customDescHtml}
                 </div>
             </div>
         `;
@@ -273,7 +361,7 @@ window.asfFieldRenderer = {
         const step = field.step !== undefined ? `step="${field.step}"` : '';
         const customClass = field.class || '';
         const extraAttrs = this._renderExtraAttributes(field);
-
+        const customDescHtml = this._renderCustomDescription(field);
         const inputHtml = `<input type="number" class="form-control ${customClass}" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" ${min} ${max} ${step} placeholder="${field.placeholder || ''}" ${extraAttrs}>`;
 
         const finalInputHtml = field.input_group_right
@@ -288,6 +376,7 @@ window.asfFieldRenderer = {
                 </div>
                 <div class="col-md-8">
                     ${finalInputHtml}
+                    ${customDescHtml}
                 </div>
             </div>
         `;
@@ -297,6 +386,17 @@ window.asfFieldRenderer = {
         const rows = field.rows || 5;
         const customClass = field.class || '';
         const extraAttrs = this._renderExtraAttributes(field);
+        const escapedPlaceholder = (field.placeholder || '').replace(/"/g, '&quot;');
+        const customDescHtml = this._renderCustomDescription(field);
+        let activePlaceholderAttrs = '';
+        if (field.active_placeholder && field.placeholder) {
+            const placeholderJson = JSON.stringify(field.placeholder);
+            activePlaceholderAttrs = `
+                @focus='if (!settings.${field.id}) { settings.${field.id} = ${placeholderJson}; }'
+                @blur='if (settings.${field.id} === ${placeholderJson}) { settings.${field.id} = ""; }'
+            `;
+        }
+
         return `
             <div class="row">
                 <div class="col-md-4">
@@ -304,7 +404,8 @@ window.asfFieldRenderer = {
                     ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
                 </div>
                 <div class="col-md-8">
-                    <textarea class="form-control ${customClass}" id="${field.id}" rows="${rows}" x-model="settings.${field.id}" @input="markChanged()" placeholder="${field.placeholder || ''}" ${extraAttrs}></textarea>
+                    <textarea class="form-control ${customClass}" id="${field.id}" rows="${rows}" x-model="settings.${field.id}" @input="markChanged()" placeholder="${escapedPlaceholder}" ${extraAttrs} ${activePlaceholderAttrs}></textarea>
+                    ${customDescHtml}
                 </div>
             </div>
         `;
@@ -312,6 +413,7 @@ window.asfFieldRenderer = {
 
     renderToggleField(field) {
         const extraAttrs = this._renderExtraAttributes(field);
+        const customDescHtml = this._renderCustomDescription(field);
         return `
             <div class="row align-items-center">
                 <div class="col-md-4">
@@ -331,6 +433,7 @@ window.asfFieldRenderer = {
                         ${extraAttrs}
                         >
                     </div>
+                    ${customDescHtml}
                 </div>
             </div>
         `;
@@ -350,6 +453,7 @@ window.asfFieldRenderer = {
         const placeholderAttr = field.placeholder ? `data-placeholder="${field.placeholder}"` : '';
         const customClass = field.class || '';
         const extraAttrs = this._renderExtraAttributes(field);
+        const customDescHtml = this._renderCustomDescription(field);
 
         // We use x-model for standard selects, but the initChoice function for enhanced ones.
         const modelOrInit = (field.class && field.class.includes('aui-select2'))
@@ -372,6 +476,7 @@ window.asfFieldRenderer = {
                     >
                         ${optionsHtml}
                     </select>
+                    ${customDescHtml}
                 </div>
             </div>
         `;
@@ -379,6 +484,12 @@ window.asfFieldRenderer = {
 
     renderColorField(field) {
         const extraAttrs = this._renderExtraAttributes(field);
+        const customDescHtml = this._renderCustomDescription(field);
+
+        // The original default value is stored in originalSettings.
+        // We need to access it safely in the template.
+        const originalValue = `originalSettings['${field.id}']`;
+
         return `
             <div class="row align-items-center">
                 <div class="col-md-4">
@@ -386,10 +497,14 @@ window.asfFieldRenderer = {
                     ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
                 </div>
                 <div class="col-md-8">
-                     <div class="d-flex align-items-center">
-                        <input type="color" class="form-control form-control-color me-2" id="${field.id}-color" x-model="settings.${field.id}" @input="markChanged()">
-                        <input type="text" class="form-control" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" style="max-width: 120px;" pattern="^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$" ${extraAttrs}>
+                     <div class="input-group">
+                        <input type="color" class="form-control form-control-color" id="${field.id}-color" x-model="settings.${field.id}" @input="markChanged()">
+                        <input type="text" class="form-control" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" style="flex: 0 1 120px;" pattern="^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$" ${extraAttrs}>
+                        <button type="button" class="btn btn-outline-secondary" @click="settings['${field.id}'] = ${originalValue}; markChanged()" x-show="settings['${field.id}'] !== ${originalValue}" x-cloak title="Reset to default">
+                            <i class="fa-solid fa-arrow-rotate-left"></i>
+                        </button>
                     </div>
+                    ${customDescHtml}
                 </div>
             </div>
         `;
@@ -400,6 +515,7 @@ window.asfFieldRenderer = {
         const max = field.max || 100;
         const step = field.step || 1;
         const extraAttrs = this._renderExtraAttributes(field);
+        const customDescHtml = this._renderCustomDescription(field);
         return `
             <div class="row align-items-center">
                 <div class="col-md-4">
@@ -411,6 +527,7 @@ window.asfFieldRenderer = {
                         <input type="range" class="form-range" id="${field.id}" min="${min}" max="${max}" step="${step}" x-model="settings.${field.id}" @input="markChanged()" ${extraAttrs}>
                         <span class="badge bg-secondary ms-3" x-text="settings.${field.id}"></span>
                     </div>
+                    ${customDescHtml}
                 </div>
             </div>
         `;
@@ -418,6 +535,7 @@ window.asfFieldRenderer = {
 
     renderCheckboxField(field) {
         const extraAttrs = this._renderExtraAttributes(field);
+        const customDescHtml = this._renderCustomDescription(field);
         return `
             <div class="row">
                 <div class="col-md-4">
@@ -435,6 +553,7 @@ window.asfFieldRenderer = {
                         >
                         <label class="form-check-label" for="${field.id}">${field.description || ''}</label>
                     </div>
+                    ${customDescHtml}
                 </div>
             </div>
         `;
@@ -453,6 +572,7 @@ window.asfFieldRenderer = {
                 `;
             }
         }
+        const customDescHtml = this._renderCustomDescription(field);
         return `
             <div class="row">
                 <div class="col-md-4">
@@ -461,6 +581,7 @@ window.asfFieldRenderer = {
                 </div>
                 <div class="col-md-8">
                     ${optionsHtml}
+                    ${customDescHtml}
                 </div>
             </div>
         `;
@@ -470,6 +591,7 @@ window.asfFieldRenderer = {
         const placeholderAttr = field.placeholder ? `data-placeholder="${field.placeholder}"` : '';
         const customClass = field.class || '';
         const extraAttrs = this._renderExtraAttributes(field);
+        const customDescHtml = this._renderCustomDescription(field);
         let optionsHtml = '';
 
         if (field.options) {
@@ -496,6 +618,7 @@ window.asfFieldRenderer = {
                 >
                     ${optionsHtml}
                 </select>
+                ${customDescHtml}
             </div>
         </div>
     `;
@@ -514,6 +637,7 @@ window.asfFieldRenderer = {
                 `;
             }
         }
+        const customDescHtml = this._renderCustomDescription(field);
         return `
             <div class="row">
                 <div class="col-md-4">
@@ -522,12 +646,14 @@ window.asfFieldRenderer = {
                 </div>
                 <div class="col-md-8">
                     ${optionsHtml}
+                    ${customDescHtml}
                 </div>
             </div>
         `;
     },
 
     renderImageField(field) {
+        const customDescHtml = this._renderCustomDescription(field);
         return `
             <div class="row">
                 <div class="col-md-4">
@@ -536,8 +662,13 @@ window.asfFieldRenderer = {
                 </div>
                 <div class="col-md-8">
                     <div class="asf-image-uploader">
-                        <div class="asf-image-preview mb-2 border rounded d-flex justify-content-center bg-secondary-subtle" style="width: 150px; height: 150px; display: flex; align-items: center; justify-content: center;" x-show="settings.${field.id}">
-                            <img x-bind:src="imagePreviews[field.id]" style="max-width: 100%; max-height: 100%; object-fit: cover;" alt="Preview">
+                        <div class="asf-image-preview mb-2 border rounded d-flex justify-content-center align-items-center bg-light" style="width: 150px; height: 150px;">
+                            <template x-if="settings.${field.id} && imagePreviews[field.id]">
+                                <img :src="imagePreviews[field.id]" style="max-width: 100%; max-height: 100%; object-fit: cover;" alt="Preview" x-cloak>
+                            </template>
+                            <template x-if="!settings.${field.id} || !imagePreviews[field.id]">
+                                <i class="fa-solid fa-image fa-2x text-muted" x-cloak></i>
+                            </template>
                         </div>
                         <div>
                             <button type="button" class="btn btn-sm btn-secondary" @click.prevent="selectImage('${field.id}')">
@@ -548,14 +679,62 @@ window.asfFieldRenderer = {
                             </button>
                         </div>
                     </div>
+                    ${customDescHtml}
                 </div>
             </div>
         `;
     },
 
+    renderColorField(field) {
+        const extraAttrs = this._renderExtraAttributes(field);
+        const customDescHtml = this._renderCustomDescription(field);
+
+        // Conditionally create the HTML for the reset button.
+        // It only renders if a `default` value is present in the field's definition.
+        const resetButtonHtml = field.default ? `
+        <button 
+            type="button" 
+            class="btn btn-outline-secondary ms-2" 
+            title="Reset to default"
+            x-cloak
+            x-show="settings.${field.id} && settings.${field.id}.toLowerCase() !== '${field.default}'.toLowerCase()"
+            @click="settings.${field.id} = '${field.default}'; markChanged()"
+            data-bs-toggle="tooltip"
+        >
+           <i class="fa-solid fa-rotate-left"></i>
+        </button>
+    ` : '';
+
+        return `
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <label for="${field.id}" class="form-label fw-bold mb-0">${field.label || field.id}</label>
+                    ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
+                </div>
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <input type="color" class="form-control form-control-color me-2" id="${field.id}-color" x-model="settings.${field.id}" @input="markChanged()">
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            id="${field.id}" 
+                            x-model="settings.${field.id}" 
+                            @input="markChanged()" 
+                            style="max-width: 120px;" 
+                            pattern="^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$" 
+                            ${extraAttrs}
+                        >
+                        ${resetButtonHtml}
+                    </div>
+                    ${customDescHtml}
+                </div>
+            </div>`;
+    },
+
     renderIconField(field) {
         const customClass = field.class || '';
         const extraAttrs = this._renderExtraAttributes(field);
+        const customDescHtml = this._renderCustomDescription(field);
 
         // The raw HTML for the addon is injected directly. You are responsible for providing valid addon HTML.
         const textAddon = field.input_group_right || '';
@@ -572,6 +751,7 @@ window.asfFieldRenderer = {
                         ${textAddon}
                         <span class="input-group-addon input-group-text top-0 end-0 c-pointer"><i class="fas fa-icons"></i></span>
                     </div>
+                    ${customDescHtml}
                 </div>
             </div>
         `;
