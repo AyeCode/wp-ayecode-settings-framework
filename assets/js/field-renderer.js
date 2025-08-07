@@ -59,6 +59,8 @@ window.asfFieldRenderer = {
                 return this.renderGdMapField(field);
             case 'helper_tags':
                 return this.renderHelperTagsField(field);
+            case 'action_button':
+                return this.renderActionButtonField(field);
             default:
                 return `<div class="alert alert-info">Unsupported field type: ${field.type}</div>`;
         }
@@ -294,7 +296,7 @@ window.asfFieldRenderer = {
         const customDescHtml = this._renderCustomDescription(field);
 
         return `
-            <div class="row align-items-center">
+            <div class="row align-items-center rounded">
                 <div class="col-md-4">
                     <label for="${field.id}" class="form-label fw-bold mb-0">${field.label || field.id}</label>
                     ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
@@ -318,7 +320,7 @@ window.asfFieldRenderer = {
             : inputHtml;
 
         return `
-            <div class="row align-items-center">
+            <div class="row align-items-center rounded">
                 <div class="col-md-4">
                     <label for="${field.id}" class="form-label fw-bold mb-0">${field.label || field.id}</label>
                     ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
@@ -342,7 +344,7 @@ window.asfFieldRenderer = {
             : inputHtml;
 
         return `
-            <div class="row align-items-center">
+            <div class="row align-items-center rounded">
                 <div class="col-md-4">
                     <label for="${field.id}" class="form-label fw-bold mb-0">${field.label || field.id}</label>
                     ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
@@ -369,7 +371,7 @@ window.asfFieldRenderer = {
             : inputHtml;
 
         return `
-            <div class="row align-items-center">
+            <div class="row align-items-center rounded">
                 <div class="col-md-4">
                     <label for="${field.id}" class="form-label fw-bold mb-0">${field.label || field.id}</label>
                     ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
@@ -415,7 +417,7 @@ window.asfFieldRenderer = {
         const extraAttrs = this._renderExtraAttributes(field);
         const customDescHtml = this._renderCustomDescription(field);
         return `
-            <div class="row align-items-center">
+            <div class="row align-items-center rounded">
                 <div class="col-md-4">
                     <label for="${field.id}" class="form-label fw-bold mb-0">${field.label || field.id}</label>
                     ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
@@ -461,7 +463,7 @@ window.asfFieldRenderer = {
             : `x-model="settings.${field.id}" @change="markChanged()"`;
 
         return `
-            <div class="row align-items-center">
+            <div class="row align-items-center rounded">
                 <div class="col-md-4">
                     <label for="${field.id}" class="form-label fw-bold mb-0">${field.label || field.id}</label>
                     ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
@@ -482,34 +484,6 @@ window.asfFieldRenderer = {
         `;
     },
 
-    renderColorField(field) {
-        const extraAttrs = this._renderExtraAttributes(field);
-        const customDescHtml = this._renderCustomDescription(field);
-
-        // The original default value is stored in originalSettings.
-        // We need to access it safely in the template.
-        const originalValue = `originalSettings['${field.id}']`;
-
-        return `
-            <div class="row align-items-center">
-                <div class="col-md-4">
-                    <label for="${field.id}" class="form-label fw-bold mb-0">${field.label || field.id}</label>
-                    ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
-                </div>
-                <div class="col-md-8">
-                     <div class="input-group">
-                        <input type="color" class="form-control form-control-color" id="${field.id}-color" x-model="settings.${field.id}" @input="markChanged()">
-                        <input type="text" class="form-control" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" style="flex: 0 1 120px;" pattern="^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$" ${extraAttrs}>
-                        <button type="button" class="btn btn-outline-secondary" @click="settings['${field.id}'] = ${originalValue}; markChanged()" x-show="settings['${field.id}'] !== ${originalValue}" x-cloak title="Reset to default">
-                            <i class="fa-solid fa-arrow-rotate-left"></i>
-                        </button>
-                    </div>
-                    ${customDescHtml}
-                </div>
-            </div>
-        `;
-    },
-
     renderRangeField(field) {
         const min = field.min || 0;
         const max = field.max || 100;
@@ -517,7 +491,7 @@ window.asfFieldRenderer = {
         const extraAttrs = this._renderExtraAttributes(field);
         const customDescHtml = this._renderCustomDescription(field);
         return `
-            <div class="row align-items-center">
+            <div class="row align-items-center rounded">
                 <div class="col-md-4">
                     <label for="${field.id}" class="form-label fw-bold mb-0">${field.label || field.id}</label>
                     ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
@@ -706,7 +680,7 @@ window.asfFieldRenderer = {
     ` : '';
 
         return `
-            <div class="row align-items-center">
+            <div class="row align-items-center rounded">
                 <div class="col-md-4">
                     <label for="${field.id}" class="form-label fw-bold mb-0">${field.label || field.id}</label>
                     ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
@@ -740,7 +714,7 @@ window.asfFieldRenderer = {
         const textAddon = field.input_group_right || '';
 
         return `
-            <div class="row align-items-center">
+            <div class="row align-items-center rounded">
                 <div class="col-md-4">
                     <label for="${field.id}" class="form-label fw-bold mb-0">${field.label || field.id}</label>
                     ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
@@ -752,6 +726,37 @@ window.asfFieldRenderer = {
                         <span class="input-group-addon input-group-text top-0 end-0 c-pointer"><i class="fas fa-icons"></i></span>
                     </div>
                     ${customDescHtml}
+                </div>
+            </div>
+        `;
+    },
+
+    renderActionButtonField(field) {
+        const customDescHtml = this._renderCustomDescription(field);
+        const buttonClass = field.button_class || 'btn-secondary';
+        return `
+            <div class="row align-items-center rounded">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold mb-0">${field.label || field.id}</label>
+                    ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
+                </div>
+                <div class="col-md-8" >
+                    <div class="d-flex align-items-center justify-content-end">
+                        <div class="me-3" x-show="actionStates['${field.id}']?.message" x-cloak>
+                            <span :class="actionStates['${field.id}']?.success ? 'text-success' : 'text-danger'" x-text="actionStates['${field.id}']?.message"></span>
+                        </div>
+                        <button type="button" id="${field.id}" class="btn ${buttonClass}" @click="executeAction('${field.id}')" :disabled="actionStates['${field.id}']?.isLoading">
+                            <span x-show="actionStates['${field.id}']?.isLoading" class="spinner-border spinner-border-sm me-2" x-cloak></span>
+                            <span x-text="actionStates['${field.id}']?.isLoading ? 'Processing...' : '${field.button_text || 'Run'}'"></span>
+                        </button>
+                    </div>
+                    
+                </div>
+                <div class="col-md-12" x-ref="action_container_${field.id}">
+                 ${customDescHtml}
+                    <div class="progress mt-2" style="height: 5px;" x-show="actionStates['${field.id}']?.progress > 0 && actionStates['${field.id}']?.progress < 100" x-cloak>
+                          <div class="progress-bar" role="progressbar" :style="{ width: actionStates['${field.id}']?.progress + '%' }"></div>
+                    </div>
                 </div>
             </div>
         `;

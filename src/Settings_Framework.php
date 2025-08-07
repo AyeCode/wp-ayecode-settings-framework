@@ -23,10 +23,16 @@ class Settings_Framework {
     const VERSION = '1.0.0';
 
     /**
-     * Settings configuration
-     * @var array
+     * Holds the configuration array once loaded.
+     * @var array|null
      */
-    private $config;
+    private $config = null;
+
+    /**
+     * Holds the function that will load the configuration.
+     * @var callable
+     */
+    private $config_loader;
 
     /**
      * WordPress option name for storing settings
@@ -73,18 +79,18 @@ class Settings_Framework {
     /**
      * Constructor
      *
-     * @param array  $config      Settings configuration array
-     * @param string $option_name WordPress option name for storing settings
-     * @param array  $args        Additional arguments
+     * @param callable $config_loader A function that returns the settings configuration array.
+     * @param string   $option_name   WordPress option name for storing settings.
+     * @param array    $args          Additional arguments.
      */
-    public function __construct($config, $option_name, $args = array()) {
+    public function __construct($config_loader, $option_name, $args = array()) {
 
         // Validate required parameters
-        if (empty($config) || empty($option_name)) {
-            wp_die('Settings Framework: Configuration and option name are required.');
+        if (!is_callable($config_loader) || empty($option_name)) {
+            wp_die('Settings Framework: A callable configuration loader and option name are required.');
         }
 
-        $this->config = $config;
+        $this->config_loader = $config_loader;
         $this->option_name = sanitize_key($option_name);
 
         // Parse arguments with defaults
@@ -135,6 +141,8 @@ class Settings_Framework {
         // Add AJAX hooks
         add_action('wp_ajax_' . $this->get_ajax_action(), array($this->ajax_handler, 'handle_save'));
         add_action('wp_ajax_' . $this->get_ajax_action() . '_reset', array($this->ajax_handler, 'handle_reset'));
+        add_action('wp_ajax_ayecode_settings_framework_execute_action', array($this, 'handle_tool_action'));
+        add_action('wp_ajax_ayecode_settings_framework_load_content_pane', array($this, 'handle_load_content_pane'));
 
         // Add settings link to plugins page if this is a plugin
         add_filter('plugin_action_links_' . plugin_basename($this->get_calling_file()), array($this, 'add_settings_link'));
@@ -204,6 +212,48 @@ class Settings_Framework {
     }
 
     /**
+     * Generic handler for "Action Buttons"
+     */
+    public function handle_tool_action() {
+        check_ajax_referer('asf_tool_action', 'nonce');
+        if (!current_user_can($this->args['capability'])) {
+            wp_send_json_error(['message' => 'Permission denied.']);
+        }
+
+        $tool_action = isset($_POST['tool_action']) ? sanitize_key($_POST['tool_action']) : '';
+        if (empty($tool_action)) {
+            wp_send_json_error(['message' => 'No tool action specified.']);
+        }
+
+//        do_action('asf_execute_tool', $this->option_name . '_'. $tool_action );
+        do_action('asf_execute_tool_' . $this->page_slug, $tool_action );
+
+        //echo $this->option_name . '###'.$tool_action ;exit;
+
+        // wp_send_json_error(['message' => 'Invalid tool action or no response from hook.']);
+    }
+
+    /**
+     * Generic handler for loading "Custom Content Panes"
+     */
+    public function handle_load_content_pane() {
+        check_ajax_referer('asf_tool_action', 'nonce');
+        if (!current_user_can($this->args['capability'])) {
+            wp_send_json_error(['message' => 'Permission denied.']);
+        }
+
+        $content_action = isset($_POST['content_action']) ? sanitize_key($_POST['content_action']) : '';
+        if (empty($content_action)) {
+            wp_send_json_error(['message' => 'No content action specified.']);
+        }
+
+//        do_action('asf_render_content_pane_' . $this->page_slug . '_' . $content_action, $_POST);
+        do_action('asf_render_content_pane_' . $this->page_slug, $content_action);
+
+       // wp_send_json_error(['message' => 'Invalid content action or no response from hook.']);
+    }
+
+    /**
      * Enqueue CSS and JavaScript assets
      *
      * @param string $hook Current admin page hook
@@ -269,17 +319,29 @@ class Settings_Framework {
             }
         }
 
+        // Process config to include pre-loaded HTML content
+        $processed_config = $this->get_config();
+        if (isset($processed_config['sections'])) {
+            foreach ($processed_config['sections'] as &$section) {
+                if (isset($section['type']) && $section['type'] === 'custom_page' && !empty($section['html_content'])) {
+                    $section['content_html'] = $section['html_content'];
+                    unset($section['html_content']);
+                }
+            }
+        }
+
 
         // Localize script with configuration and current settings
         wp_localize_script(
             'ayecode-settings-framework-admin',
             'ayecodeSettingsFramework',
             array(
-                'config' => $this->config,
+                'config' => $processed_config,
                 'settings' => $settings,
                 'image_previews' => $image_previews,
                 'ajax_url' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce($this->get_ajax_action()),
+                'tool_nonce'  => wp_create_nonce('asf_tool_action'),
                 'action' => $this->get_ajax_action(),
                 'strings' => array(
                     'saving' => __('Saving...', 'ayecode-settings-framework'),
@@ -293,12 +355,6 @@ class Settings_Framework {
                 )
             )
         );
-
-
-
-
-
-
     }
 
     /**
@@ -380,7 +436,6 @@ class Settings_Framework {
     public function save_settings($new_settings) {
         // 1. Get the full array of existing settings from the database.
         $current_settings = $this->get_settings();
-//        print_r($current_settings);
         // 2. Get the "whitelist" of all valid field IDs defined in the UI config.
         $field_map = $this->get_field_map();
 
@@ -402,9 +457,6 @@ class Settings_Framework {
                 }
             }
         }
-
-//        print_r($current_settings);
-//        exit;
 
         // 4. Save the modified array back to the database. Legacy keys are untouched.
         $result = update_option($this->option_name, $current_settings);
@@ -544,12 +596,12 @@ class Settings_Framework {
      */
     private function get_field_map() {
         $field_map = [];
-        if (empty($this->config['sections']) || !is_array($this->config['sections'])) {
+        $config = $this->get_config(); // Use the getter
+        if (empty($config['sections']) || !is_array($config['sections'])) {
             return $field_map;
         }
 
-        foreach ($this->config['sections'] as $section) {
-            // Fields directly under a section
+        foreach ($config['sections'] as $section) {
             if (!empty($section['fields']) && is_array($section['fields'])) {
                 $this->extract_fields_from_array($section['fields'], $field_map);
             }
@@ -611,11 +663,15 @@ class Settings_Framework {
     }
 
     /**
-     * Get framework configuration
+     * Get framework configuration.
+     * This method loads the config on demand using the provided callable.
      *
      * @return array Configuration
      */
     public function get_config() {
+        if (is_null($this->config)) {
+            $this->config = call_user_func($this->config_loader);
+        }
         return $this->config;
     }
 

@@ -3,7 +3,7 @@
  * Plugin Name: WP AyeCode Settings Framework
  * Plugin URI: https://github.com/AyeCode/wp-ayecode-settings-framework
  * Description: Modern WordPress settings framework with Alpine.js and Bootstrap 5. This plugin provides a demo and testing interface for the framework.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: AyeCode Ltd
  * Author URI: https://ayecode.io
  * License: GPL v3 or later
@@ -11,7 +11,7 @@
  * Text Domain: wp-ayecode-settings-framework
  * Domain Path: /languages
  * Requires at least: 5.0
- * Tested up to: 6.4
+ * Tested up to: 6.5
  * Requires PHP: 7.4
  * Network: false
  *
@@ -24,7 +24,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('WP_AYECODE_SETTINGS_FRAMEWORK_VERSION', '1.0.0');
+define('WP_AYECODE_SETTINGS_FRAMEWORK_VERSION', '1.1.0');
 define('WP_AYECODE_SETTINGS_FRAMEWORK_PLUGIN_FILE', __FILE__);
 define('WP_AYECODE_SETTINGS_FRAMEWORK_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('WP_AYECODE_SETTINGS_FRAMEWORK_PLUGIN_URL', plugin_dir_url(__FILE__));
@@ -87,10 +87,13 @@ class WP_AyeCode_Settings_Framework {
         $this->load_framework();
 
         // Initialize demo settings
-//$this->init_demo_settings();
+        $this->init_demo_settings();
 
         // Add admin notices
         add_action('admin_notices', array($this, 'admin_notices'));
+
+        // Add hooks for tool actions and content panes
+        $this->add_tool_hooks();
     }
 
     /**
@@ -122,12 +125,12 @@ class WP_AyeCode_Settings_Framework {
             return;
         }
 
-        // Demo configuration
-        $config = $this->get_demo_config();
 
         // Initialize the framework
-        $this->framework = new AyeCode\SettingsFramework\Settings_Framework(
-            $config,
+        $this->framework = new \AyeCode\SettingsFramework\Settings_Framework(
+            function() {
+                return $this->get_demo_config();
+            },
             'ayecode_framework_demo_settings',
             array(
                 'plugin_name' => __('AyeCode Settings Framework Demo', 'wp-ayecode-settings-framework'),
@@ -143,298 +146,145 @@ class WP_AyeCode_Settings_Framework {
      * Get demo configuration
      */
     private function get_demo_config() {
-
-
-
-        // testing
-//        $settings =  GeoDir_Admin_Settings::get_settings_new();
-//        return  $settings;
-
-
         return array(
             'sections' => array(
-
-                // General Settings Section with Subsections
                 array(
                     'id' => 'general',
                     'name' => __('General Settings', 'wp-ayecode-settings-framework'),
                     'icon' => 'fa-solid fa-gear',
-                    'description' => __('Basic plugin configuration and behavior', 'wp-ayecode-settings-framework'),
-                    'searchableFields' => array('site settings', 'basic options', 'general configuration'),
-                    'subsections' => array(
-                        array(
-                            'id' => 'basic',
-                            'name' => __('Basic Settings', 'wp-ayecode-settings-framework'),
-                            'icon' => 'fa-solid fa-sliders',
-                            'description' => __('Core plugin configuration', 'wp-ayecode-settings-framework'),
-                            'fields' => array(
-                                array(
-                                    'id' => 'site_title',
-                                    'type' => 'text',
-                                    'label' => __('Site Title', 'wp-ayecode-settings-framework'),
-                                    'description' => __('Enter your site title', 'wp-ayecode-settings-framework'),
-                                    'default' => get_bloginfo('name'),
-                                    'searchable' => array('title', 'site name', 'heading')
-                                ),
-                                array(
-                                    'id' => 'site_description',
-                                    'type' => 'textarea',
-                                    'label' => __('Site Description', 'wp-ayecode-settings-framework'),
-                                    'description' => __('Brief description of your site', 'wp-ayecode-settings-framework'),
-                                    'default' => get_bloginfo('description'),
-                                    'rows' => 3,
-                                    'searchable' => array('description', 'tagline', 'summary')
-                                ),
-                                // ✨ --- ADDED IMAGE FIELD 1 --- ✨
-                                array(
-                                    'id'          => 'site_logo',
-                                    'type'        => 'image',
-                                    'label'       => __('Site Logo', 'wp-ayecode-settings-framework'),
-                                    'description' => __('Upload or select a logo from the media library.', 'wp-ayecode-settings-framework'),
-                                    'default'     => '',
-                                ),
-                                array(
-                                    'id' => 'enable_features',
-                                    'type' => 'toggle',
-                                    'label' => __('Enable Advanced Features', 'wp-ayecode-settings-framework'),
-                                    'description' => __('Turn on advanced functionality', 'wp-ayecode-settings-framework'),
-                                    'default' => true,
-                                    'searchable' => array('features', 'advanced', 'enable', 'functionality')
-                                )
-                            )
-                        ),
-                        array(
-                            'id' => 'display',
-                            'name' => __('Display Options', 'wp-ayecode-settings-framework'),
-                            'icon' => 'fa-solid fa-eye',
-                            'description' => __('Control how content is displayed', 'wp-ayecode-settings-framework'),
-                            'fields' => array(
-                                array(
-                                    'id' => 'items_per_page',
-                                    'type' => 'number',
-                                    'label' => __('Items Per Page', 'wp-ayecode-settings-framework'),
-                                    'description' => __('Number of items to show per page', 'wp-ayecode-settings-framework'),
-                                    'default' => 10,
-                                    'min' => 1,
-                                    'max' => 100,
-                                    'searchable' => array('pagination', 'items', 'per page', 'limit')
-                                ),
-                                array(
-                                    'id' => 'show_thumbnails',
-                                    'type' => 'toggle',
-                                    'label' => __('Show Thumbnails', 'wp-ayecode-settings-framework'),
-                                    'description' => __('Display thumbnail images', 'wp-ayecode-settings-framework'),
-                                    'default' => true,
-                                    'searchable' => array('thumbnails', 'images', 'preview')
-                                )
-                            )
-                        )
-                    )
-                ),
-
-                // Design Settings Section
-                array(
-                    'id' => 'design',
-                    'name' => __('Design & Styling', 'wp-ayecode-settings-framework'),
-                    'icon' => 'fa-solid fa-paintbrush',
-                    'description' => __('Customize the appearance and styling', 'wp-ayecode-settings-framework'),
-                    'searchableFields' => array('design', 'styling', 'appearance', 'colors', 'theme'),
                     'fields' => array(
                         array(
-                            'id' => 'theme_style',
-                            'type' => 'select',
-                            'label' => __('Theme Style', 'wp-ayecode-settings-framework'),
-                            'description' => __('Choose your preferred theme style', 'wp-ayecode-settings-framework'),
-                            'options' => array(
-                                'default' => __('Default', 'wp-ayecode-settings-framework'),
-                                'modern' => __('Modern', 'wp-ayecode-settings-framework'),
-                                'classic' => __('Classic', 'wp-ayecode-settings-framework'),
-                                'minimal' => __('Minimal', 'wp-ayecode-settings-framework')
-                            ),
-                            'default' => 'default',
-                            'searchable' => array('theme', 'style', 'template', 'design')
+                            'id' => 'site_title',
+                            'type' => 'text',
+                            'label' => __('Site Title', 'wp-ayecode-settings-framework'),
+                            'description' => __('Standard text field for a setting.'),
+                            'default' => get_bloginfo('name'),
                         ),
-                        // ✨ --- ADDED IMAGE FIELD 2 --- ✨
-                        array(
-                            'id'          => 'default_banner_image',
-                            'type'        => 'image',
-                            'label'       => __('Default Banner Image', 'wp-ayecode-settings-framework'),
-                            'description' => __('Set a default banner for pages and posts.', 'wp-ayecode-settings-framework'),
-                            'default'     => '',
-                        ),
-                        array(
-                            'id' => 'primary_color',
-                            'type' => 'color',
-                            'label' => __('Primary Color', 'wp-ayecode-settings-framework'),
-                            'description' => __('Main brand color for your site', 'wp-ayecode-settings-framework'),
-                            'default' => '#0073aa',
-                            'searchable' => array('color', 'brand', 'primary', 'theme color')
-                        ),
-                        array(
-                            'id' => 'secondary_color',
-                            'type' => 'color',
-                            'label' => __('Secondary Color', 'wp-ayecode-settings-framework'),
-                            'description' => __('Secondary accent color', 'wp-ayecode-settings-framework'),
-                            'default' => '#666666',
-                            'searchable' => array('secondary', 'accent', 'color')
-                        ),
-                        array(
-                            'id' => 'font_size',
-                            'type' => 'range',
-                            'label' => __('Base Font Size', 'wp-ayecode-settings-framework'),
-                            'description' => __('Base font size in pixels', 'wp-ayecode-settings-framework'),
-                            'default' => 16,
-                            'min' => 12,
-                            'max' => 24,
-                            'step' => 1,
-                            'searchable' => array('font', 'text', 'size', 'typography')
-                        )
                     )
                 ),
-
-                // Email Settings Section - MODIFIED WITH GROUPS
                 array(
-                    'id' => 'email',
-                    'name' => __('Email Notifications', 'wp-ayecode-settings-framework'),
-                    'icon' => 'fa-solid fa-envelope',
-                    'description' => __('Configure email notifications and templates', 'wp-ayecode-settings-framework'),
-                    'searchableFields' => array('email', 'notifications', 'mail', 'messages'),
-                    'fields' => array(
-                        // Group 1: Notification Settings
-                        array(
-                            'type'        => 'group',
-                            'label'       => __('Notification Settings', 'wp-ayecode-settings-framework'),
-                            'description' => __('Configure who receives notifications and for what events.', 'wp-ayecode-settings-framework'),
-                            'fields'      => array(
-                                array(
-                                    'id' => 'admin_email',
-                                    'type' => 'email',
-                                    'label' => __('Admin Email', 'wp-ayecode-settings-framework'),
-                                    'description' => __('The primary contact for all admin-facing notifications.', 'wp-ayecode-settings-framework'),
-                                    'default' => get_option('admin_email'),
-                                    'required' => true,
-                                    'searchable' => array('admin', 'email', 'notifications', 'contact')
-                                ),
-                                array(
-                                    'id' => 'notification_types',
-                                    'type' => 'checkbox_group',
-                                    'label' => __('Enabled Notifications', 'wp-ayecode-settings-framework'),
-                                    'description' => __('Select which system notifications to send.', 'wp-ayecode-settings-framework'),
-                                    'options' => array(
-                                        'new_user' => __('New user registrations', 'wp-ayecode-settings-framework'),
-                                        'new_post' => __('New post submissions', 'wp-ayecode-settings-framework'),
-                                        'new_comment' => __('New comments', 'wp-ayecode-settings-framework'),
-                                        'system_updates' => __('System updates', 'wp-ayecode-settings-framework')
-                                    ),
-                                    'default' => array('new_user', 'system_updates'),
-                                    'searchable' => array('notifications', 'email types', 'alerts')
-                                ),
-                            ),
-                        ),
-                        // Group 2: Delivery Schedule
-                        array(
-                            'type'        => 'group',
-                            'label'       => __('Delivery Schedule', 'wp-ayecode-settings-framework'),
-                            'description' => __('Set the timing for email delivery.', 'wp-ayecode-settings-framework'),
-                            'fields'      => array(
-                                array(
-                                    'id' => 'email_frequency',
-                                    'type' => 'radio',
-                                    'label' => __('Email Frequency', 'wp-ayecode-settings-framework'),
-                                    'description' => __('Choose how often to send summary or digest emails.', 'wp-ayecode-settings-framework'),
-                                    'options' => array(
-                                        'immediate' => __('Immediate', 'wp-ayecode-settings-framework'),
-                                        'daily' => __('Daily digest', 'wp-ayecode-settings-framework'),
-                                        'weekly' => __('Weekly digest', 'wp-ayecode-settings-framework')
-                                    ),
-                                    'default' => 'immediate',
-                                    'searchable' => array('frequency', 'timing', 'schedule', 'digest')
-                                )
-                            )
-                        )
-                    )
-                ),
-
-                // API Settings Section
-                array(
-                    'id' => 'api',
-                    'name' => __('API & Integrations', 'wp-ayecode-settings-framework'),
-                    'icon' => 'fa-solid fa-plug',
-                    'description' => __('Configure API keys and third-party integrations', 'wp-ayecode-settings-framework'),
-                    'searchableFields' => array('api', 'integrations', 'keys', 'external services'),
-                    'fields' => array(
-                        array(
-                            'id' => 'Maps_api_key',
-                            'type' => 'password',
-                            'label' => __('Google Maps API Key', 'wp-ayecode-settings-framework'),
-                            'description' => __('API key for Google Maps integration', 'wp-ayecode-settings-framework'),
-                            'searchable' => array('google', 'maps', 'api', 'key', 'location')
-                        ),
-                        array(
-                            'id' => 'enable_rest_api',
-                            'type' => 'toggle',
-                            'label' => __('Enable REST API', 'wp-ayecode-settings-framework'),
-                            'description' => __('Allow external access via REST API', 'wp-ayecode-settings-framework'),
-                            'default' => false,
-                            'searchable' => array('rest', 'api', 'external', 'access')
-                        ),
-                        array(
-                            'id' => 'api_rate_limit',
-                            'type' => 'number',
-                            'label' => __('API Rate Limit', 'wp-ayecode-settings-framework'),
-                            'description' => __('Maximum API requests per hour', 'wp-ayecode-settings-framework'),
-                            'default' => 1000,
-                            'min' => 100,
-                            'max' => 10000,
-                            'searchable' => array('rate limit', 'throttle', 'requests', 'hour')
-                        )
-                    )
-                ),
-
-                // Advanced Settings Section
-                array(
-                    'id' => 'advanced',
-                    'name' => __('Advanced Settings', 'wp-ayecode-settings-framework'),
+                    'id' => 'tools',
+                    'name' => __('Simple Tools', 'wp-ayecode-settings-framework'),
                     'icon' => 'fa-solid fa-screwdriver-wrench',
-                    'description' => __('Advanced configuration for power users', 'wp-ayecode-settings-framework'),
-                    'searchableFields' => array('advanced', 'debug', 'development', 'cache', 'performance'),
                     'fields' => array(
                         array(
-                            'id' => 'debug_mode',
-                            'type' => 'toggle',
-                            'label' => __('Debug Mode', 'wp-ayecode-settings-framework'),
-                            'description' => __('Enable debug logging and error reporting', 'wp-ayecode-settings-framework'),
-                            'default' => false,
-                            'searchable' => array('debug', 'logging', 'errors', 'development')
+                            'id'          => 'tool_clear_cache_success',
+                            'type'        => 'action_button',
+                            'label'       => __('Clear Cache (Success Example)', 'wp-ayecode-settings-framework'),
+                            'description' => __('This button will simulate a successful background task.'),
+                            'button_text' => __('Clear Cache'),
+                            'button_class'=> 'btn-primary',
+                            'ajax_action' => 'demo_clear_cache_success'
                         ),
                         array(
-                            'id' => 'cache_duration',
-                            'type' => 'select',
-                            'label' => __('Cache Duration', 'wp-ayecode-settings-framework'),
-                            'description' => __('How long to cache data', 'wp-ayecode-settings-framework'),
-                            'options' => array(
-                                '0' => __('No caching', 'wp-ayecode-settings-framework'),
-                                '3600' => __('1 hour', 'wp-ayecode-settings-framework'),
-                                '21600' => __('6 hours', 'wp-ayecode-settings-framework'),
-                                '86400' => __('24 hours', 'wp-ayecode-settings-framework'),
-                                '604800' => __('1 week', 'wp-ayecode-settings-framework')
-                            ),
-                            'default' => '21600',
-                            'searchable' => array('cache', 'performance', 'speed', 'duration')
+                            'id'          => 'tool_regenerate_thumbnails_progress',
+                            'type'        => 'action_button',
+                            'label'       => __('Regenerate Thumbnails (Progress Example)', 'wp-ayecode-settings-framework'),
+                            'description' => __('This button will simulate a task that reports progress.'),
+                            'button_text' => __('Regenerate'),
+                            'button_class'=> 'btn-secondary',
+                            'ajax_action' => 'demo_regen_thumbs_progress'
                         ),
-                        array(
-                            'id' => 'custom_css',
-                            'type' => 'textarea',
-                            'label' => __('Custom CSS', 'wp-ayecode-settings-framework'),
-                            'description' => __('Add custom CSS styles', 'wp-ayecode-settings-framework'),
-                            'rows' => 10,
-                            'searchable' => array('css', 'styles', 'custom', 'design')
-                        )
                     )
-                )
+                ),
+                array(
+                    'id'             => 'preloaded_tool',
+                    'name'           => __('System Status', 'wp-ayecode-settings-framework'),
+                    'icon'           => 'fa-solid fa-server',
+                    'type'           => 'custom_page',
+                    'html_content'   => $this->get_system_status_html(),
+                ),
+                array(
+                    'id'           => 'ajax_tool',
+                    'name'         => __('Data Importer (AJAX)', 'wp-ayecode-settings-framework'),
+                    'icon'           => 'fa-solid fa-upload',
+                    'type'           => 'custom_page',
+                    'ajax_content' => 'importer_ui',
+                ),
             )
         );
     }
+
+    /**
+     * Add hooks for tool actions and content panes.
+     */
+    public function add_tool_hooks() {
+        add_action('asf_execute_tool_demo_clear_cache_success', array($this, 'handle_clear_cache'));
+        add_action('asf_execute_tool_demo_regen_thumbs_progress', array($this, 'handle_regen_thumbs'));
+        add_action('asf_render_content_pane_ayecode_framework_demo_settings_importer_ui', array($this, 'render_importer_ui_html'));
+    }
+
+    /**
+     * Handle the 'Clear Cache' action button.
+     */
+    public function handle_clear_cache() {
+        sleep(1); // Simulate work
+        wp_send_json_success(array(
+            'message'  => __('Cache cleared successfully!'),
+            'progress' => 100
+        ));
+    }
+
+    /**
+     * Handle the 'Regenerate Thumbnails' action using a stateless, chained-request model.
+     */
+    public function handle_regen_thumbs() {
+        // Get the current step from the AJAX request, defaulting to 0 if not present.
+        $current_step = isset($_POST['step']) ? absint($_POST['step']) : 0;
+
+        // Simulate doing work based on the current step.
+        $new_progress = $current_step + 15;
+        $message = '';
+        $next_step = null;
+
+        sleep(2);
+        if ($new_progress >= 100) {
+            $new_progress = 100;
+            // The job is done, so next_step remains null to stop the chain.
+            $message = __('Thumbnails regenerated successfully!');
+        } else {
+            // The job is not done, so set the next_step to the new progress value.
+            $next_step = $new_progress;
+            $message = sprintf(__('%d%% complete...'), $new_progress);
+        }
+
+        // Send the updated status, including the next_step, back to the browser.
+        wp_send_json_success(array(
+            'message'  => $message,
+            'progress' => $new_progress,
+            'next_step' => $next_step
+        ));
+    }
+
+    /**
+     * Get the HTML for the pre-loaded System Status tool.
+     */
+    public function get_system_status_html() {
+        global $wp_version;
+        $html = '<h4>System Status</h4>';
+        $html .= '<p>This content was generated via a PHP function during the initial page load.</p>';
+        $html .= '<ul class="list-group">';
+        $html .= '<li class="list-group-item d-flex justify-content-between align-items-center">WordPress Version <span class="badge bg-primary rounded-pill">' . esc_html($wp_version) . '</span></li>';
+        $html .= '<li class="list-group-item d-flex justify-content-between align-items-center">PHP Version <span class="badge bg-primary rounded-pill">' . esc_html(PHP_VERSION) . '</span></li>';
+        $html .= '</ul>';
+        return $html;
+    }
+
+    /**
+     * Render the HTML for the AJAX-loaded Importer tool.
+     */
+    public function render_importer_ui_html() {
+        sleep(1); // Simulate loading delay
+        $html = '
+            <h4>Import Data from CSV</h4>
+            <p>This UI was loaded via an AJAX request when you clicked the tab.</p>
+            <form id="my-importer-form" method="post" enctype="multipart/form-data">
+                <div class="mb-3"><label for="import_file" class="form-label">CSV File</label><input class="form-control" type="file" id="import_file" name="import_file" accept=".csv"></div>
+                <button type="submit" class="btn btn-primary">Upload and Preview</button>
+            </form>';
+        wp_send_json_success(array('html' => $html));
+    }
+
 
     /**
      * Plugin activation
@@ -444,24 +294,6 @@ class WP_AyeCode_Settings_Framework {
         // Set default options
         $defaults = array(
             'site_title' => get_bloginfo('name'),
-            'site_description' => get_bloginfo('description'),
-            'enable_features' => true,
-            'items_per_page' => 10,
-            'show_thumbnails' => true,
-            'theme_style' => 'default',
-            'primary_color' => '#0073aa',
-            'secondary_color' => '#666666',
-            'font_size' => 16,
-            'admin_email' => get_option('admin_email'),
-            'notification_types' => array('new_user', 'system_updates'),
-            'email_frequency' => 'immediate',
-            'enable_rest_api' => false,
-            'api_rate_limit' => 1000,
-            'debug_mode' => false,
-            'cache_duration' => '21600',
-            // ✨ --- ADDED DEFAULTS FOR IMAGE FIELDS --- ✨
-            'site_logo' => '',
-            'default_banner_image' => '',
         );
 
         add_option('ayecode_framework_demo_settings', $defaults);

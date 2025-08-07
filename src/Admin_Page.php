@@ -70,19 +70,6 @@ class Admin_Page
                 transition: background-color 0.3s ease-in-out;
                 background-color: rgba(0, 123, 255, 0.1) !important;
             }
-
-            /* The default state has the transition. This is for the "animate in". */
-            .asf-contentx {
-                transition: opacity 0.05s ease-in-out, transform 0.05s ease-in-out;
-            }
-
-            /* The changing state has NO transition. This makes the "animate out" instant. */
-            .asf-contentx.is-changing {
-                opacity: 0;
-                transform: translate(20px, 0);
-                transition: none; /* This is the key change */
-            }
-
         </style>
 
         <div class="bsui" x-data="ayecodeSettingsApp()" style="margin-left: -20px !important;">
@@ -103,14 +90,7 @@ class Admin_Page
 
 
                     <div class="d-flex align-items-center">
-
-                        <div x-show="hasUnsavedChanges" x-cloak>
-                            <div class="text-muted me-3 d-flex align-items-center">
-                                <i class="fa-solid fa-circle text-warning me-2"></i>
-                                <span x-text="strings.unsaved_changes" class="d-none d-md-block"></span>
-                            </div>
-                        </div>
-                        <div class="mx-2 animate-scale">
+                        <div class="mx-2 animate-scale d-inline-flex">
                             <button @click="toggleTheme()"
                                     class="bs-dark-mode-toggle btn btn-icon fs-6 btn-icon rounded-circle" role="button"
                                     data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Toggle dark mode"
@@ -119,12 +99,23 @@ class Admin_Page
                                 <i x-show="theme === 'dark'" x-cloak class="fa-solid fa-moon animate-target"></i>
                             </button>
                         </div>
-                        <button class="btn btn-primary" @click="saveSettings()" :disabled="isLoading">
-                            <span x-show="isLoading" class="spinner-border spinner-border-sm me-1" role="status"></span>
-                            <span x-text="isLoading ? strings.saving : '<?php _e('Save Changes', 'ayecode-settings-framework'); ?>'"
-                                  class="d-none d-md-block"></span>
-                            <i class="fa-regular fa-floppy-disk d-block d-md-none"></i>
-                        </button>
+                        <div x-show="isSettingsPage" x-cloak >
+                            <div class="d-inline-flex align-items-center">
+                                <div x-show="hasUnsavedChanges" class="text-muted me-3 ">
+                                <span class="d-inline-flex align-items-center">
+                                  <i class="fa-solid fa-circle text-warning me-2"></i>
+                                    <span x-text="strings.unsaved_changes" class="d-none d-md-block"></span>
+                                </span>
+                                </div>
+                                <button class="btn btn-primary" @click="saveSettings()" :disabled="isLoading || !hasUnsavedChanges">
+                                    <span x-show="isLoading" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                    <span x-text="isLoading ? strings.saving : '<?php _e('Save Changes', 'ayecode-settings-framework'); ?>'"
+                                          class="d-none d-md-block"></span>
+                                    <i class="fa-regular fa-floppy-disk d-block d-md-none"></i>
+                                </button>
+                            </div>
+
+                        </div>
                     </div>
                 </header>
 
@@ -186,37 +177,46 @@ class Admin_Page
                             >
                                 <template x-if="currentSectionData">
                                     <div>
-                                        <template x-if="currentSectionData.subsections">
-                                            <template x-if="currentSubsectionData">
-                                                <div>
-                                                    <h2 class="h3" x-text="currentSubsectionData.name"></h2>
-                                                    <p class="text-muted"
-                                                       x-text="currentSubsectionData.description"></p>
-                                                    <hr class="mt-4 mb-0">
-                                                    <template x-for="(field, index) in currentSubsectionData.fields"
-                                                              :key="field.id || index">
-                                                        <div class="py-4"
-                                                             x-show="shouldShowField(field)"
-                                                             x-transition
-                                                             x-cloak
-                                                             x-html="renderField(field)">
-                                                        </div>
-                                                    </template>
-                                                </div>
-                                            </template>
-                                        </template>
-                                        <template x-if="!currentSectionData.subsections">
+                                        <template x-if="currentSectionData.type === 'custom_page'">
                                             <div>
                                                 <h2 class="h3" x-text="currentSectionData.name"></h2>
                                                 <p class="text-muted" x-text="currentSectionData.description"></p>
                                                 <hr class="mt-4 mb-0">
-                                                <template x-for="(field, index) in currentSectionData.fields"
-                                                          :key="field.id || index">
-                                                    <div class="py-4"
-                                                         x-show="shouldShowField(field)"
-                                                         x-transition
-                                                         x-cloak
-                                                         x-html="renderField(field)">
+                                                <div class="py-4">
+                                                    <template x-if="currentSectionData.content_html">
+                                                        <div x-html="currentSectionData.content_html"></div>
+                                                    </template>
+                                                    <template x-if="currentSectionData.ajax_content">
+                                                        <div>
+                                                            <template x-if="isContentLoading">
+                                                                <div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>
+                                                            </template>
+                                                            <div x-show="!isContentLoading" x-html="loadedContentCache[currentSectionData.id]"></div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <template x-if="!currentSectionData.type || currentSectionData.type !== 'custom_page'">
+                                            <div>
+                                                <template x-if="currentSectionData.subsections && currentSubsectionData">
+                                                    <div>
+                                                        <h2 class="h3" x-text="currentSubsectionData.name"></h2>
+                                                        <p class="text-muted" x-text="currentSubsectionData.description"></p>
+                                                        <hr class="mt-4 mb-0">
+                                                        <template x-for="(field, index) in currentSubsectionData.fields" :key="field.id || index">
+                                                            <div class="py-4" x-show="shouldShowField(field)" x-transition x-cloak x-html="renderField(field)"></div>
+                                                        </template>
+                                                    </div>
+                                                </template>
+                                                <template x-if="!currentSectionData.subsections">
+                                                    <div>
+                                                        <h2 class="h3" x-text="currentSectionData.name"></h2>
+                                                        <p class="text-muted" x-text="currentSectionData.description"></p>
+                                                        <hr class="mt-4 mb-0">
+                                                        <template x-for="(field, index) in currentSectionData.fields" :key="field.id || index">
+                                                            <div class="py-4" x-show="shouldShowField(field)" x-transition x-cloak x-html="renderField(field)"></div>
+                                                        </template>
                                                     </div>
                                                 </template>
                                             </div>
@@ -227,7 +227,7 @@ class Admin_Page
                         </main>
 
                         <div class="asf-save-bar bg-light-subtle border-top border-start p-3 position-absolute w-100 bottom-0 text-body"
-                             x-show="hasUnsavedChanges" x-cloak x-transition>
+                             x-show="hasUnsavedChanges && isSettingsPage" x-cloak x-transition>
                             <div class="d-flex justify-content-between align-items-center w-100 px-3">
                                 <div>
                                     <i class="fa-solid fa-triangle-exclamation text-warning me-2"></i>
