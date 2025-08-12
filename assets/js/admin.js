@@ -53,13 +53,28 @@ function ayecodeSettingsApp() {
             this.loadSettings();
             this.flattenAllFields();
 
-            // pre-initialize action states
+            // Initialize data models and states for all sections and subsections
+            this.sections.forEach(section => {
+                const processPage = (pageConfig) => {
+                    if (pageConfig.type === 'action_page') {
+                        this.initializeActionPageData(pageConfig);
+                    } else if (pageConfig.type === 'import_page') {
+                        this.initializeImportPageData(pageConfig);
+                    }
+                };
+                processPage(section);
+                if (section.subsections) {
+                    section.subsections.forEach(processPage);
+                }
+            });
+
+            // pre-initialize action button field states
             this.allFields.forEach(item => {
                 if (item.field.type === 'action_button') {
-                    // Ensure every action button has a defined initial state.
                     this.actionStates[item.field.id] = { isLoading: false, message: '', progress: 0, success: null };
                 }
             });
+
 
             // Set initial section based on URL or default
             this.handleUrlHash();
@@ -70,6 +85,59 @@ function ayecodeSettingsApp() {
 
             // Initial plugin load
             this.reinitializePlugins();
+        },
+
+        /**
+         * Helper to initialize data for an action page (section or subsection).
+         */
+        initializeActionPageData(pageConfig) {
+            // Initialize fields in the main settings object
+            if (pageConfig.fields) {
+                pageConfig.fields.forEach(field => {
+                    if (this.settings[field.id] === undefined) {
+                        this.settings[field.id] = field.default !== undefined ? field.default : '';
+                    }
+                });
+            }
+            // Initialize the button state, now with a place to store files
+            this.actionStates[pageConfig.id] = { isLoading: false, message: '', progress: 0, success: null, exportedFiles: [] };
+        },
+
+        /**
+         * Helper to initialize data for an import page.
+         */
+        initializeImportPageData(pageConfig) {
+            this.actionStates[pageConfig.id] = {
+                isLoading: false,
+                message: '',
+                success: null,
+                // Specific to imports
+                selectedFile: null,
+                uploadProgress: 0,
+                processingProgress: 0,
+                status: 'idle', // idle, selected, uploading, processing, complete
+            };
+        },
+
+        /**
+         * Handles file selection for import pages.
+         */
+        handleFileSelect(event, pageId) {
+            const state = this.actionStates[pageId];
+            const file = event.target.files[0];
+
+            if (!file) {
+                state.selectedFile = null;
+                state.status = 'idle';
+                return;
+            }
+
+            // You can add file type/size validation here if needed
+            state.selectedFile = file;
+            state.status = 'selected';
+            state.message = ''; // Clear previous error messages
+            // Reset the file input so the user can select the same file again after removing it
+            event.target.value = null;
         },
 
         /**
@@ -187,7 +255,6 @@ function ayecodeSettingsApp() {
                 default:   throw new Error(`Unsupported operator: "${op}"`);
             }
         },
-
 
         /**
          * Initializes a GeoDirectory map for a settings field.
@@ -369,7 +436,6 @@ function ayecodeSettingsApp() {
             }, 150);
         },
 
-
         /**
          * Load configuration from PHP
          */
@@ -424,7 +490,6 @@ function ayecodeSettingsApp() {
                 if (currentSectionObj?.subsections?.length > 0) {
                     this.currentSubsection = currentSectionObj.subsections[0].id;
                 }
-                // ✨ ADD THIS CHECK: If the default section is an AJAX page, load its content.
                 if (currentSectionObj?.type === 'custom_page' && currentSectionObj.ajax_content) {
                     this.loadCustomPageContent(this.currentSection);
                 }
@@ -433,7 +498,6 @@ function ayecodeSettingsApp() {
         },
 
         get isActionRunning() {
-            // This checks if any value in the actionStates object has isLoading set to true.
             return Object.values(this.actionStates).some(state => state.isLoading);
         },
 
@@ -442,11 +506,8 @@ function ayecodeSettingsApp() {
          */
         setupEventListeners() {
             window.addEventListener('beforeunload', (e) => {
-                // ✨ UPDATED CONDITION
                 if (this.hasUnsavedChanges || this.isActionRunning) {
-                    // This prevents the page from unloading immediately.
                     e.preventDefault();
-                    // This is required to trigger the browser's confirmation dialog.
                     e.returnValue = 'A task is running or you have unsaved changes. Are you sure you want to leave?';
                 }
             });
@@ -476,8 +537,37 @@ function ayecodeSettingsApp() {
         /**
          * Computed properties for current section and subsection data
          */
+        get activePageConfig() {
+            return this.currentSubsectionData || this.currentSectionData || null;
+        },
         get hasUnsavedChanges() {
-            return JSON.stringify(this.settings) !== JSON.stringify(this.originalSettings);
+            if (!this.isSettingsPage) {
+                return false;
+            }
+
+            const visibleFields = this.activePageConfig?.fields || [];
+
+            // Recursive helper function to check fields, including those in groups.
+            const checkFieldsRecursively = (fields) => {
+                for (const field of fields) {
+                    if (field.type === 'group' && field.fields) {
+                        // It's a group, so we recurse into its children.
+                        if (checkFieldsRecursively(field.fields)) {
+                            return true; // Found a change in a nested field.
+                        }
+                    } else if (field.id) {
+                        // It's a standard field, so we perform the comparison.
+                        const currentValue = this.settings[field.id];
+                        const originalValue = this.originalSettings[field.id];
+                        if (JSON.stringify(currentValue) !== JSON.stringify(originalValue)) {
+                            return true; // Found a change.
+                        }
+                    }
+                }
+                return false; // No changes found at this level of nesting.
+            };
+
+            return checkFieldsRecursively(visibleFields);
         },
         get currentSectionData() {
             return this.sections.find(s => s.id === this.currentSection);
@@ -486,30 +576,18 @@ function ayecodeSettingsApp() {
             if (!this.currentSectionData || !this.currentSectionData.subsections) return null;
             return this.currentSectionData.subsections.find(ss => ss.id === this.currentSubsection);
         },
-        get isCustomPageActive() {
-            if (!this.currentSectionData) return false;
-            return this.currentSectionData.type === 'custom_page';
-        },
         get isSettingsPage() {
-            if (!this.currentSectionData) {
+            if (!this.activePageConfig) {
                 return false;
             }
-
-            // Custom pages are not settings pages.
-            if (this.currentSectionData.type === 'custom_page') {
+            const pageType = this.activePageConfig.type;
+            if (pageType === 'custom_page' || pageType === 'action_page' || pageType === 'import_page') {
                 return false;
             }
-
-            // Determine which set of fields to inspect based on the current view.
-            const fieldsToCheck = this.currentSubsectionData?.fields || this.currentSectionData?.fields;
-
-            // If there are no fields, it's not a settings page.
+            const fieldsToCheck = this.activePageConfig.fields;
             if (!fieldsToCheck || fieldsToCheck.length === 0) {
                 return false;
             }
-
-            // It's a settings page if it has at least one field that is not an action button.
-            // This could be expanded to other non-data field types like 'alert'.
             return fieldsToCheck.some(field => field.type !== 'action_button');
         },
 
@@ -524,9 +602,7 @@ function ayecodeSettingsApp() {
                 item.field.description?.toLowerCase().includes(query) ||
                 item.field.id?.toLowerCase().includes(query)
             );
-
             if (filtered.length === 0) return [];
-
             const grouped = filtered.reduce((acc, result) => {
                 const groupIdentifier = result.subsectionName || result.sectionName;
                 const groupTitle = result.subsectionName ? `${result.sectionName} &raquo; ${result.subsectionName}` : result.sectionName;
@@ -536,10 +612,8 @@ function ayecodeSettingsApp() {
                 acc[groupIdentifier].results.push(result);
                 return acc;
             }, {});
-
             return Object.values(grouped);
         },
-
 
         /**
          * Navigate to a setting from search results
@@ -600,7 +674,7 @@ function ayecodeSettingsApp() {
         handleUrlHash() {
             const hash = window.location.hash.substring(1);
             if (!hash) {
-                this.setInitialSection(); // This function now handles its own content loading
+                this.setInitialSection();
                 return;
             }
             const params = new URLSearchParams(hash);
@@ -611,19 +685,16 @@ function ayecodeSettingsApp() {
             if (sectionId && this.sections.some(s => s.id === sectionId)) {
                 this.currentSection = sectionId;
                 const section = this.sections.find(s => s.id === sectionId);
-
-                // ✨ ADD THIS CHECK: If the section from the URL is an AJAX page, load its content.
                 if (section?.type === 'custom_page' && section.ajax_content) {
                     this.loadCustomPageContent(sectionId);
                 }
-
                 if (subsectionId && section.subsections?.some(ss => ss.id === subsectionId)) {
                     this.currentSubsection = subsectionId;
                 } else {
                     this.currentSubsection = section.subsections?.length > 0 ? section.subsections[0].id : '';
                 }
             } else {
-                this.setInitialSection(); // Also handles the case of an invalid hash
+                this.setInitialSection();
             }
             if (fieldId) this.highlightField(fieldId);
         },
@@ -636,7 +707,6 @@ function ayecodeSettingsApp() {
             const newHash = params.toString();
             history.replaceState(null, '', newHash ? `#${newHash}` : window.location.pathname + window.location.search);
         },
-
 
         /**
          * Save settings via AJAX
@@ -726,30 +796,97 @@ function ayecodeSettingsApp() {
         },
 
         /**
-         * Executes an AJAX action, dynamically finding and sending data from inputs in its container,
-         * with support for polling/chained requests.
+         * Executes an AJAX action for a full "action_page".
+         */
+        async executePageAction() {
+            const pageConfig = this.activePageConfig;
+            if (!pageConfig || !pageConfig.ajax_action) {
+                console.error('Action page configuration not found.');
+                return;
+            }
+            const actionId = pageConfig.id;
+
+            // Reset the state before starting a new action
+            this.actionStates[actionId] = { isLoading: true, message: 'Starting...', progress: 0, success: null, exportedFiles: [] };
+
+            const inputData = {};
+            if (pageConfig.fields && Array.isArray(pageConfig.fields)) {
+                pageConfig.fields.forEach(field => {
+                    if (field.id) {
+                        inputData[field.id] = this.settings[field.id];
+                    }
+                });
+            }
+
+            const poll = async (currentStep) => {
+                try {
+                    const requestBody = {
+                        action: window.ayecodeSettingsFramework.tool_ajax_action,
+                        nonce: window.ayecodeSettingsFramework.tool_nonce,
+                        tool_action: pageConfig.ajax_action,
+                        step: currentStep,
+                        input_data: JSON.stringify(inputData)
+                    };
+
+                    const response = await fetch(window.ayecodeSettingsFramework.ajax_url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams(requestBody)
+                    });
+
+                    if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
+
+                    const data = await response.json();
+                    const state = this.actionStates[actionId];
+
+                    state.success = data.success;
+                    if (data.data?.message) state.message = data.data.message;
+                    if (data.data?.progress) state.progress = data.data.progress;
+
+                    // If a file object is returned in this step, add it to our list
+                    if (data.success && data.data?.file) {
+                        state.exportedFiles.push(data.data.file);
+                    }
+
+                    if (data.success && data.data?.next_step !== null && data.data?.progress < 100) {
+                        setTimeout(() => poll(data.data.next_step), 20);
+                    } else {
+                        state.isLoading = false;
+                        if (!data.success && data.data?.message) {
+                            state.message = data.data.message;
+                        }
+                    }
+
+                } catch (error) {
+                    const state = this.actionStates[actionId];
+                    state.success = false;
+                    state.message = 'An error occurred. Please check the console and try again.';
+                    state.isLoading = false;
+                    console.error('Page action failed:', error);
+                }
+            };
+
+            poll(0);
+        },
+
+        /**
+         * Executes an AJAX action for a field of type "action_button".
          */
         async executeAction(fieldId) {
-            // Find the configuration for the action button that was clicked
             const field = this.allFields.find(f => f.field.id === fieldId)?.field;
             if (!field || !field.ajax_action) {
                 console.error('Action button configuration not found for:', fieldId);
                 return;
             }
 
-            // Set the initial loading state for the UI
             this.actionStates[fieldId] = { isLoading: true, message: 'Starting...', progress: 0, success: null };
 
-            // --- Dynamically gather data from form inputs ---
             const inputData = {};
             const container = this.$refs['action_container_' + fieldId];
 
             if (container) {
-                // Find all supported form elements within this specific action's container
                 const inputs = container.querySelectorAll('input, select, textarea');
-
                 inputs.forEach(input => {
-                    // Use the input's `name` attribute as the key for the data
                     if (input.name) {
                         if (input.type === 'checkbox') {
                             inputData[input.name] = input.checked;
@@ -758,16 +895,12 @@ function ayecodeSettingsApp() {
                         }
                     }
                 });
-            }else{
-
             }
 
-            // --- Define the recursive polling function ---
             const poll = async (currentStep) => {
                 try {
-                    // Prepare all data for the AJAX request
                     const requestBody = {
-                        action: 'ayecode_settings_framework_execute_action',
+                        action: window.ayecodeSettingsFramework.tool_ajax_action,
                         nonce: window.ayecodeSettingsFramework.tool_nonce,
                         tool_action: field.ajax_action,
                         step: currentStep,
@@ -780,45 +913,175 @@ function ayecodeSettingsApp() {
                         body: new URLSearchParams(requestBody)
                     });
 
-                    // Handle non-successful HTTP responses (e.g., 500 server error)
                     if (!response.ok) {
                         throw new Error(`Server responded with an error: ${response.status}`);
                     }
 
-                    // Handle non-JSON responses (e.g., PHP fatal error outputting HTML)
                     const data = await response.json();
-
-                    // Update the UI with the latest progress from the server
                     this.actionStates[fieldId].success = data.success;
                     if (data.data?.message) this.actionStates[fieldId].message = data.data.message;
                     if (data.data?.progress) this.actionStates[fieldId].progress = data.data.progress;
 
-                    // Check if the server provided a "next_step" to continue the chain
                     if (data.success && data.data?.next_step !== null && data.data?.progress < 100) {
-                        // Call myself again with the next step value after a short delay
                         setTimeout(() => poll(data.data.next_step), 20);
                     } else {
-                        // The chain is complete (or has failed), so stop the loading spinner
                         this.actionStates[fieldId].isLoading = false;
-                        // Reset the UI after 5 seconds to clear the final message
                         setTimeout(() => {
                             if (this.actionStates[fieldId]) {
                                 this.actionStates[fieldId] = { isLoading: false, message: '', progress: 0, success: null };
                             }
                         }, 8000);
                     }
-
                 } catch (error) {
-                    // Handle any failure during the fetch/poll process
                     this.actionStates[fieldId].success = false;
                     this.actionStates[fieldId].message = 'Something went wrong, please refresh and try again.';
-                    this.actionStates[fieldId].isLoading = false; // Stop loading on error
+                    this.actionStates[fieldId].isLoading = false;
                     console.error('Action failed:', error);
                 }
             };
-
-            // Start the process by calling the poll function with the initial step
             poll(0);
+        },
+
+        /**
+         * Executes the two-phase import process: file upload, then data processing.
+         */
+        async executeImport() {
+            const pageConfig = this.activePageConfig;
+            const state = this.actionStates[pageConfig.id];
+
+            if (!state.selectedFile) {
+                alert('Please select a file to import.');
+                return;
+            }
+
+            state.isLoading = true;
+            state.success = null;
+            state.status = 'uploading';
+            state.message = 'Uploading file...';
+            state.uploadProgress = 0;
+            state.processingProgress = 0;
+
+            // --- PHASE 1: UPLOAD THE FILE ---
+            const formData = new FormData();
+            formData.append('action', window.ayecodeSettingsFramework.tool_ajax_action);
+            formData.append('nonce', window.ayecodeSettingsFramework.tool_nonce);
+            formData.append('tool_action', pageConfig.ajax_action);
+            formData.append('import_file', state.selectedFile, state.selectedFile.name);
+
+            // Append other fields from the page to the form data
+            if (pageConfig.fields) {
+                pageConfig.fields.forEach(field => {
+                    if (field.id) {
+                        formData.append(field.id, this.settings[field.id]);
+                    }
+                });
+            }
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', window.ayecodeSettingsFramework.ajax_url, true);
+
+            // Track upload progress
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable) {
+                    state.uploadProgress = Math.round((event.loaded * 100) / event.total);
+                }
+            };
+
+            // Handle completion of the upload
+            xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.success) {
+                        state.status = 'processing';
+                        state.message = data.data?.message || 'File uploaded. Processing data...';
+                        // --- PHASE 2: START POLLING FOR PROCESSING STATUS ---
+                        this.pollImportStatus(pageConfig, data.data);
+                    } else {
+                        state.isLoading = false;
+                        state.status = 'complete';
+                        state.success = false;
+                        state.message = data.data?.message || 'File upload failed.';
+                    }
+                } else {
+                    state.isLoading = false;
+                    state.status = 'complete';
+                    state.success = false;
+                    state.message = `Upload error: ${xhr.statusText}`;
+                }
+            };
+
+            // Handle network errors
+            xhr.onerror = () => {
+                state.isLoading = false;
+                state.status = 'complete';
+                state.success = false;
+                state.message = 'A network error occurred during upload.';
+            };
+
+            xhr.send(formData);
+        },
+
+        /**
+         * Helper function to poll the server for the status of the import processing.
+         */
+        async pollImportStatus(pageConfig, initialData) {
+            const state = this.actionStates[pageConfig.id];
+            let currentStep = initialData?.next_step || 0;
+            let fileData = initialData || {}; // Pass along any data from the initial upload response
+
+            if (currentStep === 0) {
+                // If the first step isn't returned from the upload, the process is likely complete.
+                state.isLoading = false;
+                state.status = 'complete';
+                state.processingProgress = 100;
+                return;
+            }
+
+            const poll = async (step) => {
+                try {
+                    const inputData = { ...fileData };
+
+                    const requestBody = {
+                        action: window.ayecodeSettingsFramework.tool_ajax_action,
+                        nonce: window.ayecodeSettingsFramework.tool_nonce,
+                        tool_action: pageConfig.ajax_action,
+                        step: step,
+                        input_data: JSON.stringify(inputData)
+                    };
+
+                    const response = await fetch(window.ayecodeSettingsFramework.ajax_url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams(requestBody)
+                    });
+
+                    if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
+
+                    const data = await response.json();
+
+                    state.success = data.success;
+                    if (data.data?.message) state.message = data.data.message;
+                    if (data.data?.progress) state.processingProgress = data.data.progress;
+
+                    if (data.success && data.data?.next_step !== null && data.data?.progress < 100) {
+                        setTimeout(() => poll(data.data.next_step), 20);
+                    } else {
+                        state.isLoading = false;
+                        state.status = 'complete';
+                        if (!data.success && data.data?.message) {
+                            state.message = data.data.message;
+                        }
+                    }
+
+                } catch (error) {
+                    state.success = false;
+                    state.message = 'An error occurred during processing. Please check the console.';
+                    state.isLoading = false;
+                    state.status = 'complete';
+                    console.error('Import processing failed:', error);
+                }
+            }
+            poll(currentStep);
         },
 
         /**
@@ -836,7 +1099,7 @@ function ayecodeSettingsApp() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: new URLSearchParams({
-                        action: 'ayecode_settings_framework_load_content_pane',
+                        action: window.ayecodeSettingsFramework.content_pane_ajax_action,
                         nonce: window.ayecodeSettingsFramework.tool_nonce,
                         content_action: sectionData.ajax_content
                     })

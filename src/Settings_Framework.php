@@ -1,734 +1,518 @@
 <?php
 /**
- * AyeCode Settings Framework
+ * AyeCode Settings Framework - Abstract Base Class
  *
- * Modern WordPress settings framework with Alpine.js and Bootstrap 5
+ * This abstract class serves as the foundation for creating new settings pages.
+ * It handles the core WordPress integrations, script enqueueing, and AJAX handling flow.
+ * To create a settings page, a new class must extend this one and implement the
+ * get_config() method, as well as define the necessary protected properties.
  *
  * @package AyeCode\SettingsFramework
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 namespace AyeCode\SettingsFramework;
 
-// Exit if accessed directly
-if (!defined('ABSPATH')) {
+// Exit if accessed directly.
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class Settings_Framework {
+abstract class Settings_Framework {
 
     /**
-     * Framework version
+     * Framework version.
      */
-    const VERSION = '1.0.0';
+    const VERSION = '1.1.0';
+
+    // region Child Class Properties
+    // These properties must be defined in the child class to configure the settings page.
+    // ----------------------------------------------------------------------------------
+
+    /**
+     * The unique WordPress option name where settings are stored.
+     *
+     * @var string
+     */
+    protected $option_name;
+
+    /**
+     * The unique slug for the admin page.
+     *
+     * @var string
+     */
+    protected $page_slug;
+
+    /**
+     * The name of the plugin, displayed in the header.
+     *
+     * @var string
+     */
+    protected $plugin_name = 'Plugin Settings';
+
+    /**
+     * The title displayed in the <title> tag of the page.
+     *
+     * @var string
+     */
+    protected $page_title = 'Settings';
+
+    /**
+     * The text for the menu item.
+     *
+     * @var string
+     */
+    protected $menu_title = 'Settings';
+
+    /**
+     * The capability required to access this settings page.
+     *
+     * @var string
+     */
+    protected $capability = 'manage_options';
+
+    /**
+     * The icon for the admin menu. Can be a dashicon class or a URL.
+     *
+     * @var string
+     */
+    protected $menu_icon = 'dashicons-admin-generic';
+
+    /**
+     * The position of the menu item in the admin menu.
+     *
+     * @var int|null
+     */
+    protected $menu_position = null;
+
+    /**
+     * If set, creates a submenu under the given parent slug.
+     *
+     * @var string|null
+     */
+    protected $parent_slug = null;
+
+    // endregion
+
+    // region Internal Properties
+    // These are used internally by the framework.
+    // ----------------------------------------------------------------------------------
 
     /**
      * Holds the configuration array once loaded.
+     * The config is lazy-loaded to avoid impacting performance on other admin pages.
+     *
      * @var array|null
      */
     private $config = null;
 
     /**
-     * Holds the function that will load the configuration.
-     * @var callable
-     */
-    private $config_loader;
-
-    /**
-     * WordPress option name for storing settings
+     * The screen ID for the admin page, set by WordPress.
+     *
      * @var string
      */
-    private $option_name;
+    protected $screen_id;
 
     /**
-     * Admin page slug
-     * @var string
-     */
-    private $page_slug;
-
-    /**
-     * Plugin/theme name for display
-     * @var string
-     */
-    private $plugin_name;
-
-    /**
-     * Admin page screen ID
-     * @var string
-     */
-    private $screen_id;
-
-    /**
-     * Admin page instance
+     * Instance of the Admin_Page renderer.
+     *
      * @var Admin_Page
      */
-    private $admin_page;
+    protected $admin_page;
 
     /**
-     * AJAX handler instance
+     * Instance of the AJAX handler.
+     *
      * @var Ajax_Handler
      */
-    private $ajax_handler;
+    protected $ajax_handler;
 
     /**
-     * Framework arguments
-     * @var array
-     */
-    public $args;
-
-    /**
-     * Constructor
+     * Instance of the Field_Manager.
      *
-     * @param callable $config_loader A function that returns the settings configuration array.
-     * @param string   $option_name   WordPress option name for storing settings.
-     * @param array    $args          Additional arguments.
+     * @var Field_Manager
      */
-    public function __construct($config_loader, $option_name, $args = array()) {
+    public $field_manager;
 
-        // Validate required parameters
-        if (!is_callable($config_loader) || empty($option_name)) {
-            wp_die('Settings Framework: A callable configuration loader and option name are required.');
+    // endregion
+
+    /**
+     * Abstract method for retrieving the settings configuration array.
+     * This method MUST be implemented by the child class.
+     *
+     * @return array The settings configuration array.
+     */
+    abstract protected function get_config();
+
+    /**
+     * Constructor.
+     *
+     * Initializes the framework by validating the required child properties
+     * and setting up the core WordPress hooks.
+     */
+    public function __construct() {
+        // Ensure required properties are set by the child class.
+        if ( empty( $this->option_name ) || empty( $this->page_slug ) ) {
+            wp_die( 'Settings Framework: The extending class must define the protected properties "$option_name" and "$page_slug".' );
         }
-
-        $this->config_loader = $config_loader;
-        $this->option_name = sanitize_key($option_name);
-
-        // Parse arguments with defaults
-        $defaults = array(
-            'page_slug'    => $this->option_name,
-            'plugin_name'  => 'Plugin Settings',
-            'menu_title'   => 'Settings',
-            'page_title'   => 'Settings',
-            'capability'   => 'manage_options',
-            'menu_icon'    => 'dashicons-admin-generic',
-            'menu_position' => null,
-            'parent_slug'  => null // If set, creates submenu instead of top-level menu
-        );
-
-        $args = wp_parse_args($args, $defaults);
-
-        $this->page_slug = sanitize_key($args['page_slug']);
-        $this->plugin_name = wp_kses_post($args['plugin_name']);
-
-        // Store args for later use
-        $this->args = $args;
-
-        // Initialize the framework
         $this->init();
     }
 
     /**
-     * Initialize the framework
+     * Initializes the framework components and hooks into WordPress.
      */
     private function init() {
-
-        // Only run in admin
-        if (!is_admin()) {
+        if ( ! is_admin() ) {
             return;
         }
 
-        // Load required classes
         $this->load_dependencies();
 
-        // Initialize components
-        $this->admin_page = new Admin_Page($this);
-        $this->ajax_handler = new Ajax_Handler($this);
+        // Instantiate core components, passing this framework instance to them.
+        $this->field_manager = new Field_Manager( $this );
+        $this->admin_page    = new Admin_Page( $this );
+        $this->ajax_handler  = new Ajax_Handler( $this );
 
-        // Hook into WordPress
-        add_action('admin_menu', array($this, 'add_admin_menu'));
-        add_action('admin_enqueue_scripts', array($this, 'enqueue_assets'));
+        // Register core hooks.
+        add_action( 'admin_menu', [ $this, 'add_admin_menu' ] );
+        add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 
-        // Add AJAX hooks
-        add_action('wp_ajax_' . $this->get_ajax_action(), array($this->ajax_handler, 'handle_save'));
-        add_action('wp_ajax_' . $this->get_ajax_action() . '_reset', array($this->ajax_handler, 'handle_reset'));
-        add_action('wp_ajax_ayecode_settings_framework_execute_action', array($this, 'handle_tool_action'));
-        add_action('wp_ajax_ayecode_settings_framework_load_content_pane', array($this, 'handle_load_content_pane'));
+        // Register AJAX actions. The handlers are in the Ajax_Handler class.
+        add_action( 'wp_ajax_save_' . $this->option_name, [ $this->ajax_handler, 'handle_save' ] );
+        add_action( 'wp_ajax_reset_' . $this->option_name, [ $this->ajax_handler, 'handle_reset' ] );
 
-        // Add settings link to plugins page if this is a plugin
-        add_filter('plugin_action_links_' . plugin_basename($this->get_calling_file()), array($this, 'add_settings_link'));
+        // Generic AJAX handlers for tools and content panes.
+        // These hooks are designed to be used by multiple framework instances.
+        // The specific tool/content action is identified in the POST data.
+        add_action( 'wp_ajax_ayecode_settings_framework_execute_action_' .  $this->page_slug, [ $this, 'handle_tool_action' ] );
+        add_action( 'wp_ajax_ayecode_settings_framework_load_content_pane_' .  $this->page_slug, [ $this, 'handle_load_content_pane' ] );
 
-        // Add AyeCode UI
-        add_filter('aui_screen_ids', array($this, 'add_aui_screens'));
+        // Add settings link to the plugins page.
+        add_filter( 'plugin_action_links_' . plugin_basename( $this->get_calling_file() ), [ $this, 'add_settings_link' ] );
 
-        // Load translations when ready
-        add_action('init', array($this, 'load_textdomain'));
+        // Integrate with AyeCode UI if present.
+        add_filter( 'aui_screen_ids', [ $this, 'add_aui_screens' ] );
     }
 
     /**
-     * Load textdomain for translations
-     */
-    public function load_textdomain() {
-        // This can be overridden by the calling plugin if needed
-        // For now, we'll use basic English strings since this is a framework
-    }
-
-    /**
-     * Load required dependencies
+     * Loads the framework's dependent class files.
      */
     private function load_dependencies() {
-
-        $base_path = dirname(__FILE__);
-
+        $base_path = dirname( __FILE__ );
         require_once $base_path . '/Admin_Page.php';
         require_once $base_path . '/Ajax_Handler.php';
-        require_once $base_path . '/Field_Renderer.php';
+        require_once $base_path . '/Field_Renderer.php'; // Kept for static helpers.
+        require_once $base_path . '/Field_Manager.php';   // The new decoupled field manager.
     }
 
     /**
-     * Add admin menu page
+     * Adds the settings page to the WordPress admin menu.
      */
     public function add_admin_menu() {
+        $render_callback = [ $this->admin_page, 'render' ];
 
-        $args = $this->args;
-
-        if (!empty($args['parent_slug'])) {
-            // Add submenu page
+        if ( ! empty( $this->parent_slug ) ) {
             $this->screen_id = add_submenu_page(
-                $args['parent_slug'],
-                $args['page_title'],
-                $args['menu_title'],
-                $args['capability'],
+                $this->parent_slug,
+                $this->page_title,
+                $this->menu_title,
+                $this->capability,
                 $this->page_slug,
-                array($this->admin_page, 'render')
+                $render_callback
             );
         } else {
-            // Add top-level menu page
             $this->screen_id = add_menu_page(
-                $args['page_title'],
-                $args['menu_title'],
-                $args['capability'],
+                $this->page_title,
+                $this->menu_title,
+                $this->capability,
                 $this->page_slug,
-                array($this->admin_page, 'render'),
-                $args['menu_icon'],
-                $args['menu_position']
+                $render_callback,
+                $this->menu_icon,
+                $this->menu_position
             );
         }
-
-        // Hook into admin_head for this specific screen
-        add_action('admin_head-' . $this->screen_id, array($this, 'admin_head'));
-
-        // Allow hooking after screen ID is set
-        do_action('ayecode_settings_framework_screen_id_set', $this->screen_id, $this);
     }
 
     /**
-     * Generic handler for "Action Buttons"
-     */
-    public function handle_tool_action() {
-        check_ajax_referer('asf_tool_action', 'nonce');
-        if (!current_user_can($this->args['capability'])) {
-            wp_send_json_error(['message' => 'Permission denied.']);
-        }
-
-        $tool_action = isset($_POST['tool_action']) ? sanitize_key($_POST['tool_action']) : '';
-        if (empty($tool_action)) {
-            wp_send_json_error(['message' => 'No tool action specified.']);
-        }
-
-//        do_action('asf_execute_tool', $this->option_name . '_'. $tool_action );
-        do_action('asf_execute_tool_' . $this->page_slug, $tool_action );
-
-        //echo $this->option_name . '###'.$tool_action ;exit;
-
-        // wp_send_json_error(['message' => 'Invalid tool action or no response from hook.']);
-    }
-
-    /**
-     * Generic handler for loading "Custom Content Panes"
-     */
-    public function handle_load_content_pane() {
-        check_ajax_referer('asf_tool_action', 'nonce');
-        if (!current_user_can($this->args['capability'])) {
-            wp_send_json_error(['message' => 'Permission denied.']);
-        }
-
-        $content_action = isset($_POST['content_action']) ? sanitize_key($_POST['content_action']) : '';
-        if (empty($content_action)) {
-            wp_send_json_error(['message' => 'No content action specified.']);
-        }
-
-//        do_action('asf_render_content_pane_' . $this->page_slug . '_' . $content_action, $_POST);
-        do_action('asf_render_content_pane_' . $this->page_slug, $content_action);
-
-       // wp_send_json_error(['message' => 'Invalid content action or no response from hook.']);
-    }
-
-    /**
-     * Enqueue CSS and JavaScript assets
+     * Enqueues CSS and JavaScript assets for the settings page.
+     * This function is hooked into `admin_enqueue_scripts` and will only
+     * load assets on the correct admin page to maintain performance.
      *
-     * @param string $hook Current admin page hook
+     * @param string $hook The current admin page hook.
      */
-    public function enqueue_assets($hook) {
-
-        // Only load on our settings page
-        if (!$this->is_settings_page($hook)) {
+    public function enqueue_assets( $hook ) {
+        if ( $hook !== $this->screen_id ) {
             return;
         }
 
-        $assets_url = $this->get_assets_url();
-        $version = self::VERSION;
+        // Enqueue all WordPress and framework scripts from this central method.
+        wp_enqueue_media();
+        wp_enqueue_script( 'iconpicker' );
 
-        // Enqueue Alpine.js (local file)
-        wp_enqueue_script(
-            'alpine-js',
-            $assets_url . 'js/alpine.min.js',
-            array(),
-            '3.14.9',
-            true
-        );
+        wp_enqueue_style( 'flatpickr' );
+        wp_enqueue_script( 'flatpickr' );
 
-        // Add defer attribute to Alpine.js
-        add_filter('script_loader_tag', array($this, 'add_defer_to_alpine'), 10, 2);
+        $assets_url = plugin_dir_url( __DIR__ ) . 'assets/';
+        $version    = self::VERSION;
 
+        // Enqueue Alpine.js and add the 'defer' attribute.
+        wp_enqueue_script( 'alpine-js', $assets_url . 'js/alpine.min.js', [], '3.14.9', true );
+        add_filter( 'script_loader_tag', [ $this, 'add_defer_to_alpine' ], 10, 2 );
 
-        // ✨ 1. Enqueue the new Field Renderer script
-        wp_enqueue_script(
-            'ayecode-settings-framework-renderer',
-            $assets_url . 'js/field-renderer.js',
-            array(), // No dependencies
-            $version,
-            true
-        );
+        // Enqueue the field renderer and the main admin script.
+        wp_enqueue_script( 'ayecode-settings-framework-renderer', $assets_url . 'js/field-renderer.js', [], $version, true );
+        wp_enqueue_script( 'ayecode-settings-framework-admin', $assets_url . 'js/admin.js', [ 'ayecode-settings-framework-renderer' ], $version, true );
 
-        // ✨ 2. Enqueue main admin script, making it dependent on the renderer
-        wp_enqueue_script(
-            'ayecode-settings-framework-admin',
-            $assets_url . 'js/admin.js',
-            array('ayecode-settings-framework-renderer'), // Dependency added
-            $version,
-            true
-        );
-
-
-        // IMAGE PREVIEW LOGIC
-        $settings = $this->get_settings();
-        $all_fields = $this->get_field_map();
-        $image_previews = [];
-
-        foreach ($all_fields as $field_id => $field_config) {
-            // Check if the field is an image type and has a value saved
-            if (isset($field_config['type']) && $field_config['type'] === 'image' && !empty($settings[$field_id])) {
-                $image_id = absint($settings[$field_id]);
-                if ($image_id) {
-                    // Get the 'thumbnail' size URL for the preview
-                    $preview_url = wp_get_attachment_image_url($image_id, 'thumbnail');
-                    if ($preview_url) {
-                        $image_previews[$field_id] = $preview_url;
-                    }
-                }
-            }
-        }
-
-        // Process config to include pre-loaded HTML content
-        $processed_config = $this->get_config();
-        if (isset($processed_config['sections'])) {
-            foreach ($processed_config['sections'] as &$section) {
-                if (isset($section['type']) && $section['type'] === 'custom_page' && !empty($section['html_content'])) {
-                    $section['content_html'] = $section['html_content'];
-                    unset($section['html_content']);
-                }
-            }
-        }
-
-
-        // Localize script with configuration and current settings
+        // Localize the main script with all necessary data.
         wp_localize_script(
             'ayecode-settings-framework-admin',
             'ayecodeSettingsFramework',
-            array(
-                'config' => $processed_config,
-                'settings' => $settings,
-                'image_previews' => $image_previews,
-                'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce($this->get_ajax_action()),
-                'tool_nonce'  => wp_create_nonce('asf_tool_action'),
-                'action' => $this->get_ajax_action(),
-                'strings' => array(
-                    'saving' => __('Saving...', 'ayecode-settings-framework'),
-                    'saved' => __('Settings saved successfully!', 'ayecode-settings-framework'),
-                    'error' => __('Error saving settings. Please try again.', 'ayecode-settings-framework'),
-                    'unsaved_changes' => __('You have unsaved changes', 'ayecode-settings-framework'),
-                    'confirm_discard' => __('Are you sure you want to discard your changes?', 'ayecode-settings-framework'),
-                    'search_placeholder' => __('Quick search...', 'ayecode-settings-framework'),
-                    'no_results' => __('No settings found', 'ayecode-settings-framework'),
-                    'clear_search' => __('Clear search', 'ayecode-settings-framework')
-                )
-            )
+            [
+                'config'         => $this->get_config_with_preloads(),
+                'settings'       => $this->get_settings(),
+                'image_previews' => $this->get_image_previews(),
+                'ajax_url'       => admin_url( 'admin-ajax.php' ),
+                'nonce'          => wp_create_nonce( 'save_' . $this->option_name ),
+                'tool_nonce'     => wp_create_nonce( 'asf_tool_action' ),
+                'action'         => 'save_' . $this->option_name, // The base action for save/reset.
+                'tool_ajax_action' => 'ayecode_settings_framework_execute_action_' . $this->page_slug,
+                'content_pane_ajax_action' => 'ayecode_settings_framework_load_content_pane_' . $this->page_slug,
+                'strings'        => [
+                    'saving'            => __( 'Saving...', 'ayecode-settings-framework' ),
+                    'saved'             => __( 'Settings saved successfully!', 'ayecode-settings-framework' ),
+                    'error'             => __( 'Error saving settings. Please try again.', 'ayecode-settings-framework' ),
+                    'unsaved_changes'   => __( 'You have unsaved changes', 'ayecode-settings-framework' ),
+                    'confirm_discard'   => __( 'Are you sure you want to discard your changes?', 'ayecode-settings-framework' ),
+                    'search_placeholder' => __( 'Quick search...', 'ayecode-settings-framework' ),
+                    'no_results'        => __( 'No settings found', 'ayecode-settings-framework' ),
+                    'clear_search'      => __( 'Clear search', 'ayecode-settings-framework' ),
+                ],
+            ]
         );
     }
 
     /**
-     * Add defer attribute to Alpine.js script tag
+     * Gets the full settings configuration array, loading it if necessary.
+     * This is the "lazy-load" getter for the config.
      *
-     * @param string $tag    Script tag HTML
-     * @param string $handle Script handle
-     * @return string Modified script tag
+     * @return array The configuration array.
      */
-    public function add_defer_to_alpine($tag, $handle) {
-        if ('alpine-js' === $handle) {
-            return str_replace(' src', ' defer src', $tag);
-        }
-        return $tag;
-    }
-
-    /**
-     * Check if current page is our settings page
-     *
-     * @param string $hook Current page hook
-     * @return bool
-     */
-    private function is_settings_page($hook) {
-        return $hook === $this->screen_id;
-    }
-
-    /**
-     * Get assets URL
-     *
-     * @return string Assets URL with trailing slash
-     */
-    private function get_assets_url() {
-
-        // Get the URL of the directory containing this framework file
-        $framework_url = plugin_dir_url(__FILE__);
-
-        // Assets are in the same directory structure, go up one level from src/ to assets/
-        return trailingslashit($framework_url . '../assets');
-    }
-
-    /**
-     * Get the file that instantiated this framework
-     *
-     * @return string File path
-     */
-    private function get_calling_file() {
-
-        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-
-        // Look for the first file outside of this framework
-        foreach ($backtrace as $trace) {
-            if (isset($trace['file']) && strpos($trace['file'], 'settings-framework') === false) {
-                return $trace['file'];
-            }
+    public function get_config_raw() {
+        if ( is_null( $this->config ) ) {
+            // call_user_func is used to call the abstract method implemented in the child.
+            $this->config = call_user_func( [ $this, 'get_config' ] );
         }
 
-        // Fallback to current file
-        return __FILE__;
+        return $this->config;
     }
 
     /**
-     * Get current settings from database
+     * Retrieves settings from the database.
      *
-     * @return array Current settings
+     * @return array Current settings.
      */
     public function get_settings() {
-        return get_option($this->option_name, array());
+        return get_option( $this->option_name, [] );
     }
 
     /**
-     * Save settings to database using a "whitelist" approach.
+     * Saves settings to the database. It delegates the sanitization
+     * and processing to the Field_Manager.
      *
-     * This method only updates settings that are explicitly defined in the
-     * framework's configuration, preserving all other legacy settings.
-     *
-     * @param array $new_settings Settings to save from the form.
-     * @return bool Success
+     * @param array $new_settings The raw settings data from the AJAX request.
+     * @return bool True on success, false on failure.
      */
-    public function save_settings($new_settings) {
-        // 1. Get the full array of existing settings from the database.
+    public function save_settings( $new_settings ) {
         $current_settings = $this->get_settings();
-        // 2. Get the "whitelist" of all valid field IDs defined in the UI config.
-        $field_map = $this->get_field_map();
+        $sanitized        = $this->field_manager->sanitize_and_prepare_settings( $new_settings, $current_settings );
 
-        // 3. Loop through the whitelist of allowed fields.
-        foreach ($field_map as $key => $field_config) {
+        $result = update_option( $this->option_name, $sanitized );
 
-            // Check if a new value for this key was submitted from the form.
-            if (isset($new_settings[$key])) {
-                // If yes, sanitize it and update it in our settings array.
-                $current_settings[$key] = $this->sanitize_field_value($new_settings[$key], $field_config['type']);
-            } else {
-                // If the key is not in the submitted data, it could be an unchecked box.
-                // We must set it to a "false" or empty value to ensure it's saved as "off".
-                $type = $field_config['type'];
-                if ($type === 'checkbox' || $type === 'toggle') {
-                    $current_settings[$key] = 0;
-                } elseif ($type === 'multiselect' || $type === 'checkbox_group') {
-                    $current_settings[$key] = array();
-                }
-            }
-        }
-
-        // 4. Save the modified array back to the database. Legacy keys are untouched.
-        $result = update_option($this->option_name, $current_settings);
-
-        // 5. Fire action after settings are saved.
-        do_action('ayecode_settings_framework_saved', $current_settings, $this->option_name);
+        do_action( 'ayecode_settings_framework_saved', $sanitized, $this->option_name );
 
         return $result;
     }
 
     /**
-     * Reset settings to defaults
+     * Resets all settings to their default values as defined in the config.
      *
-     * @return bool Success
+     * @return bool True on success, false on failure.
      */
     public function reset_settings() {
+        $defaults = $this->field_manager->get_default_settings();
+        $result   = update_option( $this->option_name, $defaults );
 
-        $defaults = $this->get_default_settings();
-        $result = update_option($this->option_name, $defaults);
-
-        // Fire action after settings are reset
-        do_action('ayecode_settings_framework_reset', $defaults, $this->option_name);
+        do_action( 'ayecode_settings_framework_reset', $defaults, $this->option_name );
 
         return $result;
     }
 
     /**
-     * Get default settings from configuration
-     *
-     * @return array Default settings
+     * Generic handler for "Action Buttons". It fires a dynamic hook
+     * that a specific settings implementation can listen for.
      */
-    private function get_default_settings() {
-
-        $defaults = array();
-        $field_map = $this->get_field_map();
-
-        foreach ($field_map as $field_id => $field) {
-            if (isset($field['default'])) {
-                $defaults[$field_id] = $field['default'];
-            }
+    public function handle_tool_action() {
+        check_ajax_referer( 'asf_tool_action', 'nonce' );
+        if ( ! current_user_can( $this->capability ) ) {
+            wp_send_json_error( [ 'message' => 'Permission denied.' ] );
         }
 
-        return $defaults;
+        $tool_action = isset( $_POST['tool_action'] ) ? sanitize_key( $_POST['tool_action'] ) : '';
+        if ( empty( $tool_action ) ) {
+            wp_send_json_error( [ 'message' => 'No tool action specified.' ] );
+        }
+
+        // Fire a hook specific to this settings page instance and the action.
+        // Example: asf_execute_tool_my_plugin_settings_page_my_tool_id
+//        echo '###'.'asf_execute_tool_' . $this->page_slug;
+        do_action( 'asf_execute_tool_' . $this->page_slug, $tool_action, $_POST );
     }
 
     /**
-     * Sanitize settings based on field types
-     *
-     * @param array $settings Raw settings
-     * @return array Sanitized settings
+     * Generic handler for loading "Custom Content Panes" via AJAX.
      */
-    private function sanitize_settings($settings) {
-
-        if (!is_array($settings)) {
-            return array();
+    public function handle_load_content_pane() {
+        check_ajax_referer( 'asf_tool_action', 'nonce' );
+        if ( ! current_user_can( $this->capability ) ) {
+            wp_send_json_error( [ 'message' => 'Permission denied.' ] );
         }
 
-        $sanitized = array();
-        $field_map = $this->get_field_map();
-
-        foreach ($settings as $key => $value) {
-
-            $key = sanitize_key($key);
-
-            if (isset($field_map[$key])) {
-                $field_type = $field_map[$key]['type'];
-                $sanitized[$key] = $this->sanitize_field_value($value, $field_type);
-            } else {
-                // Default sanitization for unknown fields
-                $sanitized[$key] = sanitize_text_field($value);
-            }
+        $content_action = isset( $_POST['content_action'] ) ? sanitize_key( $_POST['content_action'] ) : '';
+        if ( empty( $content_action ) ) {
+            wp_send_json_error( [ 'message' => 'No content action specified.' ] );
         }
 
-        return $sanitized;
+        // Fire a hook specific to this settings page instance and the content pane ID.
+        do_action( 'asf_render_content_pane_' . $this->page_slug, $content_action );
     }
 
     /**
-     * Sanitize individual field value based on type
+     * Adds a "Settings" link to the plugin's action links on the plugins page.
      *
-     * @param mixed  $value      Field value
-     * @param string $field_type Field type
-     * @return mixed Sanitized value
+     * @param array $links Existing links.
+     * @return array Modified links.
      */
-    private function sanitize_field_value($value, $field_type) {
-
-        switch ($field_type) {
-            case 'text':
-            case 'password':
-            case 'hidden':
-                return sanitize_text_field($value);
-
-            case 'textarea':
-                return sanitize_textarea_field($value);
-
-            case 'email':
-                return sanitize_email($value);
-
-            case 'url':
-                return esc_url_raw($value);
-
-            case 'number':
-            case 'range':
-                return is_numeric($value) ? (float) $value : 0;
-
-            case 'checkbox':
-            case 'toggle':
-                return !empty($value) ? 1 : 0;
-
-            case 'select':
-            case 'radio':
-                return sanitize_text_field($value);
-
-            case 'multiselect':
-            case 'checkbox_group':
-                if (is_array($value)) {
-                    return array_map('sanitize_text_field', $value);
-                }
-                return array();
-
-            case 'color':
-                return sanitize_hex_color($value);
-
-            case 'file':
-                return esc_url_raw($value);
-            case 'image':
-                return absint($value); // Sanitize as an absolute integer
-
-            default:
-                return sanitize_text_field($value);
-        }
-    }
-
-    /**
-     * Build field map for sanitization
-     *
-     * @return array Field ID => field config map
-     */
-    private function get_field_map() {
-        $field_map = [];
-        $config = $this->get_config(); // Use the getter
-        if (empty($config['sections']) || !is_array($config['sections'])) {
-            return $field_map;
-        }
-
-        foreach ($config['sections'] as $section) {
-            if (!empty($section['fields']) && is_array($section['fields'])) {
-                $this->extract_fields_from_array($section['fields'], $field_map);
-            }
-            // Fields within subsections
-            if (!empty($section['subsections']) && is_array($section['subsections'])) {
-                foreach ($section['subsections'] as $subsection) {
-                    if (!empty($subsection['fields']) && is_array($subsection['fields'])) {
-                        $this->extract_fields_from_array($subsection['fields'], $field_map);
-                    }
-                }
-            }
-        }
-        return $field_map;
-    }
-
-    /**
-     * Helper function to recursively extract fields from config arrays.
-     *
-     * @param array $fields_array The array of fields to process.
-     * @param array $field_map    The map to add fields to (passed by reference).
-     */
-    private function extract_fields_from_array($fields_array, &$field_map) {
-        foreach ($fields_array as $field) {
-            if (isset($field['type']) && $field['type'] === 'group' && !empty($field['fields'])) {
-                // Recursively extract from groups
-                $this->extract_fields_from_array($field['fields'], $field_map);
-            } elseif (!empty($field['id'])) {
-                $field_map[$field['id']] = $field;
-            }
-        }
-    }
-
-    /**
-     * Get AJAX action name
-     *
-     * @return string AJAX action
-     */
-    public function get_ajax_action() {
-        return 'save_' . $this->option_name;
-    }
-
-    /**
-     * Add settings link to plugin actions
-     *
-     * @param array $links Existing links
-     * @return array Modified links
-     */
-    public function add_settings_link($links) {
-
+    public function add_settings_link( $links ) {
         $settings_link = sprintf(
             '<a href="%s">%s</a>',
-            admin_url('admin.php?page=' . $this->page_slug),
-            __('Settings', 'ayecode-settings-framework')
+            admin_url( 'admin.php?page=' . $this->page_slug ),
+            __( 'Settings', 'ayecode-settings-framework' )
         );
-
-        array_unshift($links, $settings_link);
+        array_unshift( $links, $settings_link );
 
         return $links;
     }
 
     /**
-     * Get framework configuration.
-     * This method loads the config on demand using the provided callable.
+     * Adds the 'defer' attribute to the Alpine.js script tag for better performance.
      *
-     * @return array Configuration
+     * @param string $tag    The original script tag HTML.
+     * @param string $handle The script's handle.
+     * @return string The modified script tag.
      */
-    public function get_config() {
-        if (is_null($this->config)) {
-            $this->config = call_user_func($this->config_loader);
+    public function add_defer_to_alpine( $tag, $handle ) {
+        if ( 'alpine-js' === $handle ) {
+            return str_replace( ' src', ' defer src', $tag );
         }
-        return $this->config;
+
+        return $tag;
     }
 
     /**
-     * Get option name
+     * Pre-processes the config to include content for 'custom_page' sections
+     * that use 'html_content', so it's available on page load.
      *
-     * @return string Option name
+     * @return array The processed configuration.
      */
-    public function get_option_name() {
-        return $this->option_name;
+    private function get_config_with_preloads() {
+        $config = $this->get_config_raw();
+        if ( isset( $config['sections'] ) ) {
+            foreach ( $config['sections'] as &$section ) {
+                if ( isset( $section['type'], $section['html_content'] ) && $section['type'] === 'custom_page' ) {
+                    // The content is directly embedded for the frontend.
+                    $section['content_html'] = $section['html_content'];
+                    unset( $section['html_content'] ); // Avoid sending it twice.
+                }
+            }
+        }
+
+        return $config;
     }
 
     /**
-     * Get page slug
+     * Generates preview URLs for all 'image' type fields that have a value.
      *
-     * @return string Page slug
+     * @return array An associative array of [field_id => preview_url].
      */
+    private function get_image_previews() {
+        $settings       = $this->get_settings();
+        $all_fields     = $this->field_manager->get_field_map();
+        $image_previews = [];
+
+        foreach ( $all_fields as $field_id => $field_config ) {
+            if ( isset( $field_config['type'] ) && $field_config['type'] === 'image' && ! empty( $settings[ $field_id ] ) ) {
+                $image_id = absint( $settings[ $field_id ] );
+                if ( $image_id > 0 ) {
+                    $preview_url = wp_get_attachment_image_url( $image_id, 'thumbnail' );
+                    if ( $preview_url ) {
+                        $image_previews[ $field_id ] = $preview_url;
+                    }
+                }
+            }
+        }
+
+        return $image_previews;
+    }
+
+    /**
+     * Helper function to find the file that instantiated the child class.
+     * Used for the 'plugin_action_links' filter.
+     *
+     * @return string The file path of the calling plugin.
+     */
+    private function get_calling_file() {
+        $backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS );
+        foreach ( $backtrace as $trace ) {
+            if ( isset( $trace['file'] ) && strpos( $trace['file'], 'wp-ayecode-settings-framework' ) === false ) {
+                return $trace['file'];
+            }
+        }
+
+        return __FILE__; // Fallback
+    }
+
+    /**
+     * Adds this page's screen ID to the list for AyeCode UI components.
+     *
+     * @param array $screen_ids Existing screen IDs.
+     * @return array Modified screen IDs.
+     */
+    public function add_aui_screens( $screen_ids ) {
+        if ( $this->screen_id ) {
+            $screen_ids[] = $this->screen_id;
+        }
+
+        return $screen_ids;
+    }
+
+    // region Public Getters
+    // Provides controlled access to protected properties for other classes.
+
     public function get_page_slug() {
         return $this->page_slug;
     }
 
-    /**
-     * Get plugin name
-     *
-     * @return string Plugin name
-     */
     public function get_plugin_name() {
         return $this->plugin_name;
     }
 
-    /**
-     * Admin head hook for our page
-     */
-    public function admin_head() {
-        // Hook for custom admin head content on settings page
-        do_action('ayecode_settings_framework_admin_head', $this);
+    public function get_option_name() {
+        return $this->option_name;
     }
 
-    /**
-     * Get the screen ID for this settings page
-     *
-     * @return string|null Screen ID or null if not set yet
-     */
-    public function get_screen_id() {
-        return $this->screen_id;
+    public function get_page_title() {
+        return $this->page_title;
     }
 
-    /**
-     * Add AUI screen support (if using AyeCode UI)
-     *
-     * @param array $screen_ids Existing screen IDs
-     * @return array Modified screen IDs
-     */
-    public function add_aui_screens($screen_ids) {
-        if ($this->screen_id) {
-            $screen_ids[] = $this->screen_id;
-        }
-        return $screen_ids;
-    }
+    // endregion
 }

@@ -53,6 +53,10 @@ window.asfFieldRenderer = {
                 return this.renderGroupField(field);
             case 'image':
                 return this.renderImageField(field);
+            case 'hidden':
+                return this.renderHiddenField(field);
+            case 'file':
+                return this.renderFileField(field);
             case 'font-awesome':
                 return this.renderIconField(field);
             case 'gd_map':
@@ -61,6 +65,8 @@ window.asfFieldRenderer = {
                 return this.renderHelperTagsField(field);
             case 'action_button':
                 return this.renderActionButtonField(field);
+            case 'link_button':
+                return this.renderLinkButtonField(field);
             default:
                 return `<div class="alert alert-info">Unsupported field type: ${field.type}</div>`;
         }
@@ -217,11 +223,11 @@ window.asfFieldRenderer = {
                         <div class="row g-3 mb-3">
                             <div class="col">
                                 <label for="${field.lat_field}" class="form-label small">Latitude</label>
-                                <input type="text" class="form-control" id="${field.lat_field}" x-model="settings.${field.lat_field}" @input="markChanged()" ${extraAttrs}>
+                                <input type="text" class="form-control" id="${field.lat_field}" name="${field.lat_field}" x-model="settings.${field.lat_field}" ${extraAttrs}>
                             </div>
                             <div class="col">
                                 <label for="${field.lng_field}" class="form-label small">Longitude</label>
-                                <input type="text" class="form-control" id="${field.lng_field}" x-model="settings.${field.lng_field}" @input="markChanged()" ${extraAttrs}>
+                                <input type="text" class="form-control" id="${field.lng_field}" name="${field.lng_field}" x-model="settings.${field.lng_field}" ${extraAttrs}>
                             </div>
                         </div>
                         
@@ -287,7 +293,7 @@ window.asfFieldRenderer = {
             `;
         }
 
-        const inputHtml = `<input type="${field.type || 'text'}" class="form-control ${customClass}" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" placeholder="${escapedPlaceholder}" ${extraAttrs} ${activePlaceholderAttrs}>`;
+        const inputHtml = `<input type="${field.type || 'text'}" class="form-control ${customClass}" id="${field.id}" name="${field.id}" x-model="settings.${field.id}" placeholder="${escapedPlaceholder}" ${extraAttrs} ${activePlaceholderAttrs}>`;
 
         const finalInputHtml = field.input_group_right
             ? `<div class="input-group">${inputHtml}${field.input_group_right}</div>`
@@ -313,7 +319,7 @@ window.asfFieldRenderer = {
         const customClass = field.class || '';
         const extraAttrs = this._renderExtraAttributes(field);
         const customDescHtml = this._renderCustomDescription(field);
-        const inputHtml = `<input type="password" autocomplete="new-password" class="form-control ${customClass}" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" placeholder="${field.placeholder || ''}" ${extraAttrs}>`;
+        const inputHtml = `<input type="password" autocomplete="new-password" class="form-control ${customClass}" id="${field.id}" name="${field.id}" x-model="settings.${field.id}" placeholder="${field.placeholder || ''}" ${extraAttrs}>`;
 
         const finalInputHtml = field.input_group_right
             ? `<div class="input-group">${inputHtml}${field.input_group_right}</div>`
@@ -337,7 +343,7 @@ window.asfFieldRenderer = {
         const customClass = field.class || '';
         const extraAttrs = this._renderExtraAttributes(field);
         const customDescHtml = this._renderCustomDescription(field);
-        const inputHtml = `<input type="password" autocomplete="new-password" class="form-control ${customClass}" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" @focus="$event.target.type = 'text'" @blur="$event.target.type = 'password'" placeholder="${field.placeholder || '••••••••••••••••••••••••••••'}" ${extraAttrs}>`;
+        const inputHtml = `<input type="password" autocomplete="new-password" class="form-control ${customClass}" id="${field.id}" name="${field.id}" x-model="settings.${field.id}" @focus="$event.target.type = 'text'" @blur="$event.target.type = 'password'" placeholder="${field.placeholder || '••••••••••••••••••••••••••••'}" ${extraAttrs}>`;
 
         const finalInputHtml = field.input_group_right
             ? `<div class="input-group">${inputHtml}${field.input_group_right}</div>`
@@ -364,7 +370,7 @@ window.asfFieldRenderer = {
         const customClass = field.class || '';
         const extraAttrs = this._renderExtraAttributes(field);
         const customDescHtml = this._renderCustomDescription(field);
-        const inputHtml = `<input type="number" class="form-control ${customClass}" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" ${min} ${max} ${step} placeholder="${field.placeholder || ''}" ${extraAttrs}>`;
+        const inputHtml = `<input type="number" class="form-control ${customClass}" id="${field.id}" name="${field.id}" x-model="settings.${field.id}" ${min} ${max} ${step} placeholder="${field.placeholder || ''}" ${extraAttrs}>`;
 
         const finalInputHtml = field.input_group_right
             ? `<div class="input-group">${inputHtml}${field.input_group_right}</div>`
@@ -406,13 +412,19 @@ window.asfFieldRenderer = {
                     ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
                 </div>
                 <div class="col-md-8">
-                    <textarea class="form-control ${customClass}" id="${field.id}" rows="${rows}" x-model="settings.${field.id}" @input="markChanged()" placeholder="${escapedPlaceholder}" ${extraAttrs} ${activePlaceholderAttrs}></textarea>
+                    <textarea class="form-control ${customClass}" id="${field.id}" name="${field.id}" rows="${rows}" x-model="settings.${field.id}" placeholder="${escapedPlaceholder}" ${extraAttrs} ${activePlaceholderAttrs}></textarea>
                     ${customDescHtml}
                 </div>
             </div>
         `;
     },
 
+    /**
+     * Renders a toggle switch.
+     * [Corrected] Replaced x-model with a manual @click handler to prevent
+     * data type changes (e.g., from 1 to true), ensuring the unsaved
+     * changes check works correctly when a toggle is reverted.
+     */
     renderToggleField(field) {
         const extraAttrs = this._renderExtraAttributes(field);
         const customDescHtml = this._renderCustomDescription(field);
@@ -425,14 +437,14 @@ window.asfFieldRenderer = {
                 <div class="col-md-8">
                     <div class="form-check form-switch">
                         <input 
-                        class="form-check-input" 
-                        type="checkbox" 
-                        role="switch" 
-                        id="${field.id}" 
-                        x-model="settings.${field.id}" 
-                        :checked="settings.${field.id} == '1' || settings.${field.id} === true"
-                        @change="markChanged()"
-                        ${extraAttrs}
+                            class="form-check-input" 
+                            type="checkbox" 
+                            role="switch" 
+                            id="${field.id}" 
+                            name="${field.id}"
+                            :checked="settings.${field.id} == '1' || settings.${field.id} === true"
+                            @click="settings.${field.id} = (settings.${field.id} == 1 ? 0 : 1)"
+                            ${extraAttrs}
                         >
                     </div>
                     ${customDescHtml}
@@ -457,10 +469,9 @@ window.asfFieldRenderer = {
         const extraAttrs = this._renderExtraAttributes(field);
         const customDescHtml = this._renderCustomDescription(field);
 
-        // We use x-model for standard selects, but the initChoice function for enhanced ones.
         const modelOrInit = (field.class && field.class.includes('aui-select2'))
             ? `x-ref="${field.id}" x-init="initChoice('${field.id}')"`
-            : `x-model="settings.${field.id}" @change="markChanged()"`;
+            : `x-model="settings.${field.id}"`;
 
         return `
             <div class="row align-items-center rounded">
@@ -472,6 +483,7 @@ window.asfFieldRenderer = {
                     <select 
                         class="form-select w-100 mw-100 ${customClass}" 
                         id="${field.id}" 
+                        name="${field.id}"
                         ${modelOrInit}
                         ${placeholderAttr} 
                         ${extraAttrs}
@@ -498,7 +510,7 @@ window.asfFieldRenderer = {
                 </div>
                 <div class="col-md-8">
                     <div class="d-flex align-items-center">
-                        <input type="range" class="form-range" id="${field.id}" min="${min}" max="${max}" step="${step}" x-model="settings.${field.id}" @input="markChanged()" ${extraAttrs}>
+                        <input type="range" class="form-range" id="${field.id}" name="${field.id}" min="${min}" max="${max}" step="${step}" x-model="settings.${field.id}" ${extraAttrs}>
                         <span class="badge bg-secondary ms-3" x-text="settings.${field.id}"></span>
                     </div>
                     ${customDescHtml}
@@ -520,9 +532,9 @@ window.asfFieldRenderer = {
                         <input 
                         class="form-check-input" 
                         type="checkbox" id="${field.id}" 
+                        name="${field.id}"
                         x-model="settings.${field.id}" 
                         :checked="settings.${field.id} == '1' || settings.${field.id} === true"
-                        @change="markChanged()"
                         ${extraAttrs}
                         >
                         <label class="form-check-label" for="${field.id}">${field.description || ''}</label>
@@ -540,7 +552,7 @@ window.asfFieldRenderer = {
             for (const [optValue, optLabel] of Object.entries(field.options)) {
                 optionsHtml += `
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="${field.id}" id="${field.id}_${optValue}" value="${optValue}" x-model="settings.${field.id}" @change="markChanged()" ${extraAttrs}>
+                        <input class="form-check-input" type="radio" name="${field.id}" id="${field.id}_${optValue}" value="${optValue}" x-model="settings.${field.id}" ${extraAttrs}>
                         <label class="form-check-label" for="${field.id}_${optValue}">${optLabel}</label>
                     </div>
                 `;
@@ -584,6 +596,7 @@ window.asfFieldRenderer = {
                 <select 
                     class="form-select w-100 mw-100 ${customClass}" 
                     id="${field.id}" 
+                    name="${field.id}"
                     multiple 
                     x-ref="${field.id}"
                     x-init="initChoices('${field.id}')"
@@ -605,7 +618,7 @@ window.asfFieldRenderer = {
             for (const [optValue, optLabel] of Object.entries(field.options)) {
                 optionsHtml += `
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" value="${optValue}" id="${field.id}_${optValue}" x-model="settings.${field.id}" @change="markChanged()" ${extraAttrs}>
+                        <input class="form-check-input" type="checkbox" value="${optValue}" id="${field.id}_${optValue}" name="${field.id}" x-model="settings.${field.id}" ${extraAttrs}>
                         <label class="form-check-label" for="${field.id}_${optValue}">${optLabel}</label>
                     </div>
                 `;
@@ -663,8 +676,6 @@ window.asfFieldRenderer = {
         const extraAttrs = this._renderExtraAttributes(field);
         const customDescHtml = this._renderCustomDescription(field);
 
-        // Conditionally create the HTML for the reset button.
-        // It only renders if a `default` value is present in the field's definition.
         const resetButtonHtml = field.default ? `
         <button 
             type="button" 
@@ -672,7 +683,7 @@ window.asfFieldRenderer = {
             title="Reset to default"
             x-cloak
             x-show="settings.${field.id} && settings.${field.id}.toLowerCase() !== '${field.default}'.toLowerCase()"
-            @click="settings.${field.id} = '${field.default}'; markChanged()"
+            @click="settings.${field.id} = '${field.default}'"
             data-bs-toggle="tooltip"
         >
            <i class="fa-solid fa-rotate-left"></i>
@@ -687,13 +698,13 @@ window.asfFieldRenderer = {
                 </div>
                 <div class="col-md-8">
                     <div class="d-flex align-items-center">
-                        <input type="color" class="form-control form-control-color me-2" id="${field.id}-color" x-model="settings.${field.id}" @input="markChanged()">
+                        <input type="color" class="form-control form-control-color me-2" id="${field.id}-color" x-model="settings.${field.id}">
                         <input 
                             type="text" 
                             class="form-control" 
                             id="${field.id}" 
+                            name="${field.id}"
                             x-model="settings.${field.id}" 
-                            @input="markChanged()" 
                             style="max-width: 120px;" 
                             pattern="^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$" 
                             ${extraAttrs}
@@ -710,7 +721,6 @@ window.asfFieldRenderer = {
         const extraAttrs = this._renderExtraAttributes(field);
         const customDescHtml = this._renderCustomDescription(field);
 
-        // The raw HTML for the addon is injected directly. You are responsible for providing valid addon HTML.
         const textAddon = field.input_group_right || '';
 
         return `
@@ -721,7 +731,7 @@ window.asfFieldRenderer = {
                 </div>
                 <div class="col-md-8">
                     <div class="input-group">
-                        <input data-aui-init="iconpicker" type="text" class="form-control ${customClass}" id="${field.id}" x-model="settings.${field.id}" @input="markChanged()" placeholder="${field.placeholder || ''}" ${extraAttrs}>
+                        <input data-aui-init="iconpicker" type="text" class="form-control ${customClass}" id="${field.id}" name="${field.id}" x-model="settings.${field.id}" placeholder="${field.placeholder || ''}" ${extraAttrs}>
                         ${textAddon}
                         <span class="input-group-addon input-group-text top-0 end-0 c-pointer"><i class="fas fa-icons"></i></span>
                     </div>
@@ -768,6 +778,55 @@ window.asfFieldRenderer = {
             <div class="alert alert-${type} mb-0">
                 ${field.label ? `<h6 class="alert-heading">${field.label}</h6>` : ''}
                 ${field.description || ''}
+            </div>
+        `;
+    },
+
+    renderLinkButtonField(field) {
+        const url = field.url || '#';
+        const buttonText = field.button_text || 'Click Here';
+        const buttonClass = field.button_class || 'btn-secondary';
+        const target = field.target ? `target="${field.target}"` : '';
+        const rel = field.target === '_blank' ? 'rel="noopener noreferrer"' : '';
+
+        const buttonHtml = `<a href="${url}" class="btn ${buttonClass}" ${target} ${rel}>${buttonText}</a>`;
+
+        const customDescHtml = this._renderCustomDescription(field);
+
+        return `
+            <div class="row align-items-center rounded">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold mb-0">${field.label || field.id}</label>
+                    ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
+                </div>
+                <div class="col-md-8 d-flex align-items-center justify-content-end">
+                    ${buttonHtml}
+                    ${customDescHtml}
+                </div>
+            </div>
+        `;
+    },
+
+    renderHiddenField(field) {
+        const extraAttrs = this._renderExtraAttributes(field);
+        return `<input type="hidden" id="${field.id}" name="${field.id}" x-model="settings.${field.id}" ${extraAttrs}>`;
+    },
+
+    renderFileField(field) {
+        const extraAttrs = this._renderExtraAttributes(field);
+        const accept = field.accept || ''; // e.g., '.csv, text/csv'
+        const customDescHtml = this._renderCustomDescription(field);
+
+        return `
+            <div class="row align-items-center rounded">
+                <div class="col-md-4">
+                    <label for="${field.id}" class="form-label fw-bold mb-0">${field.label || field.id}</label>
+                    ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
+                </div>
+                <div class="col-md-8">
+                    <input type="file" class="form-control p-2" id="${field.id}" name="${field.id}" accept="${accept}" ${extraAttrs}>
+                    ${customDescHtml}
+                </div>
             </div>
         `;
     },
