@@ -56,7 +56,7 @@ function ayecodeSettingsApp() {
             // Initialize data models and states for all sections and subsections
             this.sections.forEach(section => {
                 const processPage = (pageConfig) => {
-                    if (pageConfig.type === 'action_page' || pageConfig.type === 'import_page') {
+                    if (pageConfig.type === 'action_page' || pageConfig.type === 'import_page' || pageConfig.type === 'tool_page') {
                         this.initializeActionPageData(pageConfig);
                     }
                 };
@@ -68,11 +68,23 @@ function ayecodeSettingsApp() {
 
             // pre-initialize action button field states
             this.allFields.forEach(item => {
-                if (item.field.type === 'action_button') {
-                    this.actionStates[item.field.id] = { isLoading: false, message: '', progress: 0, success: null };
+                if (item.type === 'field' && item.field.type === 'action_button') {
+                    if (item.field.toggle_config) {
+                        const initialState = item.field.has_dummy_data || false;
+                        this.actionStates[item.field.id] = {
+                            has_dummy_data: initialState,
+                            isLoading: false,
+                            message: '',
+                            progress: 0,
+                            success: null
+                        };
+                        // Mirror the state into the settings object for show_if
+                        this.settings[item.field.id] = initialState;
+                    } else {
+                        this.actionStates[item.field.id] = { isLoading: false, message: '', progress: 0, success: null };
+                    }
                 }
             });
-
 
             // Set initial section based on URL or default
             this.handleUrlHash();
@@ -89,16 +101,32 @@ function ayecodeSettingsApp() {
          * Helper to initialize data for an action page or import page.
          */
         initializeActionPageData(pageConfig) {
-            // Initialize fields in the main settings object
-            if (pageConfig.fields) {
-                pageConfig.fields.forEach(field => {
-                    if (this.settings[field.id] === undefined) {
-                        this.settings[field.id] = field.default !== undefined ? field.default : '';
+            // A recursive helper function to process fields and their children
+            const processFieldsForDefaults = (fields) => {
+                if (!fields || !Array.isArray(fields)) return;
+
+                fields.forEach(field => {
+                    if (!field) return;
+
+                    // Set the default value if the field has an ID and a default is provided
+                    if (field.id && this.settings[field.id] === undefined && field.default !== undefined) {
+                        this.settings[field.id] = field.default;
+                    } else if (field.id && this.settings[field.id] === undefined) {
+                        // Ensure the property exists in the settings object even without a default
+                        this.settings[field.id] = '';
+                    }
+
+                    // If the field is a group, recurse into its children
+                    if (field.type === 'group' && field.fields) {
+                        processFieldsForDefaults(field.fields);
                     }
                 });
-            }
+            };
 
-            // Initialize the base state
+            // Start the recursive process on the page's top-level fields
+            processFieldsForDefaults(pageConfig.fields);
+
+            // This part remains the same, initializing the state for the action buttons/pages
             let initialState = {
                 isLoading: false,
                 message: '',
@@ -107,14 +135,13 @@ function ayecodeSettingsApp() {
                 exportedFiles: []
             };
 
-            // Add import-specific state properties
             if (pageConfig.type === 'import_page') {
                 initialState = {
                     ...initialState,
                     uploadedFilename: '',
                     uploadProgress: 0,
                     processingProgress: 0,
-                    status: 'idle', // idle, uploading, selected, processing, complete, error
+                    status: 'idle',
                     summary: {},
                 };
             }
@@ -601,40 +628,85 @@ function ayecodeSettingsApp() {
          */
         flattenAllFields() {
             this.allFields = [];
-            this.sections.forEach(section => {
-                if (section.fields) {
-                    section.fields.forEach(field => {
-                        this.allFields.push({
-                            field: field,
-                            sectionId: section.id,
-                            sectionName: section.name,
-                            sectionIcon: section.icon,
-                            sectionKeywords: section.keywords || [],
-                            subsectionId: null,
-                            subsectionName: null
-                        });
+
+            const processFields = (fields, section, subsection = null) => {
+                if (!fields || !Array.isArray(fields)) return;
+
+                fields.forEach(field => {
+                    if (!field) return; // Add guard for invalid field entries
+
+                    // Add the field itself to the list
+                    this.allFields.push({
+                        type: 'field',
+                        field: field,
+                        sectionId: section.id,
+                        sectionName: section.name,
+                        subsectionId: subsection ? subsection.id : null,
+                        subsectionName: subsection ? subsection.name : null,
+                        icon: section.icon
                     });
-                }
+
+                    // If the field is a group, process its nested fields recursively
+                    if (field.type === 'group' && field.fields) {
+                        processFields(field.fields, section, subsection);
+                    }
+                });
+            };
+
+            this.sections.forEach(section => {
+                // Add section for searching
+                this.allFields.push({ type: 'section', id: section.id, name: section.name, icon: section.icon, keywords: section.keywords || [] });
+
+                // Process top-level fields in the section, if any
+                processFields(section.fields, section);
+
                 if (section.subsections) {
                     section.subsections.forEach(subsection => {
-                        if (subsection.fields) {
-                            subsection.fields.forEach(field => {
-                                this.allFields.push({
-                                    field: field,
-                                    sectionId: section.id,
-                                    sectionName: section.name,
-                                    sectionIcon: section.icon,
-                                    sectionKeywords: section.keywords || [],
-                                    subsectionId: subsection.id,
-                                    subsectionName: subsection.name,
-                                    subsectionKeywords: subsection.keywords || []
-                                });
-                            });
-                        }
+                        // Add subsection for searching
+                        this.allFields.push({ type: 'subsection', id: subsection.id, name: subsection.name, icon: section.icon, sectionId: section.id, sectionName: section.name, keywords: subsection.keywords || [] });
+
+                        // Process fields within the subsection
+                        processFields(subsection.fields, section, subsection);
                     });
                 }
             });
         },
+        // flattenAllFields() {
+        //     this.allFields = [];
+        //     this.sections.forEach(section => {
+        //         if (section.fields) {
+        //             section.fields.forEach(field => {
+        //                 this.allFields.push({
+        //                     field: field,
+        //                     sectionId: section.id,
+        //                     sectionName: section.name,
+        //                     sectionIcon: section.icon,
+        //                     sectionKeywords: section.keywords || [],
+        //                     subsectionId: null,
+        //                     subsectionName: null
+        //                 });
+        //             });
+        //         }
+        //         if (section.subsections) {
+        //             section.subsections.forEach(subsection => {
+        //                 if (subsection.fields) {
+        //                     subsection.fields.forEach(field => {
+        //                         this.allFields.push({
+        //                             field: field,
+        //                             sectionId: section.id,
+        //                             sectionName: section.name,
+        //                             sectionIcon: section.icon,
+        //                             sectionKeywords: section.keywords || [],
+        //                             subsectionId: subsection.id,
+        //                             subsectionName: subsection.name,
+        //                             subsectionKeywords: subsection.keywords || []
+        //                         });
+        //                     });
+        //                 }
+        //             });
+        //         }
+        //     });
+        // },
 
         /**
          * Set initial section and subsection
@@ -737,14 +809,29 @@ function ayecodeSettingsApp() {
                 return false;
             }
             const pageType = this.activePageConfig.type;
-            if (pageType === 'custom_page' || pageType === 'action_page' || pageType === 'import_page') {
+
+            // Add 'tool_page' to the list of types that do NOT get a save button
+            if (pageType === 'custom_page' || pageType === 'action_page' || pageType === 'import_page' || pageType === 'tool_page') {
                 return false;
             }
+
             const fieldsToCheck = this.activePageConfig.fields;
-            if (!fieldsToCheck || fieldsToCheck.length === 0) {
+            if (!fieldsToCheck || !fieldsToCheck.length) {
                 return false;
             }
-            return fieldsToCheck.some(field => field.type !== 'action_button');
+
+            // This part is a bit more robust now, but the main fix is the line above.
+            const hasSavableField = (fields) => {
+                const nonSavableTypes = ['title', 'group', 'alert', 'action_button'];
+                return fields.some(field => {
+                    if (field.type === 'group' && field.fields) {
+                        return hasSavableField(field.fields);
+                    }
+                    return !nonSavableTypes.includes(field.type);
+                });
+            };
+
+            return hasSavableField(fieldsToCheck);
         },
 
         /**
@@ -1064,25 +1151,51 @@ function ayecodeSettingsApp() {
          * Executes an AJAX action for a field of type "action_button".
          */
         async executeAction(fieldId) {
-            const field = this.allFields.find(f => f.field.id === fieldId)?.field;
-            if (!field || !field.ajax_action) {
+            const fieldItem = this.allFields.find(f => f.type === 'field' && f.field.id === fieldId);
+            if (!fieldItem) {
                 console.error('Action button configuration not found for:', fieldId);
                 return;
             }
+            const field = fieldItem.field;
+            const state = this.actionStates[fieldId];
 
-            this.actionStates[fieldId] = { isLoading: true, message: 'Starting...', progress: 0, success: null };
+            let ajaxAction;
+            if (field.toggle_config) {
+                ajaxAction = state.has_dummy_data ? field.toggle_config.remove.ajax_action : field.toggle_config.insert.ajax_action;
+            } else {
+                ajaxAction = field.ajax_action;
+            }
+
+            if (!ajaxAction) {
+                console.error('No ajax_action defined for:', fieldId);
+                return;
+            }
+
+            state.isLoading = true;
+            state.message = 'Starting...';
+            state.progress = 0;
+            state.success = null;
 
             const inputData = {};
-            const container = this.$refs['action_container_' + fieldId];
+            const buttonEl = document.getElementById(fieldId);
+
+            let container = null;
+            if (buttonEl) {
+                container = buttonEl.closest('.card-body');
+            }
+            if (!container) {
+                container = this.$refs['action_container_' + fieldId];
+            }
 
             if (container) {
                 const inputs = container.querySelectorAll('input, select, textarea');
                 inputs.forEach(input => {
-                    if (input.name) {
+                    const fieldIdFromInput = input.getAttribute('data-id') || input.id;
+                    if (fieldIdFromInput) {
                         if (input.type === 'checkbox') {
-                            inputData[input.name] = input.checked;
+                            inputData[fieldIdFromInput] = input.checked;
                         } else {
-                            inputData[input.name] = input.value;
+                            inputData[fieldIdFromInput] = input.value;
                         }
                     }
                 });
@@ -1093,7 +1206,7 @@ function ayecodeSettingsApp() {
                     const requestBody = {
                         action: window.ayecodeSettingsFramework.tool_ajax_action,
                         nonce: window.ayecodeSettingsFramework.tool_nonce,
-                        tool_action: field.ajax_action,
+                        tool_action: ajaxAction,
                         step: currentStep,
                         input_data: JSON.stringify(inputData)
                     };
@@ -1109,24 +1222,39 @@ function ayecodeSettingsApp() {
                     }
 
                     const data = await response.json();
-                    this.actionStates[fieldId].success = data.success;
-                    if (data.data?.message) this.actionStates[fieldId].message = data.data.message;
-                    if (data.data?.progress) this.actionStates[fieldId].progress = data.data.progress;
+                    state.success = data.success;
+                    if (data.data?.message) state.message = data.data.message;
+                    if (data.data?.progress) state.progress = data.data.progress;
 
+                    // Check if the process is complete
                     if (data.success && data.data?.next_step !== null && data.data?.progress < 100) {
                         setTimeout(() => poll(data.data.next_step), 20);
                     } else {
-                        this.actionStates[fieldId].isLoading = false;
-                        setTimeout(() => {
-                            if (this.actionStates[fieldId]) {
-                                this.actionStates[fieldId] = { isLoading: false, message: '', progress: 0, success: null };
-                            }
-                        }, 8000);
+                        // The action is finished
+                        state.isLoading = false;
+
+                        // --- THIS IS THE FIX ---
+                        // If the action was successful and it's a toggleable button, flip the state.
+                        if (data.success && field.toggle_config) {
+                            state.has_dummy_data = !state.has_dummy_data;
+                            // Also update the mirrored state for the show_if condition
+                            this.settings[fieldId] = state.has_dummy_data;
+                        }
+                        // --- END OF FIX ---
+
+                        if (state.success) {
+                            setTimeout(() => {
+                                if (state) {
+                                    state.message = '';
+                                    state.success = null;
+                                }
+                            }, 8000);
+                        }
                     }
                 } catch (error) {
-                    this.actionStates[fieldId].success = false;
-                    this.actionStates[fieldId].message = 'Something went wrong, please refresh and try again.';
-                    this.actionStates[fieldId].isLoading = false;
+                    state.success = false;
+                    state.message = 'Something went wrong, please refresh and try again.';
+                    state.isLoading = false;
                     console.error('Action failed:', error);
                 }
             };

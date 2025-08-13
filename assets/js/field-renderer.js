@@ -743,33 +743,72 @@ window.asfFieldRenderer = {
 
     renderActionButtonField(field) {
         const customDescHtml = this._renderCustomDescription(field);
-        const buttonClass = field.button_class || 'btn-secondary';
-        return `
-            <div class="row align-items-center rounded">
+        const statePath = `actionStates['${field.id}']`;
+
+        // Logic for the state-toggling button
+        if (field.toggle_config) {
+            const insertConfig = field.toggle_config.insert || {};
+            const removeConfig = field.toggle_config.remove || {};
+
+            return `
+            <div class="row align-items-center rounded" x-ref="action_container_${field.id}">
                 <div class="col-md-4">
-                    <label class="form-label fw-bold mb-0">${field.label || field.id}</label>
+                    <label class="form-label fw-bold mb-0">${field.label || ''}</label>
                     ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
                 </div>
-                <div class="col-md-8" >
+                <div class="col-md-8">
                     <div class="d-flex align-items-center justify-content-end">
-                        <div class="me-3" x-show="actionStates['${field.id}']?.message" x-cloak>
-                            <span :class="actionStates['${field.id}']?.success ? 'text-success' : 'text-danger'" x-text="actionStates['${field.id}']?.message"></span>
+                        <div class="me-3" x-show="${statePath}?.message" x-cloak>
+                            <span :class="${statePath}?.success ? 'text-success' : 'text-danger'" x-text="${statePath}?.message"></span>
                         </div>
-                        <button type="button" id="${field.id}" class="btn ${buttonClass}" @click="executeAction('${field.id}')" :disabled="actionStates['${field.id}']?.isLoading">
-                            <span x-show="actionStates['${field.id}']?.isLoading" class="spinner-border spinner-border-sm me-2" x-cloak></span>
-                            <span x-text="actionStates['${field.id}']?.isLoading ? 'Processing...' : '${field.button_text || 'Run'}'"></span>
+                        <button type="button" 
+                                id="${field.id}" 
+                                class="btn"
+                                :class="${statePath}?.has_dummy_data ? '${removeConfig.button_class || 'btn-danger'}' : '${insertConfig.button_class || 'btn-primary'}'"
+                                @click="executeAction('${field.id}')" 
+                                :disabled="${statePath}?.isLoading">
+                            <span x-show="${statePath}?.isLoading" class="spinner-border spinner-border-sm me-2" x-cloak></span>
+                            <span x-text="${statePath}?.isLoading ? 'Processing...' : (${statePath}?.has_dummy_data ? '${removeConfig.button_text}' : '${insertConfig.button_text}')"></span>
                         </button>
                     </div>
-                    
                 </div>
-                <div class="col-md-12" x-ref="action_container_${field.id}">
-                 ${customDescHtml}
-                    <div class="progress mt-2" style="height: 5px;" x-show="actionStates['${field.id}']?.progress > 0 && actionStates['${field.id}']?.progress < 100" x-cloak>
-                          <div class="progress-bar" role="progressbar" :style="{ width: actionStates['${field.id}']?.progress + '%' }"></div>
+                <div class="col-md-12">
+                    ${customDescHtml}
+                    <div class="progress mt-2" style="height: 5px;" x-show="${statePath}?.progress > 0 && ${statePath}?.progress < 100" x-cloak>
+                        <div class="progress-bar" role="progressbar" :style="{ width: ${statePath}?.progress + '%' }"></div>
                     </div>
                 </div>
             </div>
         `;
+        }
+
+        // Fallback for regular, non-toggling buttons
+        const buttonClass = field.button_class || 'btn-secondary';
+        return `
+        <div class="row align-items-center rounded" x-ref="action_container_${field.id}">
+            <div class="col-md-4">
+                <label class="form-label fw-bold mb-0">${field.label || field.id}</label>
+                ${field.description ? `<p class="form-text text-muted mt-1 mb-0">${field.description}</p>` : ''}
+            </div>
+            <div class="col-md-8" >
+                <div class="d-flex align-items-center justify-content-end">
+                    <div class="me-3" x-show="${statePath}?.message" x-cloak>
+                        <span :class="${statePath}?.success ? 'text-success' : 'text-danger'" x-text="${statePath}?.message"></span>
+                    </div>
+                    <button type="button" id="${field.id}" class="btn ${buttonClass}" @click="executeAction('${field.id}')" :disabled="${statePath}?.isLoading">
+                        <span x-show="${statePath}?.isLoading" class="spinner-border spinner-border-sm me-2" x-cloak></span>
+                        <span x-text="${statePath}?.isLoading ? 'Processing...' : '${field.button_text || 'Run'}'"></span>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-12">
+                ${customDescHtml}
+                <div class="progress mt-2" style="height: 5px;" x-show="${statePath}?.progress > 0 && ${statePath}?.progress < 100" x-cloak>
+                      <div class="progress-bar" role="progressbar" :style="{ width: ${statePath}?.progress + '%' }"></div>
+                </div>
+            </div>
+        </div>
+    `;
     },
 
     renderAlertField(field) {
