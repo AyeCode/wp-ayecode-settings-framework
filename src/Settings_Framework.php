@@ -8,7 +8,6 @@
  * get_config() method, as well as define the necessary protected properties.
  *
  * @package AyeCode\SettingsFramework
- * @version 1.1.0
  */
 
 namespace AyeCode\SettingsFramework;
@@ -23,7 +22,34 @@ abstract class Settings_Framework {
     /**
      * Framework version.
      */
-    const VERSION = '1.1.0';
+    const VERSION = '1.2.0';
+
+    /**
+     * The base directory for temporary import files.
+     * Using a function allows it to be defined after WP's core is loaded.
+     *
+     * @var string
+     */
+    public static $import_temp_dir;
+
+    /**
+     * The base URL for temporary import files.
+     *
+     * @var string
+     */
+    public static $import_temp_url;
+
+    /**
+     * Define constants after WordPress is initialized.
+     */
+    public static function define_path_constants() {
+        if ( ! defined( 'AYECODE_SF_IMPORT_TEMP_DIR' ) ) {
+            $upload_dir = wp_upload_dir();
+            define( 'AYECODE_SF_IMPORT_TEMP_DIR', $upload_dir['basedir'] . '/ayecode-sf-import-temp/' );
+            define( 'AYECODE_SF_IMPORT_TEMP_URL', $upload_dir['baseurl'] . '/ayecode-sf-import-temp/' );
+        }
+    }
+
 
     // region Child Class Properties
     // These properties must be defined in the child class to configure the settings page.
@@ -62,7 +88,8 @@ abstract class Settings_Framework {
      *
      * @var string
      */
-    protected $menu_title = 'Settings';
+    protected
+        $menu_title = 'Settings';
 
     /**
      * The capability required to access this settings page.
@@ -166,6 +193,7 @@ abstract class Settings_Framework {
             return;
         }
 
+        self::define_path_constants();
         $this->load_dependencies();
 
         // Instantiate core components, passing this framework instance to them.
@@ -177,22 +205,60 @@ abstract class Settings_Framework {
         add_action( 'admin_menu', [ $this, 'add_admin_menu' ] );
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 
-        // Register AJAX actions. The handlers are in the Ajax_Handler class.
+        // Register AJAX actions.
         add_action( 'wp_ajax_save_' . $this->option_name, [ $this->ajax_handler, 'handle_save' ] );
         add_action( 'wp_ajax_reset_' . $this->option_name, [ $this->ajax_handler, 'handle_reset' ] );
+        add_action( 'wp_ajax_asf_tool_action_' .  $this->page_slug, [ $this, 'handle_tool_action' ] );
+        add_action( 'wp_ajax_asf_content_pane_' .  $this->page_slug, [ $this, 'handle_load_content_pane' ] );
+        add_action( 'wp_ajax_asf_temp_file_upload_' . $this->page_slug, [ $this, 'handle_temp_file_upload' ] );
+        add_action( 'wp_ajax_asf_temp_file_delete_' . $this->page_slug, [ $this, 'handle_temp_file_delete' ] );
 
-        // Generic AJAX handlers for tools and content panes.
-        // These hooks are designed to be used by multiple framework instances.
-        // The specific tool/content action is identified in the POST data.
-        add_action( 'wp_ajax_ayecode_settings_framework_execute_action_' .  $this->page_slug, [ $this, 'handle_tool_action' ] );
-        add_action( 'wp_ajax_ayecode_settings_framework_load_content_pane_' .  $this->page_slug, [ $this, 'handle_load_content_pane' ] );
 
         // Add settings link to the plugins page.
         add_filter( 'plugin_action_links_' . plugin_basename( $this->get_calling_file() ), [ $this, 'add_settings_link' ] );
 
         // Integrate with AyeCode UI if present.
         add_filter( 'aui_screen_ids', [ $this, 'add_aui_screens' ] );
+
+        // Schedule the cleanup cron job.
+        $this->schedule_cleanup_cron();
     }
+
+    /**
+     * Schedules the daily cron job for cleaning up temporary files if it's not already scheduled.
+     */
+    private function schedule_cleanup_cron() {
+        if ( ! wp_next_scheduled( 'ayecode_sf_cleanup_temp_files' ) ) {
+            wp_schedule_event( time(), 'daily', 'ayecode_sf_cleanup_temp_files' );
+        }
+        add_action( 'ayecode_sf_cleanup_temp_files', [ __CLASS__, 'cleanup_temp_files' ] );
+    }
+
+    /**
+     * Cron job callback to delete files in the temp directory that are older than 24 hours.
+     */
+    public static function cleanup_temp_files() {
+        self::define_path_constants();
+        $temp_dir = AYECODE_SF_IMPORT_TEMP_DIR;
+        if ( ! is_dir( $temp_dir ) ) {
+            return;
+        }
+
+        $iterator = new \RecursiveDirectoryIterator( $temp_dir, \RecursiveDirectoryIterator::SKIP_DOTS );
+        $files = new \RecursiveIteratorIterator( $iterator, \RecursiveIteratorIterator::CHILD_FIRST );
+
+        foreach ( $files as $file ) {
+            if ( $file->isFile() && time() - $file->getMTime() >= DAY_IN_SECONDS ) {
+                wp_delete_file( $file->getRealPath() );
+            } elseif ($file->isDir()) {
+                // Check if directory is empty after deleting files
+                if (count(scandir($file->getPathname())) == 2) { // Contains only '.' and '..'
+                    @rmdir($file->getPathname());
+                }
+            }
+        }
+    }
+
 
     /**
      * Loads the framework's dependent class files.
@@ -249,9 +315,6 @@ abstract class Settings_Framework {
         wp_enqueue_media();
         wp_enqueue_script( 'iconpicker' );
 
-        wp_enqueue_style( 'flatpickr' );
-        wp_enqueue_script( 'flatpickr' );
-
         $assets_url = plugin_dir_url( __DIR__ ) . 'assets/';
         $version    = self::VERSION;
 
@@ -275,8 +338,10 @@ abstract class Settings_Framework {
                 'nonce'          => wp_create_nonce( 'save_' . $this->option_name ),
                 'tool_nonce'     => wp_create_nonce( 'asf_tool_action' ),
                 'action'         => 'save_' . $this->option_name, // The base action for save/reset.
-                'tool_ajax_action' => 'ayecode_settings_framework_execute_action_' . $this->page_slug,
-                'content_pane_ajax_action' => 'ayecode_settings_framework_load_content_pane_' . $this->page_slug,
+                'tool_ajax_action' => 'asf_tool_action_' . $this->page_slug,
+                'content_pane_ajax_action' => 'asf_content_pane_' . $this->page_slug,
+                'file_upload_ajax_action' => 'asf_temp_file_upload_' . $this->page_slug,
+                'file_delete_ajax_action' => 'asf_temp_file_delete_' . $this->page_slug,
                 'strings'        => [
                     'saving'            => __( 'Saving...', 'ayecode-settings-framework' ),
                     'saved'             => __( 'Settings saved successfully!', 'ayecode-settings-framework' ),
@@ -362,10 +427,93 @@ abstract class Settings_Framework {
             wp_send_json_error( [ 'message' => 'No tool action specified.' ] );
         }
 
-        // Fire a hook specific to this settings page instance and the action.
-        // Example: asf_execute_tool_my_plugin_settings_page_my_tool_id
-//        echo '###'.'asf_execute_tool_' . $this->page_slug;
         do_action( 'asf_execute_tool_' . $this->page_slug, $tool_action, $_POST );
+    }
+
+    /**
+     * Handles the initial, temporary upload of a file for an import page.
+     */
+    public function handle_temp_file_upload() {
+        check_ajax_referer( 'asf_tool_action', 'nonce' );
+        if ( ! current_user_can( $this->capability ) ) {
+            wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+        }
+
+        if ( empty( $_FILES['import_file'] ) ) {
+            wp_send_json_error( [ 'message' => 'No file was uploaded.' ] );
+        }
+
+        $file = $_FILES['import_file'];
+
+        // Security Check: Validate the file's extension and MIME type against a fixed allowed list.
+        $allowed_mimes = [
+            'csv'  => 'text/csv',
+            'json' => 'application/json',
+        ];
+
+        // Temporarily allow JSON uploads for this check only, as it's not a default WordPress MIME type.
+        add_filter( 'upload_mimes', [ $this, 'add_json_mime_type' ] );
+        $file_info = wp_check_filetype_and_ext( $file['tmp_name'], $file['name'], $allowed_mimes );
+        remove_filter( 'upload_mimes', [ $this, 'add_json_mime_type' ] );
+
+        // wp_check_filetype_and_ext returns false for both ext and type if the file type is not allowed.
+        if ( false === $file_info['ext'] || false === $file_info['type'] ) {
+            wp_send_json_error( [ 'message' => 'Invalid file type. Only .csv and .json files are allowed.' ] );
+        }
+
+        // Prepare the temporary directory.
+        $upload_dir = AYECODE_SF_IMPORT_TEMP_DIR . $this->page_slug . '/';
+        if ( ! file_exists( $upload_dir ) ) {
+            wp_mkdir_p( $upload_dir );
+        }
+
+        // Use the validated extension from $file_info.
+        $file_ext = $file_info['ext'];
+
+        // Add a unique hash to the filename to prevent conflicts and make it non-guessable.
+        $file_name    = wp_basename( $file['name'], ".{$file_ext}" );
+        $hash         = substr( md5( uniqid( (string) rand(), true ) ), 0, 8 );
+        $new_filename = sanitize_file_name( "{$file_name}_{$hash}.{$file_ext}" );
+        $target_path  = $upload_dir . $new_filename;
+
+        // Move the validated file to the temporary directory.
+        if ( move_uploaded_file( $file['tmp_name'], $target_path ) ) {
+            wp_send_json_success( [
+                'filename'  => $new_filename,
+                'message'   => 'File uploaded successfully. Ready to import.',
+            ] );
+        } else {
+            wp_send_json_error( [ 'message' => 'Could not move uploaded file.' ] );
+        }
+    }
+
+
+    /**
+     * Handles the deletion of a single temporary file.
+     */
+    public function handle_temp_file_delete() {
+        check_ajax_referer( 'asf_tool_action', 'nonce' );
+        if ( ! current_user_can( $this->capability ) ) {
+            wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+        }
+
+        $filename = isset($_POST['filename']) ? sanitize_file_name($_POST['filename']) : '';
+        if (empty($filename)) {
+            wp_send_json_error(  [ 'message' => 'No filename provided.' ] );
+        }
+
+        $file_path = AYECODE_SF_IMPORT_TEMP_DIR . $this->page_slug . '/' . $filename;
+
+        // Security check: ensure the file is within our temp directory
+        if (file_exists($file_path) && strpos(realpath($file_path), realpath(AYECODE_SF_IMPORT_TEMP_DIR . $this->page_slug)) === 0) {
+            if (wp_delete_file($file_path)) {
+                wp_send_json_success();
+            } else {
+                wp_send_json_error( [ 'message' => 'Could not delete the file.' ] );
+            }
+        } else {
+            wp_send_json_error(  [ 'message' => 'Invalid file or file not found.' ]  );
+        }
     }
 
     /**
@@ -382,7 +530,6 @@ abstract class Settings_Framework {
             wp_send_json_error( [ 'message' => 'No content action specified.' ] );
         }
 
-        // Fire a hook specific to this settings page instance and the content pane ID.
         do_action( 'asf_render_content_pane_' . $this->page_slug, $content_action );
     }
 
@@ -512,6 +659,17 @@ abstract class Settings_Framework {
 
     public function get_page_title() {
         return $this->page_title;
+    }
+
+    /**
+     * Temporarily adds JSON to the list of allowed MIME types for uploads.
+     *
+     * @param array $mimes Existing MIME types.
+     * @return array Modified MIME types.
+     */
+    public function add_json_mime_type( $mimes ) {
+        $mimes['json'] = 'application/json';
+        return $mimes;
     }
 
     // endregion

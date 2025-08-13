@@ -46,9 +46,7 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
 
         // Add hooks for this specific settings page's tools.
         // The hooks are dynamic based on the page_slug.
-
-
-//        add_action( 'asf_execute_tool_' . $this->page_slug, [ $this, 'handle_demo_tool_action' ], 10, 2 );
+        add_action( 'asf_execute_tool_' . $this->page_slug, [ $this, 'handle_demo_tool_action' ], 10, 2 );
         add_action( 'asf_render_content_pane_' . $this->page_slug, [ $this, 'handle_demo_content_pane' ], 10, 1 );
     }
 
@@ -132,11 +130,27 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                     'html_content' => $this->get_system_status_html(),
                 ],
                 [
-                    'id'           => 'ajax_tool',
+                    'id'           => 'ajax_importer',
                     'name'         => __( 'Data Importer (AJAX)', 'wp-ayecode-settings-framework' ),
                     'icon'         => 'fa-solid fa-upload',
-                    'type'         => 'custom_page',
-                    'ajax_content' => 'importer_ui', // The unique ID for this content pane.
+                    'type'         => 'import_page', // Use the new import_page type
+                    'description'  => __( 'Upload a file and process it. The file is uploaded automatically when selected.', 'wp-ayecode-settings-framework' ),
+                    'button_text'  => __( 'Run Import', 'wp-ayecode-settings-framework' ),
+                    'button_class' => 'btn-primary',
+                    'ajax_action'  => 'run_ajax_importer', // The action for the final import step
+                    'fields'       => [
+                        [
+                            'id'    => 'imported_file_name', // Hidden field to store the uploaded filename
+                            'type'  => 'hidden',
+                        ],
+                        [
+                            'id'      => 'import_delete_records',
+                            'type'    => 'toggle',
+                            'label'   => __( 'Delete Existing Records', 'wp-ayecode-settings-framework' ),
+                            'desc'    => __( 'Enable to delete all existing records before importing.', 'wp-ayecode-settings-framework' ),
+                            'default' => 0,
+                        ],
+                    ],
                 ],
             ],
         ];
@@ -159,6 +173,9 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
             case 'run_importer_action':
                 $this->handle_importer_action( $post_data );
                 break;
+            case 'run_ajax_importer':
+                $this->handle_ajax_importer( $post_data );
+                break;
         }
     }
 
@@ -168,9 +185,7 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
      * @param string $content_action The 'ajax_content' from the section config.
      */
     public function handle_demo_content_pane( $content_action ) {
-        if ( 'importer_ui' === $content_action ) {
-            $this->render_importer_ui_html();
-        }
+        // This is no longer used for the importer, but kept for other potential uses.
     }
 
     // --- Specific Tool/Content Implementations ---
@@ -215,7 +230,7 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
 
         if ( empty($source_url) ) {
             wp_send_json_error([
-                'message' => 'Error: Source URL cannot be empty.z'
+                'message' => 'Error: Source URL cannot be empty.'
             ]);
         }
 
@@ -225,6 +240,38 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
             'progress' => 100,
         ] );
     }
+
+    private function handle_ajax_importer( $post_data ) {
+        $input_data = isset( $post_data['input_data'] ) ? json_decode( stripslashes( $post_data['input_data'] ), true ) : [];
+        $filename   = isset( $input_data['imported_file_name'] ) ? sanitize_file_name( $input_data['imported_file_name'] ) : '';
+        $delete     = isset( $input_data['import_delete_records'] ) ? filter_var( $input_data['import_delete_records'], FILTER_VALIDATE_BOOLEAN ) : false;
+
+        if ( empty( $filename ) ) {
+            wp_send_json_error( [ 'message' => 'Error: No file was imported.' ] );
+        }
+
+        // Construct the full path to the temporary file.
+        $file_path = self::AYECODE_SF_IMPORT_TEMP_DIR . $this->page_slug . '/' . $filename;
+
+        if ( ! file_exists( $file_path ) ) {
+            wp_send_json_error( [ 'message' => 'Error: Imported file not found on server.' ] );
+        }
+
+        // Simulate processing the file.
+        sleep( 2 );
+
+        // Here you would typically read the file (e.g., fgetcsv) and process the data.
+        // For this demo, we'll just confirm we received it.
+
+        // Clean up the temp file after processing.
+        wp_delete_file( $file_path );
+
+        wp_send_json_success( [
+            'message'  => sprintf( 'Successfully processed %s. Delete records was %s.', esc_html( $filename ), $delete ? 'ON' : 'OFF' ),
+            'progress' => 100,
+        ] );
+    }
+
 
     private function get_system_status_html() {
         global $wp_version;
@@ -238,23 +285,6 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
         </ul>
         <?php
         return ob_get_clean();
-    }
-
-    private function render_importer_ui_html() {
-        sleep( 1 );
-        ob_start();
-        ?>
-        <h4>Import Data from CSV</h4>
-        <p>This UI was loaded via an AJAX request when you clicked the tab.</p>
-        <form id="my-importer-form" method="post" enctype="multipart/form-data">
-            <div class="mb-3">
-                <label for="import_file" class="form-label">CSV File</label>
-                <input class="form-control" type="file" id="import_file" name="import_file" accept=".csv">
-            </div>
-            <button type="submit" class="btn btn-primary">Upload and Preview</button>
-        </form>
-        <?php
-        wp_send_json_success( [ 'html' => ob_get_clean() ] );
     }
 }
 

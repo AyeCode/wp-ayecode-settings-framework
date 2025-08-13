@@ -56,10 +56,8 @@ function ayecodeSettingsApp() {
             // Initialize data models and states for all sections and subsections
             this.sections.forEach(section => {
                 const processPage = (pageConfig) => {
-                    if (pageConfig.type === 'action_page') {
+                    if (pageConfig.type === 'action_page' || pageConfig.type === 'import_page') {
                         this.initializeActionPageData(pageConfig);
-                    } else if (pageConfig.type === 'import_page') {
-                        this.initializeImportPageData(pageConfig);
                     }
                 };
                 processPage(section);
@@ -88,7 +86,7 @@ function ayecodeSettingsApp() {
         },
 
         /**
-         * Helper to initialize data for an action page (section or subsection).
+         * Helper to initialize data for an action page or import page.
          */
         initializeActionPageData(pageConfig) {
             // Initialize fields in the main settings object
@@ -99,45 +97,186 @@ function ayecodeSettingsApp() {
                     }
                 });
             }
-            // Initialize the button state, now with a place to store files
-            this.actionStates[pageConfig.id] = { isLoading: false, message: '', progress: 0, success: null, exportedFiles: [] };
-        },
 
-        /**
-         * Helper to initialize data for an import page.
-         */
-        initializeImportPageData(pageConfig) {
-            this.actionStates[pageConfig.id] = {
+            // Initialize the base state
+            let initialState = {
                 isLoading: false,
                 message: '',
+                progress: 0,
                 success: null,
-                // Specific to imports
-                selectedFile: null,
+                exportedFiles: []
+            };
+
+            // Add import-specific state properties
+            if (pageConfig.type === 'import_page') {
+                initialState = {
+                    ...initialState,
+                    uploadedFilename: '',
+                    uploadProgress: 0,
+                    processingProgress: 0,
+                    status: 'idle', // idle, uploading, selected, processing, complete, error
+                    summary: {},
+                };
+            }
+
+            this.actionStates[pageConfig.id] = initialState;
+        },
+
+        resetImportPageState(pageConfig) {
+            // This function safely resets the state for an import page
+            // without breaking the reference held by the Alpine component.
+            const state = this.actionStates[pageConfig.id];
+            if (!state) return;
+
+            // Use Object.assign to reset properties on the existing state object
+            Object.assign(state, {
+                isLoading: false,
+                message: '',
+                progress: 0,
+                success: null,
+                exportedFiles: [],
+                uploadedFilename: '',
                 uploadProgress: 0,
                 processingProgress: 0,
-                status: 'idle', // idle, selected, uploading, processing, complete
+                status: 'idle',
+                summary: {},
+            });
+
+            // === ADD THIS NEW BLOCK TO RESET THE SETTINGS FIELDS ===
+            // This ensures other fields (like dropdowns) are also reset.
+            if (pageConfig.fields) {
+                pageConfig.fields.forEach(field => {
+                    if (this.settings.hasOwnProperty(field.id)) {
+                        // Set the field back to its default value, or empty string
+                        this.settings[field.id] = field.default !== undefined ? field.default : '';
+                    }
+                });
+            }
+        },
+
+        findPageConfigById(pageId, sections) {
+            for (const section of sections) {
+                if (section.id === pageId) return section;
+                if (section.subsections) {
+                    const found = this.findPageConfigById(pageId, section.subsections);
+                    if (found) return found;
+                }
+            }
+            return null;
+        },
+
+        handleFileUpload(event, pageId, hiddenFieldName) {
+            const state = this.actionStates[pageId];
+            const file = event.dataTransfer ? event.dataTransfer.files[0] : event.target.files[0];
+
+            if (!file) return;
+
+            const pageConfig = this.findPageConfigById(pageId, this.sections);
+            const acceptedFileType = pageConfig?.accept_file_type;
+
+            if (acceptedFileType) {
+                const fileExtension = file.name.split('.').pop().toLowerCase();
+                const mimeMap = {
+                    'csv': 'text/csv',
+                    'json': 'application/json'
+                };
+                const acceptedMime = mimeMap[acceptedFileType];
+
+                // Check both extension and MIME type for better security
+                if (fileExtension !== acceptedFileType || (acceptedMime && file.type !== acceptedMime)) {
+                    state.status = 'error';
+                    state.success = false;
+                    state.message = `Invalid file type. Please upload a .${acceptedFileType} file.`;
+                    if (event.target) event.target.value = null; // Reset file input
+                    return;
+                }
+            }
+
+            // Reset the file input so the same file can be re-selected
+            if (event.target) event.target.value = null;
+
+            state.status = 'uploading';
+            state.isLoading = true;
+            state.message = '';
+            state.success = null;
+            state.uploadProgress = 0;
+
+            const formData = new FormData();
+            formData.append('action', window.ayecodeSettingsFramework.file_upload_ajax_action);
+            formData.append('nonce', window.ayecodeSettingsFramework.tool_nonce);
+            formData.append('import_file', file);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', window.ayecodeSettingsFramework.ajax_url, true);
+
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    state.uploadProgress = Math.round((e.loaded * 100) / e.total);
+                }
             };
+
+            xhr.onload = () => {
+                state.isLoading = false;
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        state.status = 'selected';
+                        state.uploadedFilename = response.data.filename;
+                        state.message = response.data.message;
+                        this.settings[hiddenFieldName] = response.data.filename; // IMPORTANT: Set hidden field
+                    } else {
+                        state.status = 'error';
+                        state.success = false;
+                        state.message = response.data.message || 'File upload failed.';
+                    }
+                } else {
+                    state.status = 'error';
+                    state.success = false;
+                    state.message = `Upload error: ${xhr.statusText}`;
+                }
+            };
+
+            xhr.onerror = () => {
+                state.isLoading = false;
+                state.status = 'error';
+                state.success = false;
+                state.message = 'A network error occurred during upload.';
+            };
+
+            xhr.send(formData);
         },
 
         /**
-         * Handles file selection for import pages.
+         * Removes an uploaded temporary file.
          */
-        handleFileSelect(event, pageId) {
+        async removeUploadedFile(pageId, hiddenFieldName) {
             const state = this.actionStates[pageId];
-            const file = event.target.files[0];
+            if (!state.uploadedFilename) return;
 
-            if (!file) {
-                state.selectedFile = null;
-                state.status = 'idle';
-                return;
+            const filename = state.uploadedFilename;
+
+            // Immediately reset the frontend state for better UX
+            state.status = 'idle';
+            state.uploadedFilename = '';
+            state.message = '';
+            state.success = null;
+            this.settings[hiddenFieldName] = '';
+
+            try {
+                await fetch(window.ayecodeSettingsFramework.ajax_url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        action: window.ayecodeSettingsFramework.file_delete_ajax_action,
+                        nonce: window.ayecodeSettingsFramework.tool_nonce,
+                        filename: filename
+                    })
+                });
+                // No need to handle success/error here as we've already updated the UI.
+                // We can log errors for debugging if needed.
+            } catch (error) {
+                console.error('Error deleting temp file:', error);
             }
-
-            // You can add file type/size validation here if needed
-            state.selectedFile = file;
-            state.status = 'selected';
-            state.message = ''; // Clear previous error messages
-            // Reset the file input so the user can select the same file again after removing it
-            event.target.value = null;
         },
 
         /**
@@ -465,14 +604,31 @@ function ayecodeSettingsApp() {
             this.sections.forEach(section => {
                 if (section.fields) {
                     section.fields.forEach(field => {
-                        this.allFields.push({ field, sectionId: section.id, sectionName: section.name, sectionIcon: section.icon, subsectionId: null, subsectionName: null });
+                        this.allFields.push({
+                            field: field,
+                            sectionId: section.id,
+                            sectionName: section.name,
+                            sectionIcon: section.icon,
+                            sectionKeywords: section.keywords || [],
+                            subsectionId: null,
+                            subsectionName: null
+                        });
                     });
                 }
                 if (section.subsections) {
                     section.subsections.forEach(subsection => {
                         if (subsection.fields) {
                             subsection.fields.forEach(field => {
-                                this.allFields.push({ field, sectionId: section.id, sectionName: section.name, sectionIcon: section.icon, subsectionId: subsection.id, subsectionName: subsection.name });
+                                this.allFields.push({
+                                    field: field,
+                                    sectionId: section.id,
+                                    sectionName: section.name,
+                                    sectionIcon: section.icon,
+                                    sectionKeywords: section.keywords || [],
+                                    subsectionId: subsection.id,
+                                    subsectionName: subsection.name,
+                                    subsectionKeywords: subsection.keywords || []
+                                });
                             });
                         }
                     });
@@ -597,11 +753,17 @@ function ayecodeSettingsApp() {
         get groupedSearchResults() {
             if (!this.searchQuery.trim()) return [];
             const query = this.searchQuery.toLowerCase().trim();
-            const filtered = this.allFields.filter(item =>
-                item.field.label?.toLowerCase().includes(query) ||
-                item.field.description?.toLowerCase().includes(query) ||
-                item.field.id?.toLowerCase().includes(query)
-            );
+
+            const filtered = this.allFields.filter(item => {
+                // Concatenate all keywords from section, subsection, and field levels
+                const allKeywords = [].concat(item.sectionKeywords || [], item.subsectionKeywords || [], item.field.keywords || []);
+
+                return item.field.label?.toLowerCase().includes(query) ||
+                    item.field.description?.toLowerCase().includes(query) ||
+                    item.field.id?.toLowerCase().includes(query) ||
+                    allKeywords.some(k => k.toLowerCase().includes(query));
+            });
+
             if (filtered.length === 0) return [];
             const grouped = filtered.reduce((acc, result) => {
                 const groupIdentifier = result.subsectionName || result.sectionName;
@@ -796,7 +958,7 @@ function ayecodeSettingsApp() {
         },
 
         /**
-         * Executes an AJAX action for a full "action_page".
+         * Executes an AJAX action for a full "action_page" or "import_page".
          */
         async executePageAction() {
             const pageConfig = this.activePageConfig;
@@ -805,9 +967,17 @@ function ayecodeSettingsApp() {
                 return;
             }
             const actionId = pageConfig.id;
+            const state = this.actionStates[actionId];
 
-            // Reset the state before starting a new action
-            this.actionStates[actionId] = { isLoading: true, message: 'Starting...', progress: 0, success: null, exportedFiles: [] };
+            state.isLoading = true;
+            state.message = 'Starting...';
+            state.progress = 0;
+            state.processingProgress = 0;
+            state.success = null;
+            state.exportedFiles = [];
+            if (pageConfig.type === 'import_page') {
+                state.status = 'processing';
+            }
 
             const inputData = {};
             if (pageConfig.fields && Array.isArray(pageConfig.fields)) {
@@ -816,6 +986,13 @@ function ayecodeSettingsApp() {
                         inputData[field.id] = this.settings[field.id];
                     }
                 });
+            }
+
+            if (pageConfig.type === 'import_page') {
+                const pageState = this.actionStates[pageConfig.id];
+                if (pageState && pageState.uploadedFilename) {
+                    inputData.import_filename = pageState.uploadedFilename;
+                }
             }
 
             const poll = async (currentStep) => {
@@ -837,31 +1014,45 @@ function ayecodeSettingsApp() {
                     if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
 
                     const data = await response.json();
-                    const state = this.actionStates[actionId];
 
                     state.success = data.success;
                     if (data.data?.message) state.message = data.data.message;
-                    if (data.data?.progress) state.progress = data.data.progress;
 
-                    // If a file object is returned in this step, add it to our list
+                    const progress = data.data?.progress || 0;
+
+                    if (data.data?.summary) {
+                        state.summary = data.data.summary;
+                    }
+
+                    if (pageConfig.type === 'import_page') {
+                        state.processingProgress = progress;
+                    } else {
+                        state.progress = progress;
+                    }
+
                     if (data.success && data.data?.file) {
                         state.exportedFiles.push(data.data.file);
                     }
 
-                    if (data.success && data.data?.next_step !== null && data.data?.progress < 100) {
+                    // Check if the process is complete
+                    if (data.success && data.data?.next_step !== null && progress < 100) {
+                        // If not complete, continue polling
                         setTimeout(() => poll(data.data.next_step), 20);
                     } else {
+                        // Otherwise, the process is finished
                         state.isLoading = false;
-                        if (!data.success && data.data?.message) {
-                            state.message = data.data.message;
+                        if (pageConfig.type === 'import_page') {
+                            state.status = 'complete';
                         }
                     }
 
                 } catch (error) {
-                    const state = this.actionStates[actionId];
                     state.success = false;
                     state.message = 'An error occurred. Please check the console and try again.';
                     state.isLoading = false;
+                    if (pageConfig.type === 'import_page') {
+                        state.status = 'complete';
+                    }
                     console.error('Page action failed:', error);
                 }
             };
@@ -940,148 +1131,6 @@ function ayecodeSettingsApp() {
                 }
             };
             poll(0);
-        },
-
-        /**
-         * Executes the two-phase import process: file upload, then data processing.
-         */
-        async executeImport() {
-            const pageConfig = this.activePageConfig;
-            const state = this.actionStates[pageConfig.id];
-
-            if (!state.selectedFile) {
-                alert('Please select a file to import.');
-                return;
-            }
-
-            state.isLoading = true;
-            state.success = null;
-            state.status = 'uploading';
-            state.message = 'Uploading file...';
-            state.uploadProgress = 0;
-            state.processingProgress = 0;
-
-            // --- PHASE 1: UPLOAD THE FILE ---
-            const formData = new FormData();
-            formData.append('action', window.ayecodeSettingsFramework.tool_ajax_action);
-            formData.append('nonce', window.ayecodeSettingsFramework.tool_nonce);
-            formData.append('tool_action', pageConfig.ajax_action);
-            formData.append('import_file', state.selectedFile, state.selectedFile.name);
-
-            // Append other fields from the page to the form data
-            if (pageConfig.fields) {
-                pageConfig.fields.forEach(field => {
-                    if (field.id) {
-                        formData.append(field.id, this.settings[field.id]);
-                    }
-                });
-            }
-
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', window.ayecodeSettingsFramework.ajax_url, true);
-
-            // Track upload progress
-            xhr.upload.onprogress = (event) => {
-                if (event.lengthComputable) {
-                    state.uploadProgress = Math.round((event.loaded * 100) / event.total);
-                }
-            };
-
-            // Handle completion of the upload
-            xhr.onload = () => {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    const data = JSON.parse(xhr.responseText);
-                    if (data.success) {
-                        state.status = 'processing';
-                        state.message = data.data?.message || 'File uploaded. Processing data...';
-                        // --- PHASE 2: START POLLING FOR PROCESSING STATUS ---
-                        this.pollImportStatus(pageConfig, data.data);
-                    } else {
-                        state.isLoading = false;
-                        state.status = 'complete';
-                        state.success = false;
-                        state.message = data.data?.message || 'File upload failed.';
-                    }
-                } else {
-                    state.isLoading = false;
-                    state.status = 'complete';
-                    state.success = false;
-                    state.message = `Upload error: ${xhr.statusText}`;
-                }
-            };
-
-            // Handle network errors
-            xhr.onerror = () => {
-                state.isLoading = false;
-                state.status = 'complete';
-                state.success = false;
-                state.message = 'A network error occurred during upload.';
-            };
-
-            xhr.send(formData);
-        },
-
-        /**
-         * Helper function to poll the server for the status of the import processing.
-         */
-        async pollImportStatus(pageConfig, initialData) {
-            const state = this.actionStates[pageConfig.id];
-            let currentStep = initialData?.next_step || 0;
-            let fileData = initialData || {}; // Pass along any data from the initial upload response
-
-            if (currentStep === 0) {
-                // If the first step isn't returned from the upload, the process is likely complete.
-                state.isLoading = false;
-                state.status = 'complete';
-                state.processingProgress = 100;
-                return;
-            }
-
-            const poll = async (step) => {
-                try {
-                    const inputData = { ...fileData };
-
-                    const requestBody = {
-                        action: window.ayecodeSettingsFramework.tool_ajax_action,
-                        nonce: window.ayecodeSettingsFramework.tool_nonce,
-                        tool_action: pageConfig.ajax_action,
-                        step: step,
-                        input_data: JSON.stringify(inputData)
-                    };
-
-                    const response = await fetch(window.ayecodeSettingsFramework.ajax_url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: new URLSearchParams(requestBody)
-                    });
-
-                    if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
-
-                    const data = await response.json();
-
-                    state.success = data.success;
-                    if (data.data?.message) state.message = data.data.message;
-                    if (data.data?.progress) state.processingProgress = data.data.progress;
-
-                    if (data.success && data.data?.next_step !== null && data.data?.progress < 100) {
-                        setTimeout(() => poll(data.data.next_step), 20);
-                    } else {
-                        state.isLoading = false;
-                        state.status = 'complete';
-                        if (!data.success && data.data?.message) {
-                            state.message = data.data.message;
-                        }
-                    }
-
-                } catch (error) {
-                    state.success = false;
-                    state.message = 'An error occurred during processing. Please check the console.';
-                    state.isLoading = false;
-                    state.status = 'complete';
-                    console.error('Import processing failed:', error);
-                }
-            }
-            poll(currentStep);
         },
 
         /**
