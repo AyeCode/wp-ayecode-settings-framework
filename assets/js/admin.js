@@ -30,6 +30,7 @@ function ayecodeSettingsApp() {
         searchModalEl: null,
         searchModal: null,
         allFields: [],
+        customSearchLinks: [],
 
         // Sections (processed from config)
         sections: [],
@@ -49,6 +50,7 @@ function ayecodeSettingsApp() {
             this.initTheme();
 
             // Load configuration and settings
+            this.customSearchLinks = window.ayecodeSettingsFramework?.custom_search_links || [];
             this.loadConfiguration();
             this.loadSettings();
             this.flattenAllFields();
@@ -633,39 +635,34 @@ function ayecodeSettingsApp() {
                 if (!fields || !Array.isArray(fields)) return;
 
                 fields.forEach(field => {
-                    if (!field) return; // Add guard for invalid field entries
+                    if (!field) return;
 
-                    // Add the field itself to the list
-                    this.allFields.push({
-                        type: 'field',
-                        field: field,
-                        sectionId: section.id,
-                        sectionName: section.name,
-                        subsectionId: subsection ? subsection.id : null,
-                        subsectionName: subsection ? subsection.name : null,
-                        icon: section.icon
-                    });
-
-                    // If the field is a group, process its nested fields recursively
                     if (field.type === 'group' && field.fields) {
                         processFields(field.fields, section, subsection);
+                    }
+                        // --- THIS IS THE CHANGE ---
+                    // Only add the field if it has an ID AND its 'searchable' flag is not explicitly false.
+                    else if (field.id && field.searchable !== false) {
+                        this.allFields.push({
+                            type: 'field',
+                            field: field,
+                            sectionId: section.id,
+                            sectionName: section.name,
+                            subsectionId: subsection ? subsection.id : null,
+                            subsectionName: subsection ? subsection.name : null,
+                            icon: section.icon
+                        });
                     }
                 });
             };
 
+            // The rest of the function remains the same...
             this.sections.forEach(section => {
-                // Add section for searching
                 this.allFields.push({ type: 'section', id: section.id, name: section.name, icon: section.icon, keywords: section.keywords || [] });
-
-                // Process top-level fields in the section, if any
                 processFields(section.fields, section);
-
                 if (section.subsections) {
                     section.subsections.forEach(subsection => {
-                        // Add subsection for searching
                         this.allFields.push({ type: 'subsection', id: subsection.id, name: subsection.name, icon: section.icon, sectionId: section.id, sectionName: section.name, keywords: subsection.keywords || [] });
-
-                        // Process fields within the subsection
                         processFields(subsection.fields, section, subsection);
                     });
                 }
@@ -837,30 +834,51 @@ function ayecodeSettingsApp() {
         /**
          * Computed: Grouped search results for display
          */
+        /**
+         * Computed: Grouped search results for display
+         */
         get groupedSearchResults() {
             if (!this.searchQuery.trim()) return [];
             const query = this.searchQuery.toLowerCase().trim();
 
-            const filtered = this.allFields.filter(item => {
-                // Concatenate all keywords from section, subsection, and field levels
-                const allKeywords = [].concat(item.sectionKeywords || [], item.subsectionKeywords || [], item.field.keywords || []);
-
-                return item.field.label?.toLowerCase().includes(query) ||
-                    item.field.description?.toLowerCase().includes(query) ||
-                    item.field.id?.toLowerCase().includes(query) ||
-                    allKeywords.some(k => k.toLowerCase().includes(query));
+            // 1. Filter regular setting fields (from previous fix)
+            const fieldItems = this.allFields.filter(item => item.type === 'field');
+            const filtered = fieldItems.filter(item => {
+                const field = item.field;
+                const textToSearch = [field.label, field.description, item.sectionName, item.subsectionName, ...(field.keywords || [])].join(' ').toLowerCase();
+                return textToSearch.includes(query);
             });
 
-            if (filtered.length === 0) return [];
+            // 2. Group the regular results (from feature #2 fix)
             const grouped = filtered.reduce((acc, result) => {
                 const groupIdentifier = result.subsectionName || result.sectionName;
                 const groupTitle = result.subsectionName ? `${result.sectionName} &raquo; ${result.subsectionName}` : result.sectionName;
                 if (!acc[groupIdentifier]) {
-                    acc[groupIdentifier] = { groupTitle, sectionIcon: result.sectionIcon, results: [] };
+                    acc[groupIdentifier] = {
+                        groupTitle, sectionIcon: result.sectionIcon, results: [],
+                        sectionId: result.sectionId, subsectionId: result.subsectionId
+                    };
                 }
                 acc[groupIdentifier].results.push(result);
                 return acc;
             }, {});
+
+            // 3. --- NEW --- Search and add custom links
+            const matchingCustomLinks = this.customSearchLinks.filter(link => {
+                const textToSearch = [link.title, link.description, ...(link.keywords || [])].join(' ').toLowerCase();
+                return textToSearch.includes(query);
+            });
+
+            if (matchingCustomLinks.length > 0) {
+                // Add them to a special group called "Helpful Links"
+                grouped['helpful_links'] = {
+                    groupTitle: 'Helpful Links',
+                    sectionIcon: 'fas fa-fw fa-external-link-alt', // A default icon for this group
+                    results: matchingCustomLinks,
+                    isCustomGroup: true // A flag to help the template render it differently
+                };
+            }
+
             return Object.values(grouped);
         },
 
@@ -875,6 +893,33 @@ function ayecodeSettingsApp() {
                 this.updateUrlHash(result.field.id);
                 this.$nextTick(() => this.highlightField(result.field.id));
             });
+        },
+
+        goToSection(sectionId, subsectionId = '') {
+            this.changeView(() => {
+                this.currentSection = sectionId;
+                const section = this.sections.find(s => s.id === sectionId);
+                this.currentSubsection = subsectionId || (section?.subsections?.length > 0 ? section.subsections[0].id : '');
+                this.searchModal.hide();
+                this.updateUrlHash();
+                if (section?.type === 'custom_page' && section.ajax_content) {
+                    this.loadCustomPageContent(sectionId);
+                }
+            });
+        },
+        /**
+         * Navigate to a custom link from search results
+         */
+        goToCustomLink(link) {
+            // First, always hide the modal
+            this.searchModal.hide();
+
+            // Then, handle the navigation
+            if (link.external) {
+                window.open(link.url, '_blank');
+            } else {
+                window.location.href = link.url;
+            }
         },
 
         /**

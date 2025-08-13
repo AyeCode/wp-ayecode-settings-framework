@@ -397,12 +397,46 @@ class Admin_Page {
                                 <div x-show="groupedSearchResults.length > 0" x-cloak>
                                     <template x-for="group in groupedSearchResults" :key="group.groupTitle">
                                         <div class="mb-3">
-                                            <h5 class="px-3 py-2 bg-primary-subtle rounded d-flex align-items-center"><i :class="group.sectionIcon || 'fa-solid fa-gear'" class="fa-fw me-2 text-muted"></i><span x-html="group.groupTitle"></span></h5>
-                                            <ul class="list-group list-group-flush">
-                                                <template x-for="result in group.results" :key="result.field.id">
-                                                    <li class="list-group-item list-group-item-action border-0 rounded py-1"><a href="#" @click.prevent="goToSearchResult(result)" class="text-decoration-none text-dark-subtle d-block p-2"><div x-text="result.field.label"></div><div class="small text-muted" x-show="result.field.description" x-text="result.field.description"></div></a></li>
-                                                </template>
-                                            </ul>
+
+                                            <template x-if="!group.isCustomGroup">
+                                                <div>
+                                                    <a href="#" @click.prevent="goToSection(group.sectionId, group.subsectionId)" class="text-decoration-none text-muted">
+                                                        <h5 class="px-3 py-2 bg-primary-subtle rounded d-flex align-items-center">
+                                                            <i :class="group.sectionIcon || 'fa-solid fa-gear'" class="fa-fw me-2 text-muted"></i>
+                                                            <span x-html="group.groupTitle"></span>
+                                                        </h5>
+                                                    </a>
+                                                    <ul class="list-group list-group-flush">
+                                                        <template x-for="result in group.results" :key="result.field.id">
+                                                            <li class="list-group-item list-group-item-action border-0 rounded py-1"><a href="#" @click.prevent="goToSearchResult(result)" class="text-decoration-none text-dark-subtle d-block p-2"><div x-text="result.field.label"></div><div class="small text-muted" x-show="result.field.description" x-text="result.field.description"></div></a></li>
+                                                        </template>
+                                                    </ul>
+                                                </div>
+                                            </template>
+
+                                            <template x-if="group.isCustomGroup">
+                                                <div>
+                                                    <h5 class="px-3 py-2 bg-primary-subtle rounded d-flex align-items-center">
+                                                        <i :class="group.sectionIcon" class="fa-fw me-2 text-muted"></i>
+                                                        <span x-text="group.groupTitle"></span>
+                                                    </h5>
+                                                    <ul class="list-group list-group-flush">
+                                                        <template x-for="result in group.results" :key="result.url">
+                                                            <li class="list-group-item list-group-item-action border-0 rounded py-1">
+                                                                <a href="#" @click.prevent="goToCustomLink(result)" class="text-decoration-none text-dark-subtle d-block p-2">
+                                                                    <div class="fw-bold">
+                                                                        <i :class="result.icon" class="fa-fw me-2 text-muted"></i>
+                                                                        <span x-text="result.title"></span>
+                                                                        <i x-show="result.external" class="fa-solid fa-up-right-from-square fa-xs ms-1"></i>
+                                                                    </div>
+                                                                    <div class="small text-muted" x-show="result.description" x-text="result.description"></div>
+                                                                </a>
+                                                            </li>
+                                                        </template>
+                                                    </ul>
+                                                </div>
+                                            </template>
+
                                         </div>
                                     </template>
                                 </div>

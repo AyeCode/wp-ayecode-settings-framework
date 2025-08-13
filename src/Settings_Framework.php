@@ -334,6 +334,7 @@ abstract class Settings_Framework {
                 'config'         => $this->get_config_with_preloads(),
                 'settings'       => $this->get_settings(),
                 'image_previews' => $this->get_image_previews(),
+                'custom_search_links' => $this->get_custom_search_links(),
                 'ajax_url'       => admin_url( 'admin-ajax.php' ),
                 'nonce'          => wp_create_nonce( 'save_' . $this->option_name ),
                 'tool_nonce'     => wp_create_nonce( 'asf_tool_action' ),
@@ -355,6 +356,8 @@ abstract class Settings_Framework {
             ]
         );
     }
+
+    public function get_custom_search_links() { return [];}
 
     /**
      * Gets the full settings configuration array, loading it if necessary.
