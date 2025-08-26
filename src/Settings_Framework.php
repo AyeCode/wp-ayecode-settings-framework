@@ -317,14 +317,29 @@ abstract class Settings_Framework {
 
         $assets_url = plugin_dir_url( __DIR__ ) . 'assets/';
         $version    = self::VERSION;
+        $script_handle = 'ayecode-settings-framework-admin';
+
 
         // Enqueue Alpine.js and add the 'defer' attribute.
         wp_enqueue_script( 'alpine-js', $assets_url . 'js/alpine.min.js', [], '3.14.9', true );
         add_filter( 'script_loader_tag', [ $this, 'add_defer_to_alpine' ], 10, 2 );
 
         // Enqueue the field renderer and the main admin script.
-        wp_enqueue_script( 'ayecode-settings-framework-renderer', $assets_url . 'js/field-renderer.js', [], $version, true );
-        wp_enqueue_script( 'ayecode-settings-framework-admin', $assets_url . 'js/admin.js', [ 'ayecode-settings-framework-renderer' ], $version, true );
+//        wp_enqueue_script( 'ayecode-settings-framework-renderer', $assets_url . 'js/field-renderer.js', [], $version, true );
+//        wp_enqueue_script( 'ayecode-settings-framework-admin', $assets_url . 'js/admin.js', [ 'ayecode-settings-framework-renderer' ], $version, true );
+
+        // new build renderer
+        wp_enqueue_script( 'ayecode-settings-framework-admin', $assets_url . 'dist/js/settings.js', [ 'alpine-js'], $version, true );
+
+//        // **THE FIX: Add a filter to tell WordPress this script is a module.**
+//        add_filter( 'script_loader_tag', function( $tag, $handle, $src ) use ( $script_handle ) {
+//            if ( $handle === $script_handle ) {
+//                // Replace the standard script tag with one that has type="module"
+//                $tag = '<script type="module" src="' . esc_url( $src ) . '" id="' . esc_attr( $handle ) . '-js"></script>';
+//            }
+//            return $tag;
+//        }, 10, 3 );
+
 
         // Localize the main script with all necessary data.
         wp_localize_script(
@@ -354,6 +369,16 @@ abstract class Settings_Framework {
                     'clear_search'      => __( 'Clear search', 'ayecode-settings-framework' ),
                 ],
             ]
+        );
+
+
+        // --- THE FIX ---
+        // Add an inline script that dispatches a custom event AFTER the data object is created.
+        // This is the signal our main script will wait for.
+        wp_add_inline_script(
+            'ayecode-settings-framework-admin',
+            "document.addEventListener('DOMContentLoaded', function() { document.dispatchEvent(new CustomEvent('ayecode:settings-data-ready')); });",
+            'after'
         );
     }
 

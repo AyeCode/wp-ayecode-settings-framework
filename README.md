@@ -316,4 +316,54 @@ GPL-3.0-or-later
 
 ---
 
+
+## 🛠️ Building Assets with Vite
+
+This plugin uses [Vite](https://vitejs.dev/) to bundle and optimize its JavaScript.  
+We build in **IIFE format** so the output can be safely enqueued in WordPress without requiring a module loader.
+
+### 📦 Prerequisites
+- Node.js (LTS version recommended, e.g. 20.x)
+- npm or yarn
+
+### 🔧 Setup
+```bash
+# install dependencies
+npm install
+```
+
+### 🚀 Development
+
+```bash
+npm run dev
+```
+
+- Vite will serve unminified builds.
+- Update `vite.config.js → server.origin` if you need a different dev URL.
+
+### 🏗️ Production Build
+Build optimized assets into `assets/dist`:
+
+```bash
+npm run build
+```
+
+- Output JS is placed under `assets/dist/js/`
+- Filenames follow the entry name (`settings.js`, `admin-keys.js`, etc).
+- A `manifest.json` is generated in `assets/dist/` for PHP to resolve correct asset paths.
+
+### 📂 Entry Points
+Each entry corresponds to a separate admin screen:
+
+- `settings.js` → Settings Framework (Alpine.js app)
+- `admin-keys.js` → API Keys admin page
+
+You can add more entries in `vite.config.js → build.rollupOptions.input`.
+
+### ⚙️ Notes
+- **Alpine.js is external** — it’s enqueued separately in WordPress, not bundled.
+- Output is an **IIFE** (immediately-invoked function expression) for WP compatibility.
+- Static assets (images, fonts, etc.) are handled by WordPress enqueueing, not via Vite’s `public/` folder.
+
+
 Made with ❤️ by [AyeCode Ltd](https://ayecode.io)

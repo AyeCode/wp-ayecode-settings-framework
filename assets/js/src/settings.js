@@ -1,0 +1,54 @@
+// assets/js/src/settings.js
+
+// ---- Alpine component (glue only) ----
+import alpineApp from '@/app/alpineApp';
+
+// ---- Renderer dispatcher (publishes window.asfFieldRenderer and fallback logic) ----
+import '@/renderer/index';
+
+// ---- Register field renderers (self-register on import) ----
+// Basic fields
+import '@/renderer/fields/hidden';
+import '@/renderer/fields/alert';
+import '@/renderer/fields/text';
+import '@/renderer/fields/password';
+import '@/renderer/fields/number';
+import '@/renderer/fields/textarea';
+
+// Selectables & groups
+import '@/renderer/fields/toggle';
+import '@/renderer/fields/select';
+import '@/renderer/fields/range';
+import '@/renderer/fields/checkbox';
+import '@/renderer/fields/radio';
+import '@/renderer/fields/multiselect';
+import '@/renderer/fields/checkboxGroup';
+import '@/renderer/fields/group';
+
+// Media & special
+import '@/renderer/fields/image';
+import '@/renderer/fields/color';
+import '@/renderer/fields/icon';
+import '@/renderer/fields/actionButton';
+import '@/renderer/fields/linkButton';
+import '@/renderer/fields/gdMap';
+import '@/renderer/fields/helperTags';
+import '@/renderer/fields/customRenderer';
+
+// Optional extras (match your old file types if used)
+import '@/renderer/fields/file';
+import '@/renderer/fields/googleApiKey';
+
+// ---- Expose the same global used by your HTML: x-data="ayecodeSettingsApp()" ----
+if (typeof window !== 'undefined') {
+    window.ayecodeSettingsApp = alpineApp;
+}
+
+// ---- Minimal readiness check (keeps original behaviour/logs) ----
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof window.Alpine === 'undefined') {
+        console.error('Alpine.js is required for AyeCode Settings Framework');
+        return;
+    }
+    console.log('AyeCode Settings Framework ready');
+});
