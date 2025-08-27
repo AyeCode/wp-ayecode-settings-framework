@@ -89,9 +89,23 @@ export default function alpineApp() {
         reinitializePlugins()         { pluginsSvc.reinitializePlugins(this); },
         changeView(fn)                { pluginsSvc.changeView(this, fn); },
         goToSearchResult(result)      { searchSvc.goToSearchResult(this, result); },
-        goToSection(sectionId, ss='') { routerSvc.goToSection(this, sectionId, ss); },
+        goToSection(sectionId, ss='') {
+            // If leaving a form builder, reset its state
+            if (this.activePageConfig?.type === 'form_builder') {
+                this.editingField = null;
+                this.leftColumnView = 'field_list';
+            }
+            routerSvc.goToSection(this, sectionId, ss);
+        },
         goToCustomLink(link)          { searchSvc.goToCustomLink(this, link); },
-        switchSection(sectionId)      { routerSvc.switchSection(this, sectionId); },
+        switchSection(sectionId)      {
+            // If leaving a form builder, reset its state
+            if (this.activePageConfig?.type === 'form_builder') {
+                this.editingField = null;
+                this.leftColumnView = 'field_list';
+            }
+            routerSvc.switchSection(this, sectionId);
+        },
         switchSubsection(ssId)        { routerSvc.switchSubsection(this, ssId); },
         highlightField(fieldId)       { highlight.highlightField(this, fieldId); },
         handleUrlHash()               { routerSvc.handleUrlHash(this); },
@@ -173,14 +187,6 @@ export default function alpineApp() {
 
             // Force a re-render by updating the iteration key
             this.sortIteration++;
-
-            // Enhanced debugging log
-            console.log('DEBUG: handleSort fired. New order:');
-            const newOrderForLog = this.settings[sectionId].map((field, index) => ({
-                label: field.label,
-                position: index
-            }));
-            console.table(newOrderForLog);
         },
         findPageConfigById(id, secs)  { return findUtil.findPageConfigById(id, secs); },
         showNotification(msg, type)   { notifySvc.showNotification(this, msg, type); },

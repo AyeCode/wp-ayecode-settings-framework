@@ -113,13 +113,18 @@ export function isSettingsPage(ctx) {
     if (nonSettingsTypes.includes(t)) return false;
 
     const fields = page.fields;
-    if (!fields || !fields.length) return false;
+    // **THE FIX**: Check for fields in a way that works for both objects and arrays.
+    if (!fields || Object.keys(fields).length === 0) {
+        return false;
+    }
 
     const hasSavable = (arr) => {
         const nonSavable = ['title', 'group', 'alert', 'action_button'];
-        return arr.some(f => (f.type === 'group' && f.fields) ? hasSavable(f.fields) : !nonSavable.includes(f.type));
+        return arr.some(f => (f.type === 'group' && f.fields) ? hasSavable(Object.values(f.fields)) : !nonSavable.includes(f.type));
     };
-    return hasSavable(fields);
+
+    // **THE FIX**: Convert fields to an array before checking for savable types.
+    return hasSavable(Object.values(fields));
 }
 
 export function hasUnsavedChanges(ctx) {
@@ -148,7 +153,8 @@ export function hasUnsavedChanges(ctx) {
     // Logic for Standard Settings pages
     if (isSettingsPage(ctx)) {
         const check = (fields) => {
-            for (const f of fields) {
+            // **THE FIX**: Use Object.values to handle both arrays and objects.
+            for (const f of Object.values(fields)) {
                 if (f.type === 'group' && f.fields) {
                     if (check(f.fields)) return true;
                 } else if (f.id) {
@@ -161,7 +167,7 @@ export function hasUnsavedChanges(ctx) {
             }
             return false;
         };
-        return check(page.fields || []);
+        return check(page.fields || {});
     }
 
     // For all other page types, there are no savable changes.
