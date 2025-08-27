@@ -31,11 +31,15 @@ export default defineConfig({
                 entryFileNames: 'js/[name].js',
                 chunkFileNames: 'js/[name]-[hash].js',
                 assetFileNames: '[name][extname]',
+                // Define the global variables for your external packages
                 globals: {
                     alpinejs: 'Alpine',
+                    // This is the missing line:
+                    '@alpinejs/sort': 'AlpineSort'
                 },
             },
-            external: ['alpinejs'], // Treat Alpine.js as an external dependency.
+            // Add @alpinejs/sort to the external array
+            external: [ '@alpinejs/sort', 'alpinejs'],
             plugins: [],
         },
     },

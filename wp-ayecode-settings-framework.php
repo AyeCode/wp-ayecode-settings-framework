@@ -55,107 +55,160 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
      *
      * @return array The configuration array.
      */
+    /**
+     * Provides the settings configuration array for this specific page.
+     *
+     * @return array The configuration array.
+     */
     public function get_config() {
         return [
-            'sections' => [
-                [
-                    'id'    => 'general',
-                    'name'  => __( 'General Settings', 'wp-ayecode-settings-framework' ),
-                    'icon'  => 'fa-solid fa-gear',
-                    'fields' => [
+                'sections' => [
                         [
-                            'id'      => 'site_title',
-                            'type'    => 'text',
-                            'label'   => __( 'Site Title', 'wp-ayecode-settings-framework' ),
-                            'desc'    => __( 'Standard text field for a setting.', 'wp-ayecode-settings-framework' ),
-                            'default' => get_bloginfo( 'name' ),
+                                'id'    => 'general',
+                                'name'  => __( 'General Settings', 'wp-ayecode-settings-framework' ),
+                                'icon'  => 'fa-solid fa-gear',
+                                'fields' => [
+                                        [
+                                                'id'      => 'site_title',
+                                                'type'    => 'text',
+                                                'label'   => __( 'Site Title', 'wp-ayecode-settings-framework' ),
+                                                'desc'    => __( 'Standard text field for a setting.', 'wp-ayecode-settings-framework' ),
+                                                'default' => get_bloginfo( 'name' ),
+                                        ],
+                                ],
                         ],
-                    ],
+                    // New Form Builder Section Added Here
+                        [
+                                'id'    => 'listing_form_builder', // This will be the key where the form structure is saved
+                                'name'  => __( 'Listing Form Builder', 'wp-ayecode-settings-framework' ),
+                                'icon'  => 'fa-solid fa-edit',
+                                'type'  => 'form_builder',
+                                'templates' => [
+                                        [
+                                                'group_title' => 'Standard Fields',
+                                                'fields' => [
+                                                        [
+                                                                'id'      => 'text',
+                                                                'title'   => 'Text',
+                                                                'icon'    => 'fa-solid fa-font',
+                                                                'default' => [ 'type' => 'text', 'label' => 'New Text Field', 'icon' => 'fa-solid fa-font' ],
+                                                                'settings' => [
+                                                                        [ 'id' => 'label', 'type' => 'text', 'label' => 'Label' ],
+                                                                        [ 'id' => 'description', 'type' => 'textarea', 'label' => 'Description', 'rows' => 2 ],
+                                                                        [ 'id' => 'placeholder', 'type' => 'text', 'label' => 'Placeholder' ],
+                                                                        [ 'id' => 'is_required', 'type' => 'toggle', 'label' => 'Is Required' ],
+                                                                ]
+                                                        ],
+                                                        [
+                                                                'id'      => 'textarea',
+                                                                'title'   => 'Textarea',
+                                                                'icon'    => 'fa-solid fa-paragraph',
+                                                                'default' => [ 'type' => 'textarea', 'label' => 'New Textarea', 'icon' => 'fa-solid fa-paragraph' ],
+                                                                'settings' => [
+                                                                        [ 'id' => 'label', 'type' => 'text', 'label' => 'Label' ],
+                                                                        [ 'id' => 'description', 'type' => 'textarea', 'label' => 'Description', 'rows' => 2 ],
+                                                                        [ 'id' => 'is_required', 'type' => 'toggle', 'label' => 'Is Required' ],
+                                                                ]
+                                                        ],
+                                                        [
+                                                                'id'      => 'select',
+                                                                'title'   => 'Select',
+                                                                'icon'    => 'fa-solid fa-list-ul',
+                                                                'default' => [ 'type' => 'select', 'label' => 'New Select', 'options' => ['opt1' => 'Option 1'], 'icon' => 'fa-solid fa-list-ul' ],
+                                                                'settings' => [
+                                                                        [ 'id' => 'label', 'type' => 'text', 'label' => 'Label' ],
+                                                                        [ 'id' => 'description', 'type' => 'textarea', 'label' => 'Description', 'rows' => 2 ],
+                                                                        [ 'id' => 'options', 'type' => 'textarea', 'label' => 'Options', 'description' => 'Enter one option per line in `key : value` format.' ],
+                                                                        [ 'id' => 'is_required', 'type' => 'toggle', 'label' => 'Is Required' ],
+                                                                ]
+                                                        ],
+                                                ]
+                                        ],
+                                ]
+                        ],
+                        [
+                                'id'    => 'tools',
+                                'name'  => __( 'Simple Tools', 'wp-ayecode-settings-framework' ),
+                                'icon'  => 'fa-solid fa-screwdriver-wrench',
+                                'fields' => [
+                                        [
+                                                'id'           => 'tool_clear_cache_success',
+                                                'type'         => 'action_button',
+                                                'label'        => __( 'Clear Cache (Success Example)', 'wp-ayecode-settings-framework' ),
+                                                'description'  => __( 'This button will simulate a successful background task.', 'wp-ayecode-settings-framework' ),
+                                                'button_text'  => __( 'Clear Cache' ),
+                                                'button_class' => 'btn-primary',
+                                                'ajax_action'  => 'demo_clear_cache_success', // The unique ID for this action.
+                                        ],
+                                        [
+                                                'id'           => 'tool_regenerate_thumbnails_progress',
+                                                'type'         => 'action_button',
+                                                'label'        => __( 'Regenerate Thumbnails (Progress Example)', 'wp-ayecode-settings-framework' ),
+                                                'description'  => __( 'This button will simulate a task that reports progress.', 'wp-ayecode-settings-framework' ),
+                                                'button_text'  => __( 'Regenerate' ),
+                                                'button_class' => 'btn-secondary',
+                                                'ajax_action'  => 'demo_regen_thumbs_progress', // The unique ID for this action.
+                                        ],
+                                ],
+                        ],
+                        [
+                                'id'             => 'importer_tool',
+                                'name'           => __( 'Action Page Demo', 'wp-ayecode-settings-framework' ),
+                                'description'    => __( 'This entire page is an action page. The main save bar is hidden, and all inputs are sent with the single action button below.', 'wp-ayecode-settings-framework'),
+                                'icon'           => 'fa-solid fa-bolt',
+                                'type'           => 'action_page', // The new page type
+                                'button_text'    => __( 'Run Importer', 'wp-ayecode-settings-framework' ),
+                                'button_class'   => 'btn-success',
+                                'ajax_action'    => 'run_importer_action', // The unique ID for this page's action
+                                'fields' => [
+                                        [
+                                                'id'      => 'import_source_url',
+                                                'type'    => 'url',
+                                                'label'   => __( 'Source URL', 'wp-ayecode-settings-framework' ),
+                                                'desc'    => __( 'Enter the URL of the data file to import.', 'wp-ayecode-settings-framework' ),
+                                        ],
+                                        [
+                                                'id'      => 'overwrite_existing',
+                                                'type'    => 'toggle',
+                                                'label'   => __( 'Overwrite Existing Data', 'wp-ayecode-settings-framework' ),
+                                                'desc'    => __( 'Enable to replace existing entries with imported ones.', 'wp-ayecode-settings-framework' ),
+                                                'default' => 0,
+                                        ],
+                                ],
+                        ],
+                        [
+                                'id'           => 'preloaded_tool',
+                                'name'         => __( 'System Status', 'wp-ayecode-settings-framework' ),
+                                'icon'         => 'fa-solid fa-server',
+                                'type'         => 'custom_page',
+                                'html_content' => $this->get_system_status_html(),
+                        ],
+                        [
+                                'id'           => 'ajax_importer',
+                                'name'         => __( 'Data Importer (AJAX)', 'wp-ayecode-settings-framework' ),
+                                'icon'         => 'fa-solid fa-upload',
+                                'type'         => 'import_page', // Use the new import_page type
+                                'description'  => __( 'Upload a file and process it. The file is uploaded automatically when selected.', 'wp-ayecode-settings-framework' ),
+                                'button_text'  => __( 'Run Import', 'wp-ayecode-settings-framework' ),
+                                'button_class' => 'btn-primary',
+                                'ajax_action'  => 'run_ajax_importer', // The action for the final import step
+                                'fields'       => [
+                                        [
+                                                'id'    => 'imported_file_name', // Hidden field to store the uploaded filename
+                                                'type'  => 'hidden',
+                                        ],
+                                        [
+                                                'id'      => 'import_delete_records',
+                                                'type'    => 'toggle',
+                                                'label'   => __( 'Delete Existing Records', 'wp-ayecode-settings-framework' ),
+                                                'desc'    => __( 'Enable to delete all existing records before importing.', 'wp-ayecode-settings-framework' ),
+                                                'default' => 0,
+                                        ],
+                                ],
+                        ],
                 ],
-                [
-                    'id'    => 'tools',
-                    'name'  => __( 'Simple Tools', 'wp-ayecode-settings-framework' ),
-                    'icon'  => 'fa-solid fa-screwdriver-wrench',
-                    'fields' => [
-                        [
-                            'id'           => 'tool_clear_cache_success',
-                            'type'         => 'action_button',
-                            'label'        => __( 'Clear Cache (Success Example)', 'wp-ayecode-settings-framework' ),
-                            'description'  => __( 'This button will simulate a successful background task.', 'wp-ayecode-settings-framework' ),
-                            'button_text'  => __( 'Clear Cache' ),
-                            'button_class' => 'btn-primary',
-                            'ajax_action'  => 'demo_clear_cache_success', // The unique ID for this action.
-                        ],
-                        [
-                            'id'           => 'tool_regenerate_thumbnails_progress',
-                            'type'         => 'action_button',
-                            'label'        => __( 'Regenerate Thumbnails (Progress Example)', 'wp-ayecode-settings-framework' ),
-                            'description'  => __( 'This button will simulate a task that reports progress.', 'wp-ayecode-settings-framework' ),
-                            'button_text'  => __( 'Regenerate' ),
-                            'button_class' => 'btn-secondary',
-                            'ajax_action'  => 'demo_regen_thumbs_progress', // The unique ID for this action.
-                        ],
-                    ],
-                ],
-                [
-                    'id'             => 'importer_tool',
-                    'name'           => __( 'Action Page Demo', 'wp-ayecode-settings-framework' ),
-                    'description'    => __( 'This entire page is an action page. The main save bar is hidden, and all inputs are sent with the single action button below.', 'wp-ayecode-settings-framework'),
-                    'icon'           => 'fa-solid fa-bolt',
-                    'type'           => 'action_page', // The new page type
-                    'button_text'    => __( 'Run Importer', 'wp-ayecode-settings-framework' ),
-                    'button_class'   => 'btn-success',
-                    'ajax_action'    => 'run_importer_action', // The unique ID for this page's action
-                    'fields' => [
-                        [
-                            'id'      => 'import_source_url',
-                            'type'    => 'url',
-                            'label'   => __( 'Source URL', 'wp-ayecode-settings-framework' ),
-                            'desc'    => __( 'Enter the URL of the data file to import.', 'wp-ayecode-settings-framework' ),
-                        ],
-                        [
-                            'id'      => 'overwrite_existing',
-                            'type'    => 'toggle',
-                            'label'   => __( 'Overwrite Existing Data', 'wp-ayecode-settings-framework' ),
-                            'desc'    => __( 'Enable to replace existing entries with imported ones.', 'wp-ayecode-settings-framework' ),
-                            'default' => 0,
-                        ],
-                    ],
-                ],
-                [
-                    'id'           => 'preloaded_tool',
-                    'name'         => __( 'System Status', 'wp-ayecode-settings-framework' ),
-                    'icon'         => 'fa-solid fa-server',
-                    'type'         => 'custom_page',
-                    'html_content' => $this->get_system_status_html(),
-                ],
-                [
-                    'id'           => 'ajax_importer',
-                    'name'         => __( 'Data Importer (AJAX)', 'wp-ayecode-settings-framework' ),
-                    'icon'         => 'fa-solid fa-upload',
-                    'type'         => 'import_page', // Use the new import_page type
-                    'description'  => __( 'Upload a file and process it. The file is uploaded automatically when selected.', 'wp-ayecode-settings-framework' ),
-                    'button_text'  => __( 'Run Import', 'wp-ayecode-settings-framework' ),
-                    'button_class' => 'btn-primary',
-                    'ajax_action'  => 'run_ajax_importer', // The action for the final import step
-                    'fields'       => [
-                        [
-                            'id'    => 'imported_file_name', // Hidden field to store the uploaded filename
-                            'type'  => 'hidden',
-                        ],
-                        [
-                            'id'      => 'import_delete_records',
-                            'type'    => 'toggle',
-                            'label'   => __( 'Delete Existing Records', 'wp-ayecode-settings-framework' ),
-                            'desc'    => __( 'Enable to delete all existing records before importing.', 'wp-ayecode-settings-framework' ),
-                            'default' => 0,
-                        ],
-                    ],
-                ],
-            ],
         ];
     }
-
     /**
      * Central handler for all tool actions on this page.
      *
@@ -193,8 +246,8 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
     private function handle_clear_cache() {
         sleep( 1 );
         wp_send_json_success( [
-            'message'  => __( 'Cache cleared successfully!', 'wp-ayecode-settings-framework' ),
-            'progress' => 100,
+                'message'  => __( 'Cache cleared successfully!', 'wp-ayecode-settings-framework' ),
+                'progress' => 100,
         ] );
     }
 
@@ -205,15 +258,15 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
 
         if ( $new_progress >= 100 ) {
             wp_send_json_success( [
-                'message'   => __( 'Thumbnails regenerated successfully!', 'wp-ayecode-settings-framework' ),
-                'progress'  => 100,
-                'next_step' => null, // Signal completion.
+                    'message'   => __( 'Thumbnails regenerated successfully!', 'wp-ayecode-settings-framework' ),
+                    'progress'  => 100,
+                    'next_step' => null, // Signal completion.
             ] );
         } else {
             wp_send_json_success( [
-                'message'   => sprintf( __( '%d%% complete...', 'wp-ayecode-settings-framework' ), $new_progress ),
-                'progress'  => $new_progress,
-                'next_step' => $new_progress, // Signal to continue.
+                    'message'   => sprintf( __( '%d%% complete...', 'wp-ayecode-settings-framework' ), $new_progress ),
+                    'progress'  => $new_progress,
+                    'next_step' => $new_progress, // Signal to continue.
             ] );
         }
     }
@@ -230,14 +283,14 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
 
         if ( empty($source_url) ) {
             wp_send_json_error([
-                'message' => 'Error: Source URL cannot be empty.'
+                    'message' => 'Error: Source URL cannot be empty.'
             ]);
         }
 
         // Send a success response.
         wp_send_json_success( [
-            'message'  => sprintf('Import completed! Overwrite was %s.', $overwrite ? 'ON' : 'OFF'),
-            'progress' => 100,
+                'message'  => sprintf('Import completed! Overwrite was %s.', $overwrite ? 'ON' : 'OFF'),
+                'progress' => 100,
         ] );
     }
 
@@ -267,8 +320,8 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
         wp_delete_file( $file_path );
 
         wp_send_json_success( [
-            'message'  => sprintf( 'Successfully processed %s. Delete records was %s.', esc_html( $filename ), $delete ? 'ON' : 'OFF' ),
-            'progress' => 100,
+                'message'  => sprintf( 'Successfully processed %s. Delete records was %s.', esc_html( $filename ), $delete ? 'ON' : 'OFF' ),
+                'progress' => 100,
         ] );
     }
 

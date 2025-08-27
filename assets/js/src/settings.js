@@ -1,4 +1,5 @@
 // assets/js/src/settings.js
+// Alpine and Sort are now loaded via WordPress, so we remove the imports.
 
 // ---- Alpine component (glue only) ----
 import alpineApp from '@/app/alpineApp';
@@ -39,10 +40,22 @@ import '@/renderer/fields/customRenderer';
 import '@/renderer/fields/file';
 import '@/renderer/fields/googleApiKey';
 
+
+
 // ---- Expose the same global used by your HTML: x-data="ayecodeSettingsApp()" ----
 if (typeof window !== 'undefined') {
     window.ayecodeSettingsApp = alpineApp;
+
 }
+
+// ---- Alpine Initialization ----
+// This is the safest way to initialize Alpine and its plugins
+// when scripts are loaded with `defer`.
+// document.addEventListener('alpine:init', () => {
+//     // The Sort plugin's script creates `window.AlpineSort`, which we use here.
+//     window.Alpine.plugin(window.AlpineSort);
+// });
+
 
 // ---- Minimal readiness check (keeps original behaviour/logs) ----
 document.addEventListener('DOMContentLoaded', function () {
@@ -50,5 +63,14 @@ document.addEventListener('DOMContentLoaded', function () {
         console.error('Alpine.js is required for AyeCode Settings Framework');
         return;
     }
+    // Alpine is started globally now, so this can be simplified.
     console.log('AyeCode Settings Framework ready');
+});
+
+document.addEventListener("alpine:init", () => {
+    if (Alpine.directive("sort")) {
+        console.log("x-sort directive is available ✅");
+    } else {
+        console.log("x-sort directive not found ❌");
+    }
 });

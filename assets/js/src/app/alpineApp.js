@@ -17,7 +17,7 @@ import * as findUtil from '@/utils/find';
 
 export default function alpineApp() {
     return {
-        // STATE (same names as before)
+        // STATE
         config: window.ayecodeSettingsFramework?.config || {},
         originalSettings: {},
         settings: {},
@@ -39,20 +39,24 @@ export default function alpineApp() {
         actionStates: {},
         isContentLoading: false,
         loadedContentCache: {},
+        leftColumnView: 'field_list',
+        editingField: null,
 
         // LIFECYCLE
         init() {
-            // theme + config + data
             themeSvc.initTheme(this);
             this.customSearchLinks = window.ayecodeSettingsFramework?.custom_search_links || [];
-            configSvc.loadConfiguration(this);         // sets this.sections
-            settingsSvc.loadSettings(this);            // sets settings/originals/previews
-            configSvc.flattenAllFields(this);          // sets this.allFields
+            configSvc.loadConfiguration(this);
+            settingsSvc.loadSettings(this);
+            configSvc.flattenAllFields(this);
 
-            // init action-page state
+            this.sections.forEach(section => {
+                if (section.type === 'form_builder' && !Array.isArray(this.settings[section.id])) {
+                    this.settings[section.id] = [];
+                }
+            });
+
             actionsSvc.initActionPages(this);
-
-            // initial route + UI
             routerSvc.handleUrlHash(this);
             searchSvc.setupSearchModal(this);
             pluginsSvc.setupEventListeners(this);
@@ -60,7 +64,7 @@ export default function alpineApp() {
             console.log('AyeCode Settings Framework initialized');
         },
 
-        // COMPUTEDS (delegated)
+        // COMPUTEDS
         get activePageConfig()      { return routerSvc.activePageConfig(this); },
         get hasUnsavedChanges()     { return settingsSvc.hasUnsavedChanges(this); },
         get currentSectionData()    { return routerSvc.currentSectionData(this); },
@@ -69,12 +73,10 @@ export default function alpineApp() {
         get isActionRunning()       { return actionsSvc.isAnyActionRunning(this); },
         get groupedSearchResults()  { return searchSvc.groupedSearchResults(this); },
 
-        // UI actions (names unchanged, just forwarded)
+        // METHODS
         toggleTheme()                 { themeSvc.toggleTheme(this); },
         reinitializePlugins()         { pluginsSvc.reinitializePlugins(this); },
         changeView(fn)                { pluginsSvc.changeView(this, fn); },
-
-        // Navigation / routing
         goToSearchResult(result)      { searchSvc.goToSearchResult(this, result); },
         goToSection(sectionId, ss='') { routerSvc.goToSection(this, sectionId, ss); },
         goToCustomLink(link)          { searchSvc.goToCustomLink(this, link); },
@@ -84,40 +86,59 @@ export default function alpineApp() {
         handleUrlHash()               { routerSvc.handleUrlHash(this); },
         updateUrlHash(fieldId=null)   { routerSvc.updateUrlHash(this, fieldId); },
         setInitialSection()           { routerSvc.setInitialSection(this); },
-
-        // Settings
         async saveSettings()          { await settingsSvc.saveSettings(this); },
         discardChanges()              { settingsSvc.discardChanges(this); },
-
-        // Fields / logic
         shouldShowField(field)        { return cond.shouldShowField(this, field); },
+
+        // ** RESTORED FUNCTIONS **
         evaluateCondition(rule)       { return cond.evaluateCondition(this, rule); },
         evaluateSimpleComparison(e)   { return cond.evaluateSimpleComparison(e); },
 
-        // Renderer hook (unchanged contract)
-        renderField(field)            { return settingsSvc.renderFieldCompat(field); },
-
-        // Media & maps
+        renderField(field)            { return settingsSvc.renderFieldCompat(field, 'settings'); },
         selectImage(fieldId)          { mediaSvc.selectImage(this, fieldId); },
         removeImage(fieldId)          { mediaSvc.removeImage(this, fieldId); },
         initGdMap(fieldId, lat, lng)  { mapsSvc.initGdMap(this, fieldId, lat, lng); },
-
-        // Choices.js
         initChoice(fieldId)           { pluginsSvc.initChoice(this, fieldId); },
         initChoices(fieldId)          { pluginsSvc.initChoices(this, fieldId); },
-
-        // Actions / tools
         async executePageAction()     { await actionsSvc.executePageAction(this); },
         async executeAction(fieldId)  { await actionsSvc.executeAction(this, fieldId); },
-
-        // Uploads
         handleFileUpload(e, pid, h)   { uploadsSvc.handleFileUpload(this, e, pid, h); },
         async removeUploadedFile(pid, h) { await uploadsSvc.removeUploadedFile(this, pid, h); },
-
-        // Custom pages
         async loadCustomPageContent(id){ await customPageSvc.loadCustomPageContent(this, id); },
 
-        // Utils
+        // Form Builder Methods
+        async saveForm() {
+            await settingsSvc.saveFormBuilder(this);
+        },
+        addField(fieldTemplate, parentField = null) {
+            const newField = JSON.parse(JSON.stringify(fieldTemplate.default));
+            newField._uid = Date.now();
+
+            if (newField.type === 'group' && !newField.fields) {
+                newField.fields = [];
+            }
+
+            const targetArray = parentField ? parentField.fields : this.settings[this.activePageConfig.id];
+            targetArray.push(newField);
+
+            this.editField(newField);
+        },
+        editField(field) {
+            this.editingField = field;
+            this.leftColumnView = 'field_settings';
+        },
+        deleteField(field, parentField = null) {
+            if (!confirm('Are you sure you want to delete this field?')) return;
+            const targetArray = parentField ? parentField.fields : this.settings[this.activePageConfig.id];
+            const index = targetArray.findIndex(f => f._uid === field._uid);
+            if (index > -1) {
+                targetArray.splice(index, 1);
+            }
+            if (this.editingField && this.editingField._uid === field._uid) {
+                this.editingField = null;
+                this.leftColumnView = 'field_list';
+            }
+        },
         findPageConfigById(id, secs)  { return findUtil.findPageConfigById(id, secs); },
         showNotification(msg, type)   { notifySvc.showNotification(this, msg, type); },
     };

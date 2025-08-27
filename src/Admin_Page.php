@@ -85,7 +85,7 @@ class Admin_Page {
                                 <template x-if="activePageConfig">
                                     <div>
                                         <?php // Default view for standard settings pages ?>
-                                        <template x-if="!activePageConfig.type || (activePageConfig.type !== 'custom_page' && activePageConfig.type !== 'action_page' && activePageConfig.type !== 'import_page')">
+                                        <template x-if="!activePageConfig.type || (activePageConfig.type !== 'custom_page' && activePageConfig.type !== 'action_page' && activePageConfig.type !== 'import_page' && activePageConfig.type !== 'form_builder')">
                                             <?php include $templates_dir . 'views/standard-settings.php'; ?>
                                         </template>
 
@@ -102,6 +102,11 @@ class Admin_Page {
                                         <?php // View for import pages ?>
                                         <template x-if="activePageConfig.type === 'import_page'">
                                             <?php include $templates_dir . 'views/import-page.php'; ?>
+                                        </template>
+
+                                        <?php // View for the new form builder ?>
+                                        <template x-if="activePageConfig.type === 'form_builder'">
+                                            <?php include $templates_dir . 'views/form-builder.php'; ?>
                                         </template>
                                     </div>
                                 </template>

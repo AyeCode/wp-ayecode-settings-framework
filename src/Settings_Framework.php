@@ -315,33 +315,24 @@ abstract class Settings_Framework {
         wp_enqueue_media();
         wp_enqueue_script( 'iconpicker' );
 
-        $assets_url = plugin_dir_url( __DIR__ ) . 'assets/';
-        $version    = self::VERSION;
-        $script_handle = 'ayecode-settings-framework-admin';
+	    $assets_url = plugin_dir_url( dirname( __FILE__ ) ) . 'assets/';
+	    $version    = self::VERSION;
+
+	    // 1. Enqueue the Alpine Sort plugin FIRST, with no dependencies.
+	    wp_enqueue_script( 'alpine-js-sort', $assets_url . 'js/alpine.sort.min.js', [], '3.14.9', true );
+
+	    // 2. Enqueue Alpine.js Core SECOND, making it dependent on the sort plugin.
+	    // This ensures the plugin script tag appears before the core script tag in the HTML.
+	    wp_enqueue_script( 'alpine-js', $assets_url . 'js/alpine.min.js', ['alpine-js-sort'], '3.14.9', true );
+
+	    // 3. Your main app script depends on the Alpine core being ready.
+	    wp_enqueue_script( 'ayecode-settings-framework-admin', $assets_url . 'dist/js/settings.js', [ 'alpine-js' ], $version, true );
+
+	    // 4. Add 'defer' to the Alpine scripts. WordPress will respect the dependency order.
+	    add_filter( 'script_loader_tag', [ $this, 'add_defer_to_alpine_scripts' ], 10, 2 );
 
 
-        // Enqueue Alpine.js and add the 'defer' attribute.
-        wp_enqueue_script( 'alpine-js', $assets_url . 'js/alpine.min.js', [], '3.14.9', true );
-        add_filter( 'script_loader_tag', [ $this, 'add_defer_to_alpine' ], 10, 2 );
-
-        // Enqueue the field renderer and the main admin script.
-//        wp_enqueue_script( 'ayecode-settings-framework-renderer', $assets_url . 'js/field-renderer.js', [], $version, true );
-//        wp_enqueue_script( 'ayecode-settings-framework-admin', $assets_url . 'js/admin.js', [ 'ayecode-settings-framework-renderer' ], $version, true );
-
-        // new build renderer
-        wp_enqueue_script( 'ayecode-settings-framework-admin', $assets_url . 'dist/js/settings.js', [ 'alpine-js'], $version, true );
-
-//        // **THE FIX: Add a filter to tell WordPress this script is a module.**
-//        add_filter( 'script_loader_tag', function( $tag, $handle, $src ) use ( $script_handle ) {
-//            if ( $handle === $script_handle ) {
-//                // Replace the standard script tag with one that has type="module"
-//                $tag = '<script type="module" src="' . esc_url( $src ) . '" id="' . esc_attr( $handle ) . '-js"></script>';
-//            }
-//            return $tag;
-//        }, 10, 3 );
-
-
-        // Localize the main script with all necessary data.
+	    // Localize the main script with all necessary data.
         wp_localize_script(
             'ayecode-settings-framework-admin',
             'ayecodeSettingsFramework',
@@ -578,20 +569,21 @@ abstract class Settings_Framework {
         return $links;
     }
 
-    /**
-     * Adds the 'defer' attribute to the Alpine.js script tag for better performance.
-     *
-     * @param string $tag    The original script tag HTML.
-     * @param string $handle The script's handle.
-     * @return string The modified script tag.
-     */
-    public function add_defer_to_alpine( $tag, $handle ) {
-        if ( 'alpine-js' === $handle ) {
-            return str_replace( ' src', ' defer src', $tag );
-        }
+	/**
+	 * Adds the 'defer' attribute to the Alpine.js script tags for better performance.
+	 *
+	 * @param string $tag    The original script tag HTML.
+	 * @param string $handle The script's handle.
+	 * @return string The modified script tag.
+	 */
+	public function add_defer_to_alpine_scripts( $tag, $handle ) {
+		// Updated to handle both the core and the sort plugin
+		if ( 'alpine-js' === $handle || 'alpine-js-sort' === $handle ) {
+			return str_replace( ' src', ' defer src', $tag );
+		}
 
-        return $tag;
-    }
+		return $tag;
+	}
 
     /**
      * Pre-processes the config to include content for 'custom_page' sections
