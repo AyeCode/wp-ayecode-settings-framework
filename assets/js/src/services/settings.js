@@ -48,7 +48,6 @@ export async function saveFormBuilder(ctx) {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
-                // THE FIX IS HERE: The 'action' parameter was missing.
                 action: window.ayecodeSettingsFramework.action,
                 nonce: window.ayecodeSettingsFramework.nonce,
                 settings: JSON.stringify(dataToSave),
@@ -75,17 +74,33 @@ export async function saveFormBuilder(ctx) {
 export function discardChanges(ctx) {
     if (confirm(ctx.strings.confirm_discard)) {
         ctx.settings = JSON.parse(JSON.stringify(ctx.originalSettings));
-        ctx.imagePreviews = JSON.parse(JSON.stringify(ctx.imagePreviews));
+        ctx.imagePreviews = JSON.parse(JSON.stringify(ctx.originalImagePreviews));
     }
 }
 
 export function renderFieldCompat(field, modelPrefix = 'settings') {
+    let html = '';
     if (window.asfFieldRenderer) {
-        const fn = 'render' + field.type.charAt(0).toUpperCase() + field.type.slice(1) + 'Field';
-        if (typeof window.asfFieldRenderer[fn] === 'function') return window.asfFieldRenderer[fn](field, modelPrefix);
-        if (typeof window.asfFieldRenderer.renderField === 'function') return window.asfFieldRenderer.renderField(field, modelPrefix);
+        const funcName = 'render' + field.type.charAt(0).toUpperCase() + field.type.slice(1) + 'Field';
+        if (typeof window.asfFieldRenderer[funcName] === 'function') {
+            html = window.asfFieldRenderer[funcName](field);
+        } else if (typeof window.asfFieldRenderer.renderField === 'function') {
+            html = window.asfFieldRenderer.renderField(field);
+        } else {
+            html = `<div class="alert alert-warning">Field renderer for type "${field.type}" not found.</div>`;
+        }
+    } else {
+        html = `<div class="alert alert-warning">Field renderer for type "${field.type}" not found.</div>`;
     }
-    return `<div class="alert alert-warning">Field renderer for type "${field.type}" not found.</div>`;
+
+    // If using a different model prefix (like for the form builder's editing pane),
+    // replace the hardcoded "settings." with the correct prefix.
+    if (modelPrefix !== 'settings') {
+        const replacementRegex = new RegExp(`(x-model|:checked|@click|x-show)="(settings|\\s*settings)\\.`, 'g');
+        html = html.replace(replacementRegex, `$1="${modelPrefix}.`);
+    }
+
+    return html;
 }
 
 // Computeds
@@ -116,7 +131,18 @@ export function hasUnsavedChanges(ctx) {
         const settingId = page.id;
         const currentData = ctx.settings[settingId] || [];
         const originalData = ctx.originalSettings[settingId] || [];
-        return JSON.stringify(currentData) !== JSON.stringify(originalData);
+
+        // Create sanitized copies for comparison
+        const sanitizedCurrent = JSON.parse(JSON.stringify(currentData)).map(f => {
+            delete f.fields; // Remove the schema before comparing
+            return f;
+        });
+        const sanitizedOriginal = JSON.parse(JSON.stringify(originalData)).map(f => {
+            delete f.fields; // Remove the schema before comparing
+            return f;
+        });
+
+        return JSON.stringify(sanitizedCurrent) !== JSON.stringify(sanitizedOriginal);
     }
 
     // Logic for Standard Settings pages

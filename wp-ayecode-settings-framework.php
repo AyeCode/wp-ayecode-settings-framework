@@ -86,39 +86,39 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                 'templates' => [
                                         [
                                                 'group_title' => 'Standard Fields',
-                                                'fields' => [
+                                                'options' => [
                                                         [
-                                                                'id'      => 'text',
                                                                 'title'   => 'Text',
                                                                 'icon'    => 'fa-solid fa-font',
-                                                                'default' => [ 'type' => 'text', 'label' => 'New Text Field', 'icon' => 'fa-solid fa-font' ],
-                                                                'settings' => [
-                                                                        [ 'id' => 'label', 'type' => 'text', 'label' => 'Label' ],
+                                                                'fields' => [
+                                                                        [ 'id' => 'type', 'type' => 'hidden', 'default' => 'text' ],
+                                                                        [ 'id' => 'label', 'type' => 'text', 'label' => 'Label', 'default' => 'New Text Field' ],
+                                                                        [ 'id' => 'icon', 'type' => 'icon', 'label' => 'Icon', 'default' => 'fa-solid fa-font' ],
                                                                         [ 'id' => 'description', 'type' => 'textarea', 'label' => 'Description', 'rows' => 2 ],
                                                                         [ 'id' => 'placeholder', 'type' => 'text', 'label' => 'Placeholder' ],
                                                                         [ 'id' => 'is_required', 'type' => 'toggle', 'label' => 'Is Required' ],
                                                                 ]
                                                         ],
                                                         [
-                                                                'id'      => 'textarea',
                                                                 'title'   => 'Textarea',
                                                                 'icon'    => 'fa-solid fa-paragraph',
-                                                                'default' => [ 'type' => 'textarea', 'label' => 'New Textarea', 'icon' => 'fa-solid fa-paragraph' ],
-                                                                'settings' => [
-                                                                        [ 'id' => 'label', 'type' => 'text', 'label' => 'Label' ],
+                                                                'fields' => [
+                                                                        [ 'id' => 'type', 'type' => 'hidden', 'default' => 'textarea' ],
+                                                                        [ 'id' => 'label', 'type' => 'text', 'label' => 'Label', 'default' => 'New Textarea' ],
+                                                                        [ 'id' => 'icon', 'type' => 'icon', 'label' => 'Icon', 'default' => 'fa-solid fa-paragraph' ],
                                                                         [ 'id' => 'description', 'type' => 'textarea', 'label' => 'Description', 'rows' => 2 ],
                                                                         [ 'id' => 'is_required', 'type' => 'toggle', 'label' => 'Is Required' ],
                                                                 ]
                                                         ],
                                                         [
-                                                                'id'      => 'select',
                                                                 'title'   => 'Select',
                                                                 'icon'    => 'fa-solid fa-list-ul',
-                                                                'default' => [ 'type' => 'select', 'label' => 'New Select', 'options' => ['opt1' => 'Option 1'], 'icon' => 'fa-solid fa-list-ul' ],
-                                                                'settings' => [
-                                                                        [ 'id' => 'label', 'type' => 'text', 'label' => 'Label' ],
+                                                                'fields' => [
+                                                                        [ 'id' => 'type', 'type' => 'hidden', 'default' => 'select' ],
+                                                                        [ 'id' => 'label', 'type' => 'text', 'label' => 'Label', 'default' => 'New Select' ],
+                                                                        [ 'id' => 'icon', 'type' => 'icon', 'label' => 'Icon', 'default' => 'fa-solid fa-list-ul' ],
                                                                         [ 'id' => 'description', 'type' => 'textarea', 'label' => 'Description', 'rows' => 2 ],
-                                                                        [ 'id' => 'options', 'type' => 'textarea', 'label' => 'Options', 'description' => 'Enter one option per line in `key : value` format.' ],
+                                                                        [ 'id' => 'options', 'type' => 'textarea', 'label' => 'Options', 'description' => 'Enter one option per line in `key : value` format.', 'default' => 'opt1 : Option 1' ],
                                                                         [ 'id' => 'is_required', 'type' => 'toggle', 'label' => 'Is Required' ],
                                                                 ]
                                                         ],

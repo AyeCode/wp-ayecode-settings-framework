@@ -41,6 +41,7 @@ export default function alpineApp() {
         loadedContentCache: {},
         leftColumnView: 'field_list',
         editingField: null,
+        sortIteration: 0,
 
         // LIFECYCLE
         init() {
@@ -51,8 +52,18 @@ export default function alpineApp() {
             configSvc.flattenAllFields(this);
 
             this.sections.forEach(section => {
-                if (section.type === 'form_builder' && !Array.isArray(this.settings[section.id])) {
-                    this.settings[section.id] = [];
+                if (section.type === 'form_builder') {
+                    if (!Array.isArray(this.settings[section.id])) {
+                        this.settings[section.id] = [];
+                    }
+
+                    const templates = section.templates.flatMap(g => g.options);
+                    this.settings[section.id].forEach(savedField => {
+                        const template = templates.find(t => t.fields.find(f => f.id === 'type' && f.default === savedField.type));
+                        if (template) {
+                            savedField.fields = template.fields;
+                        }
+                    });
                 }
             });
 
@@ -94,7 +105,9 @@ export default function alpineApp() {
         evaluateCondition(rule)       { return cond.evaluateCondition(this, rule); },
         evaluateSimpleComparison(e)   { return cond.evaluateSimpleComparison(e); },
 
-        renderField(field)            { return settingsSvc.renderFieldCompat(field, 'settings'); },
+        renderField(field, modelPrefix = 'settings') {
+            return settingsSvc.renderFieldCompat(field, modelPrefix);
+        },
         selectImage(fieldId)          { mediaSvc.selectImage(this, fieldId); },
         removeImage(fieldId)          { mediaSvc.removeImage(this, fieldId); },
         initGdMap(fieldId, lat, lng)  { mapsSvc.initGdMap(this, fieldId, lat, lng); },
@@ -110,13 +123,15 @@ export default function alpineApp() {
         async saveForm() {
             await settingsSvc.saveFormBuilder(this);
         },
-        addField(fieldTemplate, parentField = null) {
-            const newField = JSON.parse(JSON.stringify(fieldTemplate.default));
-            newField._uid = Date.now();
+        addField(optionTemplate, parentField = null) {
+            // Create a new field object from the template's fields array
+            const newField = optionTemplate.fields.reduce((acc, field) => {
+                acc[field.id] = field.default !== undefined ? field.default : null;
+                return acc;
+            }, {});
 
-            if (newField.type === 'group' && !newField.fields) {
-                newField.fields = [];
-            }
+            newField._uid = Date.now();
+            newField.fields = optionTemplate.fields; // Keep a reference to the schema
 
             const targetArray = parentField ? parentField.fields : this.settings[this.activePageConfig.id];
             targetArray.push(newField);
@@ -138,6 +153,34 @@ export default function alpineApp() {
                 this.editingField = null;
                 this.leftColumnView = 'field_list';
             }
+        },
+        handleSort(item, position) {
+            const sectionId = this.activePageConfig.id;
+            let items = [...this.settings[sectionId]];
+
+            const movedItem = items.find(i => i._uid == item);
+            if (!movedItem) return;
+
+            const oldIndex = items.indexOf(movedItem);
+            if (oldIndex === -1) return;
+
+            // Remove the item from its old position and insert it into the new one
+            items.splice(oldIndex, 1);
+            items.splice(position, 0, movedItem);
+
+            // Re-assign the entire array to ensure Alpine's reactivity is triggered
+            this.settings[sectionId] = items;
+
+            // Force a re-render by updating the iteration key
+            this.sortIteration++;
+
+            // Enhanced debugging log
+            console.log('DEBUG: handleSort fired. New order:');
+            const newOrderForLog = this.settings[sectionId].map((field, index) => ({
+                label: field.label,
+                position: index
+            }));
+            console.table(newOrderForLog);
         },
         findPageConfigById(id, secs)  { return findUtil.findPageConfigById(id, secs); },
         showNotification(msg, type)   { notifySvc.showNotification(this, msg, type); },

@@ -21,28 +21,27 @@ if ( ! defined( 'ABSPATH' ) ) {
             <div class="border rounded p-3 bg-body">
                 <template x-if="editingField">
                     <div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Label</label>
-                            <input type="text" class="form-control" x-model="editingField.label">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Icon (Font Awesome)</label>
-                            <input type="text" class="form-control" x-model="editingField.icon">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Description</label>
-                            <textarea class="form-control" x-model="editingField.description" rows="3"></textarea>
-                        </div>
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" role="switch" :id="'required-' + editingField._uid" x-model="editingField.is_required">
-                            <label class="form-check-label" :for="'required-' + editingField._uid">Is Required</label>
-                        </div>
-                        <template x-if="editingField.type === 'select'">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Options</label>
-                                <textarea class="form-control" x-model="editingField.options" rows="5" placeholder="key : value (one per line)"></textarea>
+                        <template x-for="(fieldSchema, index) in editingField.fields" :key="index">
+                            <div x-show="fieldSchema.type !== 'hidden'">
+                                <div class="py-4" x-html="renderField(fieldSchema, 'editingField')"></div>
                             </div>
                         </template>
+
+                        <!-- Special case for options, as it's not a standard field -->
+                        <template x-if="editingField.type === 'select'">
+                            <div class="py-4">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold mb-0">Options</label>
+                                        <p class="form-text text-muted mt-1 mb-0">Enter one option per line in `key : value` format.</p>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <textarea class="form-control" x-model="editingField.options" rows="5"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
                         <button class="btn btn-primary w-100" @click="leftColumnView = 'field_list'; editingField = null;">Done</button>
                     </div>
                 </template>
@@ -54,11 +53,11 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <div class="mb-4">
                     <h6 class="text-muted" x-text="group.group_title"></h6>
                     <ul class="row row-cols-2 gy-0 gx-1 px-0">
-                        <template x-for="field in group.fields" :key="field.id">
-                            <li class="col" @click="addField(field)">
+                        <template x-for="option in group.options" :key="option.title">
+                            <li class="col" @click="addField(option)">
                                 <span class="btn btn-sm btn-outline-secondary w-100 c-pointer d-block text-start" >
-                                    <i :class="field.icon || 'fa-solid fa-plus'" class="fa-fw me-2 text-muted"></i>
-                                    <span x-text="field.title"></span>
+                                    <i :class="option.icon || 'fa-solid fa-plus'" class="fa-fw me-2 text-muted"></i>
+                                    <span x-text="option.title"></span>
                                 </span>
                             </li>
                         </template>
@@ -72,11 +71,10 @@ if ( ! defined( 'ABSPATH' ) ) {
         <h4 class="mb-3" x-text="activePageConfig.page_title || activePageConfig.name"></h4>
         <div
                 class="border rounded p-3 min-vh-50 bg-body flex-grow-1"
-                x-sort
-                @x-sort:end="settings[activePageConfig.id] = $event.detail.newArray"
+                x-sort="(item, pos) => handleSort(item, pos)"
         >
-            <template x-for="field in settings[activePageConfig.id]" :key="field._uid">
-                <div class="px-3 py-2 border rounded mb-2 bg-light-subtle" :class="{ 'border-primary': editingField && editingField._uid === field._uid }" :x-sort:item="field._uid">
+            <template x-for="field in settings[activePageConfig.id]" :key="sortIteration + '-' + field._uid">
+                <div class="px-3 py-2 border rounded mb-2 bg-light-subtle" :class="{ 'border-primary': editingField && editingField._uid === field._uid }" x-sort:item="field._uid">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center">
                             <span x-sort:handle class="c-move me-3 text-muted"><i class="fa-solid fa-grip-vertical"></i></span>
@@ -97,8 +95,14 @@ if ( ! defined( 'ABSPATH' ) ) {
                         <div class="ms-5 mt-2 p-2 border-start">
                             <div
                                     class="nested-dropzone min-vh-10 border-dashed rounded p-3"
-                                    x-sort
-                                    @x-sort:end="field.fields = $event.detail.newArray"
+                                    x-sort="(item, pos) => {
+                                        let items = [...field.fields];
+                                        const movedItem = items.find(i => i._uid == item);
+                                        const oldIndex = items.indexOf(movedItem);
+                                        items.splice(oldIndex, 1);
+                                        items.splice(pos, 0, movedItem);
+                                        field.fields = items;
+                                    }"
                             >
                                 <template x-for="childField in field.fields" :key="childField._uid">
                                 </template>
