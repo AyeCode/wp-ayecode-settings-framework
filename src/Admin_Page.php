@@ -68,6 +68,11 @@ class Admin_Page {
             .asf-dropzone input[type="file"] {
                 display: none;
             }
+
+            .sortable-ghost{
+                opacity: 0.5 !important;
+                border: 1px solid #0a90ff;
+            }
         </style>
 
         <div class="bsui" x-data="ayecodeSettingsApp()" style="margin-left: -20px !important;">

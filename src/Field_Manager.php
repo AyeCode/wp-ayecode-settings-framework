@@ -226,6 +226,9 @@ class Field_Manager {
 			if ( isset( $field['_uid'] ) ) {
 				$sanitized_field['_uid'] = absint( $field['_uid'] );
 			}
+			if ( isset( $field['_parentId'] ) ) {
+				$sanitized_field['_parentId'] = absint( $field['_parentId'] );
+			}
 
 			// Handle nested fields for 'group' types
 			if ( isset( $field['type'] ) && $field['type'] === 'group' && isset( $field['fields'] ) ) {

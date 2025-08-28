@@ -84,13 +84,24 @@ export default function alpineApp() {
         get isActionRunning()       { return actionsSvc.isAnyActionRunning(this); },
         get groupedSearchResults()  { return searchSvc.groupedSearchResults(this); },
 
+        // NEW COMPUTED PROPERTIES FOR NESTING
+        get parentFields() {
+            const fields = this.settings[this.activePageConfig?.id] || [];
+            // This now respects the flat array order for rendering
+            return fields.filter(f => !f._parentId);
+        },
+        childFields(parentId) {
+            const fields = this.settings[this.activePageConfig?.id] || [];
+            // This now respects the flat array order for rendering
+            return fields.filter(f => f._parentId === parentId);
+        },
+
         // METHODS
         toggleTheme()                 { themeSvc.toggleTheme(this); },
         reinitializePlugins()         { pluginsSvc.reinitializePlugins(this); },
         changeView(fn)                { pluginsSvc.changeView(this, fn); },
         goToSearchResult(result)      { searchSvc.goToSearchResult(this, result); },
         goToSection(sectionId, ss='') {
-            // If leaving a form builder, reset its state
             if (this.activePageConfig?.type === 'form_builder') {
                 this.editingField = null;
                 this.leftColumnView = 'field_list';
@@ -99,7 +110,6 @@ export default function alpineApp() {
         },
         goToCustomLink(link)          { searchSvc.goToCustomLink(this, link); },
         switchSection(sectionId)      {
-            // If leaving a form builder, reset its state
             if (this.activePageConfig?.type === 'form_builder') {
                 this.editingField = null;
                 this.leftColumnView = 'field_list';
@@ -115,7 +125,6 @@ export default function alpineApp() {
         discardChanges()              { settingsSvc.discardChanges(this); },
         shouldShowField(field)        { return cond.shouldShowField(this, field); },
 
-        // ** RESTORED FUNCTIONS **
         evaluateCondition(rule)       { return cond.evaluateCondition(this, rule); },
         evaluateSimpleComparison(e)   { return cond.evaluateSimpleComparison(e); },
 
@@ -137,55 +146,70 @@ export default function alpineApp() {
         async saveForm() {
             await settingsSvc.saveFormBuilder(this);
         },
-        addField(optionTemplate, parentField = null) {
-            // Create a new field object from the template's fields array
+        addField(optionTemplate) {
             const newField = optionTemplate.fields.reduce((acc, field) => {
                 acc[field.id] = field.default !== undefined ? field.default : null;
                 return acc;
             }, {});
-
             newField._uid = Date.now();
-            newField.fields = optionTemplate.fields; // Keep a reference to the schema
-
-            const targetArray = parentField ? parentField.fields : this.settings[this.activePageConfig.id];
-            targetArray.push(newField);
-
+            newField.fields = optionTemplate.fields;
+            this.settings[this.activePageConfig.id].push(newField);
             this.editField(newField);
         },
         editField(field) {
             this.editingField = field;
             this.leftColumnView = 'field_settings';
         },
-        deleteField(field, parentField = null) {
+        deleteField(field) {
             if (!confirm('Are you sure you want to delete this field?')) return;
-            const targetArray = parentField ? parentField.fields : this.settings[this.activePageConfig.id];
-            const index = targetArray.findIndex(f => f._uid === field._uid);
+            let fields = this.settings[this.activePageConfig.id];
+            const index = fields.findIndex(f => f._uid === field._uid);
             if (index > -1) {
-                targetArray.splice(index, 1);
+                fields.splice(index, 1);
             }
+            this.settings[this.activePageConfig.id] = fields.filter(f => f._parentId !== field._uid);
             if (this.editingField && this.editingField._uid === field._uid) {
                 this.editingField = null;
                 this.leftColumnView = 'field_list';
             }
         },
-        handleSort(item, position) {
+        handleSort(item, position, parentId = null) {
             const sectionId = this.activePageConfig.id;
             let items = [...this.settings[sectionId]];
 
             const movedItem = items.find(i => i._uid == item);
             if (!movedItem) return;
 
+            // Update parent ID
+            movedItem._parentId = parentId;
+
+            // Remove item from its old position
             const oldIndex = items.indexOf(movedItem);
-            if (oldIndex === -1) return;
-
-            // Remove the item from its old position and insert it into the new one
             items.splice(oldIndex, 1);
-            items.splice(position, 0, movedItem);
 
-            // Re-assign the entire array to ensure Alpine's reactivity is triggered
+            // Find the correct new position in the flat array
+            const targetSiblings = items.filter(i => i._parentId === parentId);
+            let newIndex;
+            if (position >= targetSiblings.length) {
+                // Dropped at the end of the list (or into an empty list)
+                if (parentId) {
+                    const parentIndex = items.findIndex(i => i._uid === parentId);
+                    // Find where the last child of this parent is, and insert after it
+                    const lastChildIndex = items.findLastIndex(i => i._parentId === parentId);
+                    newIndex = lastChildIndex !== -1 ? lastChildIndex + 1 : parentIndex + 1;
+                } else {
+                    newIndex = items.length; // Add to the very end of the whole array
+                }
+            } else {
+                // Dropped at a specific position, find the sibling to insert before
+                const sibling = targetSiblings[position];
+                newIndex = items.indexOf(sibling);
+            }
+
+            // Insert item at its new position
+            items.splice(newIndex, 0, movedItem);
+
             this.settings[sectionId] = items;
-
-            // Force a re-render by updating the iteration key
             this.sortIteration++;
         },
         findPageConfigById(id, secs)  { return findUtil.findPageConfigById(id, secs); },
