@@ -205,6 +205,7 @@ abstract class Settings_Framework {
         add_action( 'admin_menu', [ $this, 'add_admin_menu' ] );
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 
+//		print_r($this);//exit;
         // Register AJAX actions.
         add_action( 'wp_ajax_save_' . $this->option_name, [ $this->ajax_handler, 'handle_save' ] );
         add_action( 'wp_ajax_reset_' . $this->option_name, [ $this->ajax_handler, 'handle_reset' ] );

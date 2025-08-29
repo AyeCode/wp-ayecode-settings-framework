@@ -41,7 +41,14 @@ export async function saveSettings(ctx) {
 export async function saveFormBuilder(ctx) {
     ctx.isLoading = true;
     const settingId = ctx.activePageConfig.id;
-    const dataToSave = { [settingId]: ctx.settings[settingId] };
+
+    // Create a deep copy of the data to avoid modifying the live state.
+    const cleanData = JSON.parse(JSON.stringify(ctx.settings[settingId]));
+
+    // Remove the 'fields' schema array from each item.
+    cleanData.forEach(field => delete field.fields);
+
+    const dataToSave = { [settingId]: cleanData };
 
     try {
         const res = await fetch(window.ayecodeSettingsFramework.ajax_url, {
