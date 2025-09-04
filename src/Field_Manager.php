@@ -211,6 +211,12 @@ class Field_Manager {
 			if ( isset( $field['label'] ) ) {
 				$sanitized_field['label'] = sanitize_text_field( $field['label'] );
 			}
+			if ( isset( $field['key'] ) ) {
+				$sanitized_field['key'] = sanitize_key( $field['key'] );
+			}
+			if ( isset( $field['template_id'] ) ) {
+				$sanitized_field['template_id'] = sanitize_key( $field['template_id'] );
+			}
 			if ( isset( $field['icon'] ) ) {
 				$sanitized_field['icon'] = sanitize_text_field( $field['icon'] );
 			}
@@ -224,23 +230,40 @@ class Field_Manager {
 				$sanitized_field['is_required'] = (bool) $field['is_required'];
 			}
 			if ( isset( $field['_uid'] ) ) {
-				$sanitized_field['_uid'] = absint( $field['_uid'] );
+				if (is_string($field['_uid']) && strpos($field['_uid'], 'new_') === 0) {
+					$sanitized_field['_uid'] = sanitize_text_field($field['_uid']);
+				} else {
+					$sanitized_field['_uid'] = absint($field['_uid']);
+				}
 			}
-			if ( isset( $field['_parentId'] ) ) {
-				$sanitized_field['_parentId'] = absint( $field['_parentId'] );
+			if ( isset( $field['_parent_id'] ) ) {
+				if (is_string($field['_parent_id']) && strpos($field['_parent_id'], 'new_') === 0) {
+					$sanitized_field['_parent_id'] = sanitize_text_field($field['_parent_id']);
+				} else {
+					$sanitized_field['_parent_id'] = absint($field['_parent_id']);
+				}
 			}
+			if ( isset( $field['is_new'] ) ) {
+				$sanitized_field['is_new'] = (bool) $field['is_new'];
+			}
+
 
 			// Handle nested fields for 'group' types
 			if ( isset( $field['type'] ) && $field['type'] === 'group' && isset( $field['fields'] ) ) {
 				$sanitized_field['fields'] = $this->sanitize_form_builder_fields( $field['fields'] );
 			}
 
-			if ( isset( $field['options'] ) && is_array( $field['options'] ) ) {
-				$sanitized_options = [];
-				foreach ( $field['options'] as $key => $value ) {
-					$sanitized_options[ sanitize_key( $key ) ] = sanitize_text_field( $value );
+			if ( isset( $field['options'] ) ) {
+				if (is_array( $field['options'])) {
+					$sanitized_options = [];
+					foreach ( $field['options'] as $key => $value ) {
+						$sanitized_options[ sanitize_key( $key ) ] = sanitize_text_field( $value );
+					}
+					$sanitized_field['options'] = $sanitized_options;
+				} else {
+					$sanitized_field['options'] = sanitize_textarea_field($field['options']);
 				}
-				$sanitized_field['options'] = $sanitized_options;
+
 			}
 
 

@@ -397,6 +397,7 @@ abstract class Settings_Framework {
      * @return array Current settings.
      */
     public function get_settings() {
+	    //print_r( get_option( $this->option_name, [] ) );exit;
         return get_option( $this->option_name, [] );
     }
 

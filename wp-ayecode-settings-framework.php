@@ -89,11 +89,13 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                 'group_title' => 'Standard Fields',
                                                 'options' => [
                                                         [
+                                                                'id'      => 'core_text', // Unique ID for the template
                                                                 'title'   => 'Text',
                                                                 'icon'    => 'fa-solid fa-font',
                                                                 'fields' => [
                                                                         [ 'id' => 'type', 'type' => 'hidden', 'default' => 'text' ],
                                                                         [ 'id' => 'label', 'type' => 'text', 'label' => 'Label', 'default' => 'New Text Field' ],
+                                                                        [ 'id' => 'key', 'type' => 'text', 'label' => 'Field Key', 'default' => 'new_text_field' ],
                                                                         [ 'id' => 'icon', 'type' => 'icon', 'label' => 'Icon', 'default' => 'fa-solid fa-font' ],
                                                                         [ 'id' => 'description', 'type' => 'textarea', 'label' => 'Description', 'rows' => 2 ],
                                                                         [ 'id' => 'placeholder', 'type' => 'text', 'label' => 'Placeholder' ],
@@ -101,22 +103,26 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                                 ]
                                                         ],
                                                         [
+                                                                'id'      => 'core_textarea', // Unique ID for the template
                                                                 'title'   => 'Textarea',
                                                                 'icon'    => 'fa-solid fa-paragraph',
                                                                 'fields' => [
                                                                         [ 'id' => 'type', 'type' => 'hidden', 'default' => 'textarea' ],
                                                                         [ 'id' => 'label', 'type' => 'text', 'label' => 'Label', 'default' => 'New Textarea' ],
+                                                                        [ 'id' => 'key', 'type' => 'text', 'label' => 'Field Key', 'default' => 'new_textarea' ],
                                                                         [ 'id' => 'icon', 'type' => 'icon', 'label' => 'Icon', 'default' => 'fa-solid fa-paragraph' ],
                                                                         [ 'id' => 'description', 'type' => 'textarea', 'label' => 'Description', 'rows' => 2 ],
                                                                         [ 'id' => 'is_required', 'type' => 'toggle', 'label' => 'Is Required' ],
                                                                 ]
                                                         ],
                                                         [
+                                                                'id'      => 'core_select', // Unique ID for the template
                                                                 'title'   => 'Select',
                                                                 'icon'    => 'fa-solid fa-list-ul',
                                                                 'fields' => [
                                                                         [ 'id' => 'type', 'type' => 'hidden', 'default' => 'select' ],
                                                                         [ 'id' => 'label', 'type' => 'text', 'label' => 'Label', 'default' => 'New Select' ],
+                                                                        [ 'id' => 'key', 'type' => 'text', 'label' => 'Field Key', 'default' => 'new_select' ],
                                                                         [ 'id' => 'icon', 'type' => 'icon', 'label' => 'Icon', 'default' => 'fa-solid fa-list-ul' ],
                                                                         [ 'id' => 'description', 'type' => 'textarea', 'label' => 'Description', 'rows' => 2 ],
                                                                         [ 'id' => 'options', 'type' => 'textarea', 'label' => 'Options', 'description' => 'Enter one option per line in `key : value` format.', 'default' => 'opt1 : Option 1' ],

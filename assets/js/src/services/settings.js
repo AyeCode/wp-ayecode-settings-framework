@@ -20,6 +20,7 @@ export async function saveSettings(ctx) {
         });
         const data = await res.json();
         if (data.success) {
+            ctx.settings = data.data.settings;
             ctx.originalSettings = JSON.parse(JSON.stringify(ctx.settings));
             ctx.originalImagePreviews = JSON.parse(JSON.stringify(ctx.imagePreviews));
             ctx.showNotification(data.data?.message || ctx.strings.saved, 'success');
@@ -41,6 +42,10 @@ export async function saveSettings(ctx) {
 export async function saveFormBuilder(ctx) {
     ctx.isLoading = true;
     const settingId = ctx.activePageConfig.id;
+    const sectionConfig = ctx.config.sections.find(s => s.id === settingId);
+
+    // Keep track of the temporary UID of the field being edited, if any
+    const editingUid = ctx.editingField ? ctx.editingField._uid : null;
 
     // Create a deep copy of the data to avoid modifying the live state.
     const cleanData = JSON.parse(JSON.stringify(ctx.settings[settingId]));
@@ -62,9 +67,38 @@ export async function saveFormBuilder(ctx) {
             })
         });
         const data = await res.json();
+
         if (data.success) {
-            // IMPORTANT: Only update the 'original' state for this specific setting.
-            ctx.originalSettings[settingId] = JSON.parse(JSON.stringify(ctx.settings[settingId]));
+            const freshDataFromServer = data.data.settings[settingId];
+            const templates = sectionConfig.templates.flatMap(g => g.options);
+
+            const hydratedData = freshDataFromServer.map(savedField => {
+                const template = templates.find(t => t.id === savedField.template_id);
+                if (template) {
+                    savedField.fields = template.fields;
+                }
+                return savedField;
+            });
+
+            ctx.settings[settingId] = hydratedData;
+            ctx.originalSettings[settingId] = JSON.parse(JSON.stringify(hydratedData));
+
+            // **THE FIX**: If a field was being edited, find its updated version
+            // in the hydrated data and update the `editingField` object.
+            if (editingUid && editingUid.toString().startsWith('new_')) {
+                const newFieldData = hydratedData.find(f => f._uid !== editingUid && f.is_new !== true);
+                const stillEditing = hydratedData.find(field => field.template_id === ctx.editingField.template_id && !ctx.originalSettings[settingId].some(orig => orig._uid === field._uid));
+
+                if (stillEditing) {
+                    ctx.editingField = stillEditing;
+                }
+            }
+
+            // **THE FIX**: Close the edit window on successful save
+            ctx.leftColumnView = 'field_list';
+            ctx.editingField = null;
+
+
             ctx.showNotification(data.data?.message || 'Form saved!', 'success');
         } else {
             ctx.showNotification(data.data?.message || ctx.strings.error, 'error');

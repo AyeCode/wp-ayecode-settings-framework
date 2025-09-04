@@ -1,3 +1,5 @@
+// assets/js/src/services/plugins.js
+
 // 3rd-party init + transitions + events (unchanged)
 export function reinitializePlugins(ctx) {
     ctx.$nextTick(() => {
@@ -61,32 +63,45 @@ function bindIconPickerModelSync(ctx) {
     const inputs = document.querySelectorAll('input[data-aui-init="iconpicker"]');
 
     inputs.forEach((input) => {
-        const syncFromDom = () => {
+        // Simple function to ensure the Alpine model is updated
+        const syncToAlpine = () => {
             const id = input.id;
             if (!id) return;
-            const v = input.value;
-            if (ctx.settings[id] !== v) ctx.settings[id] = v; // keep Alpine model aligned
+            const value = input.value;
+            // This directly sets the value in the correct model (settings or editingField)
+            if (ctx.editingField && ctx.editingField.hasOwnProperty(id)) {
+                if (ctx.editingField[id] !== value) ctx.editingField[id] = value;
+            } else {
+                if (ctx.settings[id] !== value) ctx.settings[id] = value;
+            }
         };
 
-        const fireAndSync = () => {
-            // Force Alpine to hear it, regardless of the plugin
-            input.dispatchEvent(new Event('input', { bubbles: true }));
+        // This function is called by the icon picker's custom events
+        const handlePickerChange = () => {
+            // Programmatically dispatch a 'change' event.
+            // This is the key part that tells Alpine to update its state.
             input.dispatchEvent(new Event('change', { bubbles: true }));
-            syncFromDom();
+            syncToAlpine();
         };
 
-        // If the plugin already fires these, great—this is enough.
-        input.addEventListener('input', syncFromDom);
-        input.addEventListener('change', syncFromDom);
+        // Listen for standard events for manual input
+        input.addEventListener('input', syncToAlpine);
+        input.addEventListener('change', syncToAlpine);
 
-        // Try common icon-picker custom events (cover multiple libs)
-        input.addEventListener('iconpickerSelected', fireAndSync);
-        input.addEventListener('iconpickerChange', fireAndSync);
-        input.addEventListener('change.bs.iconpicker', fireAndSync);
-        input.addEventListener('iconpicker-selected', fireAndSync);
+        // Listen for the icon picker's specific events
+        // Different libraries use different event names, so we listen for several common ones.
+        input.addEventListener('iconpickerSelected', handlePickerChange);
+        input.addEventListener('iconpickerChange', handlePickerChange);
+        input.addEventListener('change.bs.iconpicker', handlePickerChange); // For bootstrap-iconpicker
+        input.addEventListener('iconpicker-selected', handlePickerChange);
 
-        // Safety: if the addon button is used to open the picker, sync after click
+        // A fallback for when the popup-opening button is clicked
         const addon = input.closest('.input-group')?.querySelector('.input-group-addon, .input-group-text');
-        if (addon) addon.addEventListener('click', () => setTimeout(fireAndSync, 0));
+        if (addon) {
+            addon.addEventListener('click', () => {
+                // After opening, we might need a brief moment for the picker to be ready
+                setTimeout(handlePickerChange, 0);
+            });
+        }
     });
 }
