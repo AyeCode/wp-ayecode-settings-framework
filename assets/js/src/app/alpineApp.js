@@ -105,11 +105,12 @@ export default function alpineApp() {
         // NEW COMPUTED PROPERTIES FOR NESTING
         get parentFields() {
             const fields = this.settings[this.activePageConfig?.id] || [];
-            return fields.filter(f => !f._parent_id);
+            // **THE FIX**: Treat null, undefined, and 0 as root-level items.
+            return fields.filter(f => !f._parent_id || f._parent_id == 0);
         },
         childFields(parentId) {
             const fields = this.settings[this.activePageConfig?.id] || [];
-            return fields.filter(f => f._parent_id === parentId);
+            return fields.filter(f => f._parent_id == parentId);
         },
 
         // METHODS
@@ -214,7 +215,12 @@ export default function alpineApp() {
             const oldIndex = items.indexOf(movedItem);
             items.splice(oldIndex, 1);
 
-            const targetSiblings = items.filter(i => i._parent_id === parentId);
+            // **THE FIX**: When checking for siblings, account for the fact that a root-level parentId might be null or 0.
+            const targetSiblings = items.filter(i => {
+                const targetParentId = parentId === null ? 0 : parentId;
+                const itemParentId = i._parent_id === null ? 0 : i._parent_id;
+                return itemParentId == targetParentId;
+            });
 
             let newIndex;
 

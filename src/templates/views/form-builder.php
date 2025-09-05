@@ -23,7 +23,9 @@ if ( ! defined( 'ABSPATH' ) ) {
                     <div>
                         <template x-for="(fieldSchema, index) in editingField.fields" :key="index">
                             <div x-show="fieldSchema.type !== 'hidden'">
-                                <div class="py-4" x-html="renderField(fieldSchema, 'editingField')"></div>
+                                <div class="py-4"
+                                     x-html="renderField(fieldSchema, 'editingField')"
+                                     x-effect="$nextTick(() => Alpine.initTree($el))"></div>
                             </div>
                         </template>
                         <button class="btn btn-primary w-100" @click="leftColumnView = 'field_list'; editingField = null;">Done</button>
@@ -98,7 +100,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                              x-sort="(item, pos) => handleSort(item, pos, field._uid)"
                         >
                             <template x-for="childField in childFields(field._uid)" :key="sortIteration + '-' + childField._uid">
-                                <div class="px-3 py-2 border rounded bg-white mt-2"
+                                <div class="px-3 py-2 border rounded bg-light-subtle mt-2"
                                      :class="{
                                         'border-primary': editingField && editingField._uid === childField._uid,
                                         'border-warning': childField.hasOwnProperty('is_active') && !childField.is_active

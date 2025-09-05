@@ -19,12 +19,13 @@ registerRenderer('toggle', (field, modelPrefix = 'settings') => {
       <div class="col-md-8">
         <div class="form-check form-switch">
           <input 
+            x-model="settings.${field.id}" 
+            :checked="settings.${field.id} == '1' || settings.${field.id} === true"
             class="form-check-input" 
             type="checkbox" 
             role="switch" 
             id="${field.id}" 
             name="${field.id}"
-            :checked="${model} == 1 || ${model} === true"
             @change="${changeHandler}"
             ${extra}
           >
