@@ -50,7 +50,10 @@ export default function alpineApp() {
             themeSvc.initTheme(this);
             this.customSearchLinks = window.ayecodeSettingsFramework?.custom_search_links || [];
             configSvc.loadConfiguration(this);
-            settingsSvc.loadSettings(this);
+
+            this.settings = window.ayecodeSettingsFramework?.settings || {};
+            this.imagePreviews = window.ayecodeSettingsFramework?.image_previews || {};
+
             configSvc.flattenAllFields(this);
 
             this.sections.forEach(section => {
@@ -59,16 +62,28 @@ export default function alpineApp() {
                         this.settings[section.id] = [];
                     }
 
-                    // Re-hydrate fields with their settings schema on initial load
                     const templates = section.templates.flatMap(g => g.options);
                     this.settings[section.id].forEach(savedField => {
                         const template = templates.find(t => t.id === savedField.template_id);
                         if (template) {
                             savedField.fields = template.fields;
+                            savedField._template_icon = template.icon;
+
+                            template.fields.forEach(fieldSchema => {
+                                if (savedField[fieldSchema.id] === undefined && fieldSchema.default !== undefined) {
+                                    savedField[fieldSchema.id] = fieldSchema.default;
+                                }
+                                if (fieldSchema.type === 'toggle' && savedField[fieldSchema.id] === true) {
+                                    savedField[fieldSchema.id] = 1;
+                                }
+                            });
                         }
                     });
                 }
             });
+
+            this.originalSettings = JSON.parse(JSON.stringify(this.settings));
+            this.originalImagePreviews = JSON.parse(JSON.stringify(this.imagePreviews));
 
             actionsSvc.initActionPages(this);
             routerSvc.handleUrlHash(this);
@@ -90,12 +105,10 @@ export default function alpineApp() {
         // NEW COMPUTED PROPERTIES FOR NESTING
         get parentFields() {
             const fields = this.settings[this.activePageConfig?.id] || [];
-            // This now respects the flat array order for rendering
             return fields.filter(f => !f._parent_id);
         },
         childFields(parentId) {
             const fields = this.settings[this.activePageConfig?.id] || [];
-            // This now respects the flat array order for rendering
             return fields.filter(f => f._parent_id === parentId);
         },
 
@@ -156,15 +169,15 @@ export default function alpineApp() {
             }, {});
             newField._uid = 'new_' + Date.now();
             newField.is_new = true;
-            newField.template_id = optionTemplate.id; // Store the template ID
-            newField.fields = optionTemplate.fields; // Keep the schema for the settings pane
+            newField.template_id = optionTemplate.id;
+            newField.fields = optionTemplate.fields;
+            newField._template_icon = optionTemplate.icon;
             this.settings[this.activePageConfig.id].push(newField);
             this.editField(newField);
         },
         editField(field) {
             this.editingField = field;
             this.leftColumnView = 'field_settings';
-            // Give Alpine time to render the new view, then re-init the plugins
             setTimeout(() => this.reinitializePlugins(), 50);
         },
         deleteField(field) {
@@ -181,19 +194,11 @@ export default function alpineApp() {
             }
         },
         handleSort(item, position, parentId = null) {
-            console.log('--- Sorting Operation ---');
-            console.log(`Item UID: ${item}, New Sibling Position: ${position}, Parent UID: ${parentId}`);
-
             const sectionId = this.activePageConfig.id;
             let items = [...this.settings[sectionId]];
 
             const movedItem = items.find(i => i._uid == item);
-            if (!movedItem) {
-                console.error('Moved item not found!');
-                return;
-            }
-
-            console.log('1. Moved Item:', JSON.parse(JSON.stringify(movedItem)));
+            if (!movedItem) return;
 
             if (parentId !== null) {
                 const hasChildren = items.some(i => i._parent_id === movedItem._uid);
@@ -210,38 +215,38 @@ export default function alpineApp() {
             items.splice(oldIndex, 1);
 
             const targetSiblings = items.filter(i => i._parent_id === parentId);
-            console.log('2. Target Siblings:', JSON.parse(JSON.stringify(targetSiblings.map(f => f.label))));
 
             let newIndex;
 
             if (position >= targetSiblings.length) {
-                console.log('3a. Dropped at the end of the list.');
                 const lastSibling = targetSiblings.length > 0 ? targetSiblings[targetSiblings.length - 1] : null;
                 if (lastSibling) {
                     const lastSiblingIndex = items.indexOf(lastSibling);
                     const lastChildIndex = items.findLastIndex(i => i._parent_id === lastSibling._uid);
                     newIndex = lastChildIndex !== -1 ? lastChildIndex + 1 : lastSiblingIndex + 1;
-                    console.log(`Last Sibling: ${lastSibling.label}, its index: ${lastSiblingIndex}, its last child index: ${lastChildIndex}, New Index: ${newIndex}`);
                 } else if (parentId) {
                     newIndex = items.findIndex(i => i._uid === parentId) + 1;
-                    console.log(`Dropping into empty child list of parent ${parentId}, New Index: ${newIndex}`);
                 } else {
                     newIndex = items.length;
-                    console.log(`Dropping into empty root list, New Index: ${newIndex}`);
                 }
             } else {
-                console.log('3b. Dropped before a specific item.');
                 const sibling = targetSiblings[position];
                 newIndex = items.indexOf(sibling);
-                console.log(`Target Sibling: ${sibling.label}, New Index: ${newIndex}`);
             }
 
             items.splice(newIndex, 0, movedItem);
 
             this.settings[sectionId] = items;
             this.sortIteration++;
-            console.log('4. Final items array:', JSON.parse(JSON.stringify(items.map(f => ({ label: f.label, _uid: f._uid, _parent_id: f._parent_id })))));
-            console.log('--- End Sorting ---');
+        },
+        getTemplateForField(field) {
+            if (!field || !field.template_id) return null;
+            const section = this.activePageConfig;
+            if (section && section.templates) {
+                const templates = section.templates.flatMap(g => g.options);
+                return templates.find(t => t.id === field.template_id);
+            }
+            return null;
         },
         findPageConfigById(id, secs)  { return findUtil.findPageConfigById(id, secs); },
         showNotification(msg, type)   { notifySvc.showNotification(this, msg, type); },

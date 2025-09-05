@@ -1,10 +1,15 @@
+// assets/js/src/renderer/fields/toggle.js
+
 import { registerRenderer } from '../index';
 import { renderExtraAttributes } from '../helpers/attrs';
 import { renderCustomDesc } from '../helpers/desc';
 
-registerRenderer('toggle', (field) => {
+registerRenderer('toggle', (field, modelPrefix = 'settings') => {
     const extra = renderExtraAttributes(field);
     const customDescHtml = renderCustomDesc(field);
+    const model = `${modelPrefix}.${field.id}`;
+    const changeHandler = `${model} = $event.target.checked ? 1 : 0;`;
+
     return `
     <div class="row align-items-center rounded">
       <div class="col-md-4">
@@ -19,8 +24,8 @@ registerRenderer('toggle', (field) => {
             role="switch" 
             id="${field.id}" 
             name="${field.id}"
-            :checked="settings.${field.id} == '1' || settings.${field.id} === true"
-            @click="settings.${field.id} = (settings.${field.id} == 1 ? 0 : 1)"
+            :checked="${model} == 1 || ${model} === true"
+            @change="${changeHandler}"
             ${extra}
           >
         </div>

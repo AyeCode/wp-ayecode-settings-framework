@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP AyeCode Settings Framework
  * Description: Modern WordPress settings framework with Alpine.js and Bootstrap 5.
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: AyeCode Ltd
  * License: GPL v3 or later
  */
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants.
-define( 'WP_AYECODE_SETTINGS_FRAMEWORK_VERSION', '1.1.0' );
+define( 'WP_AYECODE_SETTINGS_FRAMEWORK_VERSION', '1.2.0' );
 define( 'WP_AYECODE_SETTINGS_FRAMEWORK_PLUGIN_FILE', __FILE__ );
 
 // Load the framework's abstract class.
@@ -55,11 +55,6 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
      *
      * @return array The configuration array.
      */
-    /**
-     * Provides the settings configuration array for this specific page.
-     *
-     * @return array The configuration array.
-     */
     public function get_config() {
         return [
                 'sections' => [
@@ -84,29 +79,33 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                 'icon'  => 'fa-solid fa-edit',
                                 'type'  => 'form_builder',
                                 'nestable' => true,
+                                'default_top' => true,
                                 'templates' => [
                                         [
                                                 'group_title' => 'Standard Fields',
                                                 'options' => [
                                                         [
-                                                                'id'      => 'core_text', // Unique ID for the template
+                                                                'id'      => 'core_text', // Unique ID for this template
                                                                 'title'   => 'Text',
                                                                 'icon'    => 'fa-solid fa-font',
-                                                                'fields' => [
+                                                                'limit'   => 5, // This field can be added up to 5 times
+                                                                'fields'  => [
                                                                         [ 'id' => 'type', 'type' => 'hidden', 'default' => 'text' ],
                                                                         [ 'id' => 'label', 'type' => 'text', 'label' => 'Label', 'default' => 'New Text Field' ],
-                                                                        [ 'id' => 'key', 'type' => 'text', 'label' => 'Field Key', 'default' => 'new_text_field' ],
+                                                                        [ 'id' => 'key', 'type' => 'text', 'label' => 'Field Key', 'default' => 'new_text_field', 'description' => 'A unique, machine-readable key for this field.' ],
                                                                         [ 'id' => 'icon', 'type' => 'icon', 'label' => 'Icon', 'default' => 'fa-solid fa-font' ],
                                                                         [ 'id' => 'description', 'type' => 'textarea', 'label' => 'Description', 'rows' => 2 ],
                                                                         [ 'id' => 'placeholder', 'type' => 'text', 'label' => 'Placeholder' ],
                                                                         [ 'id' => 'is_required', 'type' => 'toggle', 'label' => 'Is Required' ],
+                                                                    // **NEW**: Added is_active toggle
+                                                                        [ 'id' => 'is_active', 'type' => 'toggle', 'label' => 'Is Active', 'default' => true ],
                                                                 ]
                                                         ],
                                                         [
-                                                                'id'      => 'core_textarea', // Unique ID for the template
+                                                                'id'      => 'core_textarea',
                                                                 'title'   => 'Textarea',
                                                                 'icon'    => 'fa-solid fa-paragraph',
-                                                                'fields' => [
+                                                                'fields'  => [
                                                                         [ 'id' => 'type', 'type' => 'hidden', 'default' => 'textarea' ],
                                                                         [ 'id' => 'label', 'type' => 'text', 'label' => 'Label', 'default' => 'New Textarea' ],
                                                                         [ 'id' => 'key', 'type' => 'text', 'label' => 'Field Key', 'default' => 'new_textarea' ],
@@ -116,10 +115,10 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                                 ]
                                                         ],
                                                         [
-                                                                'id'      => 'core_select', // Unique ID for the template
+                                                                'id'      => 'core_select',
                                                                 'title'   => 'Select',
                                                                 'icon'    => 'fa-solid fa-list-ul',
-                                                                'fields' => [
+                                                                'fields'  => [
                                                                         [ 'id' => 'type', 'type' => 'hidden', 'default' => 'select' ],
                                                                         [ 'id' => 'label', 'type' => 'text', 'label' => 'Label', 'default' => 'New Select' ],
                                                                         [ 'id' => 'key', 'type' => 'text', 'label' => 'Field Key', 'default' => 'new_select' ],
@@ -131,6 +130,37 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                         ],
                                                 ]
                                         ],
+                                        [
+                                                'group_title' => 'Custom Fields',
+                                                'options' => [
+                                                        [
+                                                                'id'      => 'custom_title',
+                                                                'title'   => 'Listing Title',
+                                                                'icon'    => 'fa-solid fa-heading',
+                                                                'limit'   => 1, // This field can only be added once
+                                                                'fields'  => [
+                                                                        [ 'id' => 'type', 'type' => 'hidden', 'default' => 'text' ],
+                                                                        [ 'id' => 'label', 'type' => 'text', 'label' => 'Label', 'default' => 'Listing Title' ],
+                                                                        [ 'id' => 'key', 'type' => 'text', 'label' => 'Field Key', 'default' => 'listing_title' ],
+                                                                        [ 'id' => 'icon', 'type' => 'icon', 'label' => 'Icon', 'default' => 'fa-solid fa-heading' ],
+                                                                        [ 'id' => 'description', 'type' => 'textarea', 'label' => 'Description', 'rows' => 2, 'default' => 'The main title for the listing.' ],
+                                                                        [ 'id' => 'is_required', 'type' => 'toggle', 'label' => 'Is Required', 'default' => true ],
+                                                                ]
+                                                        ],
+                                                        [
+                                                                'id'      => 'custom_location_group',
+                                                                'title'   => 'Location Group',
+                                                                'icon'    => 'fa-solid fa-map-marker-alt',
+                                                                'fields'  => [
+                                                                        [ 'id' => 'type', 'type' => 'hidden', 'default' => 'group' ],
+                                                                        [ 'id' => 'label', 'type' => 'text', 'label' => 'Label', 'default' => 'Location Details' ],
+                                                                        [ 'id' => 'key', 'type' => 'text', 'label' => 'Field Key', 'default' => 'location_details' ],
+                                                                        [ 'id' => 'icon', 'type' => 'icon', 'label' => 'Icon', 'default' => 'fa-solid fa-map-marker-alt' ],
+                                                                        [ 'id' => 'description', 'type' => 'textarea', 'label' => 'Description', 'rows' => 2 ],
+                                                                ]
+                                                        ],
+                                                ]
+                                        ]
                                 ]
                         ],
                         [
