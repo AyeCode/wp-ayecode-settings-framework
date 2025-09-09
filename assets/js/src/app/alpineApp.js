@@ -41,6 +41,7 @@ export default function alpineApp() {
         actionStates: {},
         isContentLoading: false,
         loadedContentCache: {},
+        accordionStates: {},
         leftColumnView: 'field_list',
         editingField: null,
         sortIteration: 0,

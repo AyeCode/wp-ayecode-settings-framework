@@ -70,6 +70,17 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                 'desc'    => __( 'Standard text field for a setting.', 'wp-ayecode-settings-framework' ),
                                                 'default' => get_bloginfo( 'name' ),
                                         ],
+                                        array(
+                                                'id'      => 'shortcodes_allowed_roles',
+                                                'type'    => 'multiselect',
+                                                'label'   => __( 'Allow shortcodes in description', 'geodirectory' ),
+                                                'description' => __( 'Select user roles that are allowed to use shortcodes or blocks in the listing description field.', 'geodirectory' ),
+                                                'options' => function_exists('geodir_user_roles') ? geodir_user_roles() : array(),
+                                                'default' => array('administrator'),
+                                                'class'   => 'aui-select2',
+                                                'placeholder' => __('Select roles...', 'geodirectory'),
+                                                'searchable' => array('shortcode', 'blocks', 'description', 'content', 'permissions'),
+                                        )
                                 ],
                         ],
                     // New Form Builder Section Added Here
@@ -157,6 +168,65 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                                         [ 'id' => 'key', 'type' => 'text', 'label' => 'Field Key', 'default' => 'location_details' ],
                                                                         [ 'id' => 'icon', 'type' => 'icon', 'label' => 'Icon', 'default' => 'fa-solid fa-map-marker-alt' ],
                                                                         [ 'id' => 'description', 'type' => 'textarea', 'label' => 'Description', 'rows' => 2 ],
+                                                                ]
+                                                        ],
+                                                ]
+                                        ]
+                                ]
+                        ],
+                        [
+                                'id' => 'accordion_demo',
+                                'name' => __('Accordion Demo', 'wp-ayecode-settings-framework'),
+                                'icon' => 'fa-solid fa-layer-group',
+                                'fields' => [
+                                        [
+                                                'id' => 'my_accordion_container',
+                                                'type' => 'accordion',
+                                            'default_open' => 'my_accordion_container1',
+                                                'fields' => [
+                                                        [
+                                                                'label' => 'First Panel',
+                                                                'id' => 'my_accordion_container1',
+                                                                'description' => 'This is the first collapsible panel.',
+                                                                'fields' => [
+                                                                        [
+                                                                                'id' => 'accordion_field_one',
+                                                                                'type' => 'text',
+                                                                                'label' => 'Text Field Inside Accordion',
+                                                                                'default' => 'Hello World'
+                                                                        ],
+                                                                        [
+                                                                                'id' => 'accordion_field_two',
+                                                                                'type' => 'toggle',
+                                                                                'label' => 'Toggle Inside Accordion',
+                                                                                'default' => true
+                                                                        ],
+                                                                ]
+                                                        ],
+                                                        [
+                                                                'label' => 'Second Panel (Open by Default)',
+                                                                'id' => 'my_accordion_container2',
+                                                                'description' => 'This one starts in an open state.',
+                                                                'open' => true, // Add this to make a panel open by default
+                                                                'fields' => [
+                                                                        [
+                                                                                'id' => 'accordion_field_three',
+                                                                                'type' => 'color',
+                                                                                'label' => 'Color Picker',
+                                                                                'default' => '#0055ff'
+                                                                        ],
+                                                                        array(
+                                                                                'id'      => 'shortcodes_allowed_roles',
+                                                                                'type'    => 'multiselect',
+                                                                                'label'   => __( 'Allow shortcodes in description', 'geodirectory' ),
+                                                                                'description' => __( 'Select user roles that are allowed to use shortcodes or blocks in the listing description field.', 'geodirectory' ),
+                                                                                'options' => function_exists('geodir_user_roles') ? geodir_user_roles() : array(),
+                                                                                'default' => array('administrator'),
+                                                                                'class'   => 'aui-select2',
+                                                                                'placeholder' => __('Select roles...', 'geodirectory'),
+                                                                                'searchable' => array('shortcode', 'blocks', 'description', 'content', 'permissions'),
+                                                                        )
+                                                                        //['id' => 'accordion_field_four', 'type' => 'multiselect', 'label' => 'Text Field Inside Accordion', 'default' => ['opt1'],'options'=>['opt1'=>'Option 1','opt2'=>'Option 2','opt3'=>'Option 3']],
                                                                 ]
                                                         ],
                                                 ]

@@ -32,31 +32,110 @@ export function setupEventListeners(ctx) {
     window.addEventListener('hashchange', () => ctx.handleUrlHash());
 }
 
-// Choices helpers (moved here)
+// Global registries to track and clean up Choices.js instances and their watchers.
+// This is necessary to prevent memory leaks and errors when components are re-rendered. @todo move this
+window.activeChoicesInstances = window.activeChoicesInstances || {};
+window.activeChoicesWatchers = window.activeChoicesWatchers || {};
+
 export function initChoice(ctx, fieldId) {
-    const el = ctx.$refs[fieldId];
-    if (!el) { console.error(`Choices.js init failed: x-ref="${fieldId}" not found.`); return; }
-    if (!el.classList.contains('aui-select2')) return;
-    const config = window.aui_get_choices_config?.(el);
-    const choices = new window.Choices(el, config);
-    choices.setChoiceByValue(String(ctx.settings[fieldId]));
-    el.addEventListener('change', () => { ctx.settings[fieldId] = choices.getValue(true); });
-    ctx.$watch?.(`settings['${fieldId}']`, (nv) => {
-        const cur = choices.getValue(true);
-        if (nv !== cur) choices.setChoiceByValue(String(nv));
-    });
+    // Defer the entire initialization to the next browser task cycle. This is a
+    // crucial step to prevent race conditions where a parent component re-renders
+    // and destroys this element before the Choices instance is fully ready.
+    setTimeout(() => {
+        const el = ctx.$refs[fieldId];
+        if (!el) { return; }
+        if (!el.classList.contains('aui-select2')) return;
+
+        // 1. Clean up the old watcher if it exists from a previous render.
+        if (window.activeChoicesWatchers[fieldId]) {
+            window.activeChoicesWatchers[fieldId](); // Call the unsubscribe function.
+        }
+
+        // 2. Clean up the old Choices instance if it exists.
+        if (window.activeChoicesInstances[fieldId]) {
+            window.activeChoicesInstances[fieldId].destroy();
+        }
+
+        const modelName = (ctx.editingField && ctx.editingField.hasOwnProperty(fieldId)) ? 'editingField' : 'settings';
+        const model = ctx[modelName];
+
+        const config = window.aui_get_choices_config?.(el);
+        const choices = new window.Choices(el, config);
+
+        // Store the new instance and watcher for future cleanup.
+        window.activeChoicesInstances[fieldId] = choices;
+
+        choices.setChoiceByValue(String(model[fieldId]));
+
+        el.addEventListener('change', () => {
+            model[fieldId] = choices.getValue(true);
+        });
+
+        const unwatch = ctx.$watch(`${modelName}['${fieldId}']`, (nv) => {
+            if (!choices.initialised) return; // Defensive check
+            const cur = choices.getValue(true);
+            if (nv !== cur) {
+                choices.setChoiceByValue(String(nv));
+            }
+        });
+        window.activeChoicesWatchers[fieldId] = unwatch;
+
+    }, 0);
 }
+
 export function initChoices(ctx, fieldId) {
-    const el = ctx.$refs[fieldId];
-    if (!el) { console.error(`Choices.js init failed: x-ref="${fieldId}" not found.`); return; }
-    if (!Array.isArray(ctx.settings[fieldId])) ctx.settings[fieldId] = [];
-    const config = window.aui_get_choices_config?.(el);
-    const choices = new window.Choices(el, config);
-    choices.setChoiceByValue(ctx.settings[fieldId]);
-    el.addEventListener('change', () => { ctx.settings[fieldId] = choices.getValue(true); });
-    ctx.$watch?.(`settings['${fieldId}']`, (nv) => {
-        if (JSON.stringify(nv) !== JSON.stringify(choices.getValue(true))) choices.setChoiceByValue(nv);
-    });
+    // Defer the entire initialization to the next browser task cycle. This is a
+    // crucial step to prevent race conditions where a parent component re-renders
+    // and destroys this element before the Choices instance is fully ready.
+    setTimeout(() => {
+        const el = ctx.$refs[fieldId];
+        if (!el) { return; }
+
+        // 1. Clean up the old watcher if it exists from a previous render.
+        if (window.activeChoicesWatchers[fieldId]) {
+            window.activeChoicesWatchers[fieldId](); // Call the unsubscribe function.
+        }
+
+        // 2. Clean up the old Choices instance if it exists.
+        if (window.activeChoicesInstances[fieldId]) {
+            window.activeChoicesInstances[fieldId].destroy();
+        }
+
+        const modelName = (ctx.editingField && ctx.editingField.hasOwnProperty(fieldId)) ? 'editingField' : 'settings';
+        const model = ctx[modelName];
+
+        if (!Array.isArray(model[fieldId])) {
+            model[fieldId] = [];
+        }
+
+        const config = window.aui_get_choices_config?.(el);
+        const choices = new window.Choices(el, config);
+
+        // Store the new instance and watcher for future cleanup.
+        window.activeChoicesInstances[fieldId] = choices;
+
+        choices.setChoiceByValue(model[fieldId]);
+
+        el.addEventListener('change', () => {
+            const newValue = choices.getValue(true);
+            const currentValue = model[fieldId];
+            // Mutate the array in-place to prevent a destructive re-render.
+            if (JSON.stringify(currentValue) !== JSON.stringify(newValue)) {
+                currentValue.length = 0;
+                newValue.forEach(item => currentValue.push(item));
+            }
+        });
+
+        const unwatch = ctx.$watch(`${modelName}['${fieldId}']`, (nv) => {
+            if (!choices.initialised) return; // Defensive check
+            const choicesValue = choices.getValue(true);
+            if (JSON.stringify(nv) !== JSON.stringify(choicesValue)) {
+                choices.setChoiceByValue(nv);
+            }
+        });
+        window.activeChoicesWatchers[fieldId] = unwatch;
+
+    }, 0);
 }
 
 function bindIconPickerModelSync(ctx) {

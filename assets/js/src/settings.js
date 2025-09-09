@@ -25,6 +25,7 @@ import '@/renderer/fields/radio';
 import '@/renderer/fields/multiselect';
 import '@/renderer/fields/checkboxGroup';
 import '@/renderer/fields/group';
+import '@/renderer/fields/accordion';
 
 // Media & special
 import '@/renderer/fields/image';

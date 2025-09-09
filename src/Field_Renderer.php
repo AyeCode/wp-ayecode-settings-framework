@@ -101,6 +101,10 @@ class Field_Renderer {
                 'label' => __('DateTime Picker', 'ayecode-settings-framework'),
                 'description' => __('Date and time selection', 'ayecode-settings-framework')
             ),
+            'accordion' => array(
+	            'label' => __('Accordion', 'ayecode-settings-framework'),
+	            'description' => __('A collapsible container for field groups.', 'ayecode-settings-framework')
+            ),
             'group' => array(
                 'label' => __('Field Group', 'ayecode-settings-framework'),
                 'description' => __('Group of fields with collapsible header', 'ayecode-settings-framework')
