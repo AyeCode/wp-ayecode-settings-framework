@@ -1,11 +1,16 @@
 export function shouldShowField(ctx, field) {
     if (!field.show_if) return true;
-    try { return evaluateCondition(ctx, field.show_if); }
+    try {
+        // Pass the context (either settings or editingField) down to the evaluator
+        return evaluateCondition(ctx, field.show_if);
+    }
     catch (e) { console.error(`Error evaluating show_if for "${field.id}":`, e); return true; }
 }
 export function evaluateCondition(ctx, rule) {
+    // This function now receives the correct context (ctx)
     const populated = rule.replace(/\[%(\w+)%\]/g, (m, id) => {
-        const v = ctx.settings[id];
+        // Use the passed-in context (ctx) to get the value, not the global settings
+        const v = ctx[id];
         if (typeof v === 'string') return `'${v.replace(/'/g, "\\'")}'`;
         if (typeof v === 'boolean' || typeof v === 'number') return v;
         return 'null';

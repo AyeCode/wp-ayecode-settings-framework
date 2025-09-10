@@ -141,7 +141,13 @@ export default function alpineApp() {
         setInitialSection()           { routerSvc.setInitialSection(this); },
         async saveSettings()          { await settingsSvc.saveSettings(this); },
         discardChanges()              { settingsSvc.discardChanges(this); },
-        shouldShowField(field)        { return cond.shouldShowField(this, field); },
+        // shouldShowField(field)        { return cond.shouldShowField(this, field); },
+        shouldShowField(field) {
+            // **THE FIX**: Check if we are editing a field. If so, use the 'editingField'
+            // as the data source for the condition. Otherwise, use the main 'settings' object.
+            const context = this.editingField ? this.editingField : this.settings;
+            return cond.shouldShowField(context, field);
+        },
 
         evaluateCondition(rule)       { return cond.evaluateCondition(this, rule); },
         evaluateSimpleComparison(e)   { return cond.evaluateSimpleComparison(e); },
@@ -165,15 +171,41 @@ export default function alpineApp() {
             await settingsSvc.saveFormBuilder(this);
         },
         addField(optionTemplate) {
-            const newField = optionTemplate.fields.reduce((acc, field) => {
-                acc[field.id] = field.default !== undefined ? field.default : null;
-                return acc;
-            }, {});
+            // Recursive helper to build the initial data object from a template's schema
+            const buildFieldData = (fields) => {
+                return fields.reduce((acc, field) => {
+                    // Set the default value for the field itself
+                    if (field.id) {
+                        acc[field.id] = field.default !== undefined ? field.default : null;
+                    }
+
+                    // If it's a group, recurse into its sub-fields
+                    if (field.type === 'group' && field.fields) {
+                        Object.assign(acc, buildFieldData(field.fields));
+                    }
+
+                    // If it's an accordion, recurse into the fields of each panel
+                    if (field.type === 'accordion' && field.fields) {
+                        field.fields.forEach(panel => {
+                            if (panel.fields) {
+                                Object.assign(acc, buildFieldData(panel.fields));
+                            }
+                        });
+                    }
+
+                    return acc;
+                }, {});
+            };
+
+            const newField = buildFieldData(optionTemplate.fields);
+
+            // Add the form builder metadata
             newField._uid = 'new_' + Date.now();
             newField.is_new = true;
             newField.template_id = optionTemplate.id;
-            newField.fields = optionTemplate.fields;
+            newField.fields = optionTemplate.fields; // Keep the schema
             newField._template_icon = optionTemplate.icon;
+
             this.settings[this.activePageConfig.id].push(newField);
             this.editField(newField);
         },
