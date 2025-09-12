@@ -8,9 +8,21 @@ registerRenderer('multiselect', (field) => {
     const extra = renderExtraAttributes(field);
     const customDescHtml = renderCustomDesc(field);
     let optionsHtml = '';
+
+    // New logic to build options with optgroup support
     if (field.options) {
-        for (const [val, label] of Object.entries(field.options)) {
-            optionsHtml += `<option value="${val}">${label}</option>`;
+        for (const [key, value] of Object.entries(field.options)) {
+            // Check if the value is an object (but not null), indicating an optgroup
+            if (typeof value === 'object' && value !== null) {
+                optionsHtml += `<optgroup label="${key}">`;
+                for (const [optVal, optLabel] of Object.entries(value)) {
+                    optionsHtml += `<option value="${optVal}">${optLabel}</option>`;
+                }
+                optionsHtml += `</optgroup>`;
+            } else {
+                // Otherwise, it's a regular option
+                optionsHtml += `<option value="${key}">${value}</option>`;
+            }
         }
     }
 

@@ -171,20 +171,31 @@ export default function alpineApp() {
             await settingsSvc.saveFormBuilder(this);
         },
         addField(optionTemplate) {
-            // Recursive helper to build the initial data object from a template's schema
+            let actualTemplate = optionTemplate;
+            let defaultsToApply = null;
+
+            // Check if this is a "skeleton" field that just provides defaults for a base field.
+            if (optionTemplate.base_id) {
+                const allTemplates = this.activePageConfig.templates.flatMap(g => g.options);
+                actualTemplate = allTemplates.find(t => t.id === optionTemplate.base_id);
+
+                if (!actualTemplate) {
+                    alert(`Error: Base template with id '${optionTemplate.base_id}' could not be found.`);
+                    return;
+                }
+                // Store the defaults from the skeleton to apply them after the base field is created.
+                defaultsToApply = optionTemplate.defaults || {};
+            }
+
+            // This is the standard logic for creating a new field instance from a template.
             const buildFieldData = (fields) => {
                 return fields.reduce((acc, field) => {
-                    // Set the default value for the field itself
                     if (field.id) {
                         acc[field.id] = field.default !== undefined ? field.default : null;
                     }
-
-                    // If it's a group, recurse into its sub-fields
                     if (field.type === 'group' && field.fields) {
                         Object.assign(acc, buildFieldData(field.fields));
                     }
-
-                    // If it's an accordion, recurse into the fields of each panel
                     if (field.type === 'accordion' && field.fields) {
                         field.fields.forEach(panel => {
                             if (panel.fields) {
@@ -192,19 +203,29 @@ export default function alpineApp() {
                             }
                         });
                     }
-
                     return acc;
                 }, {});
             };
 
-            const newField = buildFieldData(optionTemplate.fields);
+            const newField = buildFieldData(actualTemplate.fields);
 
-            // Add the form builder metadata
+            // Add the form builder metadata.
+            // CRITICAL: The template_id is the ID of the *actual* base field.
             newField._uid = 'new_' + Date.now();
             newField.is_new = true;
-            newField.template_id = optionTemplate.id;
-            newField.fields = optionTemplate.fields; // Keep the schema
-            newField._template_icon = optionTemplate.icon;
+            newField.template_id = actualTemplate.id;
+            newField.fields = actualTemplate.fields; // Keep the schema
+            newField._template_icon = actualTemplate.icon;
+
+            // If we have defaults from a skeleton, loop through and apply them.
+            if (defaultsToApply) {
+                for (const key in defaultsToApply) {
+                    // Only apply if the property exists on the new field object.
+                    if (Object.prototype.hasOwnProperty.call(newField, key)) {
+                        newField[key] = defaultsToApply[key];
+                    }
+                }
+            }
 
             this.settings[this.activePageConfig.id].push(newField);
             this.editField(newField);

@@ -5,8 +5,9 @@ registerRenderer('group', (field) => {
     if (field.fields) {
         field.fields.forEach((sub) => {
             const safeJson = JSON.stringify(sub).replace(/"/g, '&quot;');
+            // Apply the same conditional class fix here.
             inner += `
-        <div class="py-4" 
+        <div :class="${safeJson}.type === 'hidden' ? '' : 'py-4'" 
              x-show="shouldShowField(${safeJson})" 
              x-transition 
              x-cloak>

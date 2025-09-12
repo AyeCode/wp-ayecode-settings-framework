@@ -95,20 +95,21 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                         [
                                                 'group_title' => 'Standard Fields',
                                                 'options' => [
+                                                    // These are the "real" field types. They have a full 'fields' schema
+                                                    // and serve as the base for the predefined skeletons.
                                                         [
-                                                                'id'      => 'core_text', // Unique ID for this template
+                                                                'id'      => 'core_text',
                                                                 'title'   => 'Text',
                                                                 'icon'    => 'fa-solid fa-font',
-                                                                'limit'   => 5, // This field can be added up to 5 times
+                                                                'limit'   => 5,
                                                                 'fields'  => [
                                                                         [ 'id' => 'type', 'type' => 'hidden', 'default' => 'text' ],
                                                                         [ 'id' => 'label', 'type' => 'text', 'label' => 'Label', 'default' => 'New Text Field' ],
-                                                                        [ 'id' => 'key', 'type' => 'text', 'label' => 'Field Key', 'default' => 'new_text_field', 'description' => 'A unique, machine-readable key for this field.' ],
+                                                                        [ 'id' => 'key', 'type' => 'text', 'label' => 'Field Key', 'default' => 'new_text_field' ],
                                                                         [ 'id' => 'icon', 'type' => 'icon', 'label' => 'Icon', 'default' => 'fa-solid fa-font' ],
                                                                         [ 'id' => 'description', 'type' => 'textarea', 'label' => 'Description', 'rows' => 2 ],
                                                                         [ 'id' => 'placeholder', 'type' => 'text', 'label' => 'Placeholder' ],
                                                                         [ 'id' => 'is_required', 'type' => 'toggle', 'label' => 'Is Required' ],
-                                                                    // **NEW**: Added is_active toggle
                                                                         [ 'id' => 'is_active', 'type' => 'toggle', 'label' => 'Is Active', 'default' => true ],
                                                                 ]
                                                         ],
@@ -123,6 +124,7 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                                         [ 'id' => 'icon', 'type' => 'icon', 'label' => 'Icon', 'default' => 'fa-solid fa-paragraph' ],
                                                                         [ 'id' => 'description', 'type' => 'textarea', 'label' => 'Description', 'rows' => 2 ],
                                                                         [ 'id' => 'is_required', 'type' => 'toggle', 'label' => 'Is Required' ],
+                                                                        [ 'id' => 'is_active', 'type' => 'toggle', 'label' => 'Is Active', 'default' => true ],
                                                                 ]
                                                         ],
                                                         [
@@ -137,37 +139,39 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                                         [ 'id' => 'description', 'type' => 'textarea', 'label' => 'Description', 'rows' => 2 ],
                                                                         [ 'id' => 'options', 'type' => 'textarea', 'label' => 'Options', 'description' => 'Enter one option per line in `key : value` format.', 'default' => 'opt1 : Option 1' ],
                                                                         [ 'id' => 'is_required', 'type' => 'toggle', 'label' => 'Is Required' ],
+                                                                        [ 'id' => 'is_active', 'type' => 'toggle', 'label' => 'Is Active', 'default' => true ],
                                                                 ]
                                                         ],
                                                 ]
                                         ],
                                         [
-                                                'group_title' => 'Custom Fields',
+                                                'group_title' => 'Predefined Fields',
                                                 'options' => [
+                                                    // This is a "skeleton". It has no 'fields' array. It creates a 'core_text'
+                                                    // field and applies the specified defaults.
                                                         [
-                                                                'id'      => 'custom_title',
-                                                                'title'   => 'Listing Title',
-                                                                'icon'    => 'fa-solid fa-heading',
-                                                                'limit'   => 1, // This field can only be added once
-                                                                'fields'  => [
-                                                                        [ 'id' => 'type', 'type' => 'hidden', 'default' => 'text' ],
-                                                                        [ 'id' => 'label', 'type' => 'text', 'label' => 'Label', 'default' => 'Listing Title' ],
-                                                                        [ 'id' => 'key', 'type' => 'text', 'label' => 'Field Key', 'default' => 'listing_title' ],
-                                                                        [ 'id' => 'icon', 'type' => 'icon', 'label' => 'Icon', 'default' => 'fa-solid fa-heading' ],
-                                                                        [ 'id' => 'description', 'type' => 'textarea', 'label' => 'Description', 'rows' => 2, 'default' => 'The main title for the listing.' ],
-                                                                        [ 'id' => 'is_required', 'type' => 'toggle', 'label' => 'Is Required', 'default' => true ],
+                                                                'id'       => 'custom_title_skeleton',
+                                                                'title'    => 'Listing Title',
+                                                                'icon'     => 'fa-solid fa-heading',
+                                                                'limit'    => 1,
+                                                                'base_id'  => 'core_text', // <-- The actual field type to create.
+                                                                'defaults' => [           // <-- The values to apply to the new instance.
+                                                                        'label'       => 'Listing Title',
+                                                                        'key'         => 'listing_title',
+                                                                        'description' => 'The main title for the listing.',
+                                                                        'is_required' => true,
                                                                 ]
                                                         ],
                                                         [
-                                                                'id'      => 'custom_location_group',
+                                                                'id'      => 'custom_location_group_skeleton',
                                                                 'title'   => 'Location Group',
                                                                 'icon'    => 'fa-solid fa-map-marker-alt',
-                                                                'fields'  => [
-                                                                        [ 'id' => 'type', 'type' => 'hidden', 'default' => 'group' ],
-                                                                        [ 'id' => 'label', 'type' => 'text', 'label' => 'Label', 'default' => 'Location Details' ],
-                                                                        [ 'id' => 'key', 'type' => 'text', 'label' => 'Field Key', 'default' => 'location_details' ],
-                                                                        [ 'id' => 'icon', 'type' => 'icon', 'label' => 'Icon', 'default' => 'fa-solid fa-map-marker-alt' ],
-                                                                        [ 'id' => 'description', 'type' => 'textarea', 'label' => 'Description', 'rows' => 2 ],
+                                                                'base_id' => 'core_text', // This could extend any field, here as an example
+                                                                'defaults'  => [
+                                                                        'label' => 'Location Details',
+                                                                        'key'   => 'location_details',
+                                                                        'type'  => 'group', // Overriding the type itself
+                                                                        'icon'  => 'fa-solid fa-map-marker-alt',
                                                                 ]
                                                         ],
                                                 ]

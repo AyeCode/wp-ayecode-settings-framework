@@ -69,8 +69,12 @@ registerRenderer('accordion', (field) => {
 
         panel.fields.forEach(f => {
             const safeJson = JSON.stringify(f).replace(/"/g, '&quot;');
+            // By adding :class, we remove the padding if the field type is 'hidden'.
             accordionHtml += `
-                <div class="py-4" x-show="shouldShowField(${safeJson})" x-transition x-cloak>
+                <div :class="${safeJson}.type === 'hidden' ? '' : 'py-4'" 
+                     x-show="shouldShowField(${safeJson})" 
+                     x-transition 
+                     x-cloak>
                     ${window.asfFieldRenderer.renderField(f)}
                 </div>
             `;
