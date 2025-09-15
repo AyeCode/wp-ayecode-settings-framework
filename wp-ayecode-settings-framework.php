@@ -104,6 +104,7 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                                 'limit'   => 5,
                                                                 'fields'  => [
                                                                         [ 'id' => 'type', 'type' => 'hidden', 'default' => 'text' ],
+                                                                        [ 'id' => '_is_default', 'type' => 'hidden', 'default' => false ],
                                                                         [ 'id' => 'label', 'type' => 'text', 'label' => 'Label', 'default' => 'New Text Field' ],
                                                                         [ 'id' => 'key', 'type' => 'text', 'label' => 'Field Key', 'default' => 'new_text_field' ],
                                                                         [ 'id' => 'icon', 'type' => 'icon', 'label' => 'Icon', 'default' => 'fa-solid fa-font' ],
@@ -119,6 +120,7 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                                 'icon'    => 'fa-solid fa-paragraph',
                                                                 'fields'  => [
                                                                         [ 'id' => 'type', 'type' => 'hidden', 'default' => 'textarea' ],
+                                                                        [ 'id' => '_is_default', 'type' => 'hidden', 'default' => false ],
                                                                         [ 'id' => 'label', 'type' => 'text', 'label' => 'Label', 'default' => 'New Textarea' ],
                                                                         [ 'id' => 'key', 'type' => 'text', 'label' => 'Field Key', 'default' => 'new_textarea' ],
                                                                         [ 'id' => 'icon', 'type' => 'icon', 'label' => 'Icon', 'default' => 'fa-solid fa-paragraph' ],
@@ -133,6 +135,7 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                                 'icon'    => 'fa-solid fa-list-ul',
                                                                 'fields'  => [
                                                                         [ 'id' => 'type', 'type' => 'hidden', 'default' => 'select' ],
+                                                                        [ 'id' => '_is_default', 'type' => 'hidden', 'default' => false ],
                                                                         [ 'id' => 'label', 'type' => 'text', 'label' => 'Label', 'default' => 'New Select' ],
                                                                         [ 'id' => 'key', 'type' => 'text', 'label' => 'Field Key', 'default' => 'new_select' ],
                                                                         [ 'id' => 'icon', 'type' => 'icon', 'label' => 'Icon', 'default' => 'fa-solid fa-list-ul' ],
@@ -158,6 +161,7 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                                 'defaults' => [           // <-- The values to apply to the new instance.
                                                                         'label'       => 'Listing Title',
                                                                         'key'         => 'listing_title',
+                                                                        '_is_default' => true,
                                                                         'description' => 'The main title for the listing.',
                                                                         'is_required' => true,
                                                                 ]
@@ -171,6 +175,7 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                                         'label' => 'Location Details',
                                                                         'key'   => 'location_details',
                                                                         'type'  => 'group', // Overriding the type itself
+                                                                        '_is_default' => true,
                                                                         'icon'  => 'fa-solid fa-map-marker-alt',
                                                                 ]
                                                         ],
@@ -186,7 +191,7 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                         [
                                                 'id' => 'my_accordion_container',
                                                 'type' => 'accordion',
-                                            'default_open' => 'my_accordion_container1',
+                                                'default_open' => 'my_accordion_container1',
                                                 'fields' => [
                                                         [
                                                                 'label' => 'First Panel',
@@ -230,7 +235,7 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                                                 'placeholder' => __('Select roles...', 'geodirectory'),
                                                                                 'searchable' => array('shortcode', 'blocks', 'description', 'content', 'permissions'),
                                                                         )
-                                                                        //['id' => 'accordion_field_four', 'type' => 'multiselect', 'label' => 'Text Field Inside Accordion', 'default' => ['opt1'],'options'=>['opt1'=>'Option 1','opt2'=>'Option 2','opt3'=>'Option 3']],
+                                                                    //['id' => 'accordion_field_four', 'type' => 'multiselect', 'label' => 'Text Field Inside Accordion', 'default' => ['opt1'],'options'=>['opt1'=>'Option 1','opt2'=>'Option 2','opt3'=>'Option 3']],
                                                                 ]
                                                         ],
                                                 ]

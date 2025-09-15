@@ -96,7 +96,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                                 <template x-if="activePageConfig.default_top && parentFields[0]._uid === field._uid">
                                     <i class="fas fa-check-circle me-2 text-primary" title="Default option" data-bs-toggle="tooltip"></i>
                                 </template>
-                                <button class="btn btn-sm btn-outline-danger" @click="deleteField(field)">
+                                <button class="btn btn-sm btn-outline-danger" @click="deleteField(field)" x-show="!field._is_default">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </div>
@@ -130,7 +130,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                                             <template x-if="childField.hasOwnProperty('is_active') && !childField.is_active">
                                                 <i class="fas fa-exclamation-triangle text-warning me-2" title="Inactive" data-bs-toggle="tooltip"></i>
                                             </template>
-                                            <button class="btn btn-sm btn-outline-danger" @click="deleteField(childField)">
+                                            <button class="btn btn-sm btn-outline-danger" @click="deleteField(childField)" x-show="!childField._is_default">
                                                 <i class="fa-solid fa-trash-can"></i>
                                             </button>
                                         </div>

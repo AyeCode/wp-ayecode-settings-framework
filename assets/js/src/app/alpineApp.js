@@ -259,6 +259,10 @@ export default function alpineApp() {
             }
         },
         deleteField(field) {
+            if (field._is_default) {
+                alert('This is a default field and cannot be deleted.');
+                return;
+            }
             if (!confirm('Are you sure you want to delete this field?')) return;
             let fields = this.settings[this.activePageConfig.id];
             const index = fields.findIndex(f => f._uid === field._uid);
