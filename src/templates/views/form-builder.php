@@ -13,26 +13,35 @@ if ( ! defined( 'ABSPATH' ) ) {
 ?>
 <div class="row g-5">
     <div class="col-md-6 col-12">
-        <div x-show="leftColumnView === 'field_settings'" x-cloak x-transition>
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4 class="mb-0">Field Settings</h4>
-                <button type="button" class="btn-close" @click="leftColumnView = 'field_list'; editingField = null;"></button>
+
+        <template x-if="leftColumnView === 'field_settings'">
+            <div id="asf-field-settings"
+                 :key="'fs-' + (editingField && editingField._uid ? editingField._uid : 'none')"
+                 x-cloak x-transition>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="mb-0">Field Settings</h4>
+                    <button type="button" class="btn-close"
+                            @click="leftColumnView = 'field_list'; $nextTick(() => { editingField = window.__ASF_NULL_FIELD })"
+                    ></button>
+                </div>
+                <div class="border rounded p-3 bg-body">
+                    <template x-if="editingField">
+                        <div>
+                            <template x-for="(fieldSchema, index) in editingField.fields" :key="index">
+                                <div x-show="fieldSchema.type !== 'hidden'">
+                                    <div class="py-4"
+                                         x-html="renderField(fieldSchema, 'editingField')"
+                                         x-effect="$nextTick(() => Alpine.initTree($el))"></div>
+                                </div>
+                            </template>
+                            <button class="btn btn-primary w-100"
+                                    @click="leftColumnView = 'field_list'; $nextTick(() => { editingField = window.__ASF_NULL_FIELD })">Done</button>
+                        </div>
+                    </template>
+                </div>
             </div>
-            <div class="border rounded p-3 bg-body">
-                <template x-if="editingField">
-                    <div>
-                        <template x-for="(fieldSchema, index) in editingField.fields" :key="index">
-                            <div x-show="fieldSchema.type !== 'hidden'">
-                                <div class="py-4"
-                                     x-html="renderField(fieldSchema, 'editingField')"
-                                     x-effect="$nextTick(() => Alpine.initTree($el))"></div>
-                            </div>
-                        </template>
-                        <button class="btn btn-primary w-100" @click="leftColumnView = 'field_list'; editingField = null;">Done</button>
-                    </div>
-                </template>
-            </div>
-        </div>
+        </template>
+
         <div x-show="leftColumnView === 'field_list'" x-cloak x-transition>
             <h4 class="mb-3">Available Fields</h4>
             <template x-for="(group, groupIndex) in activePageConfig.templates" :key="groupIndex">

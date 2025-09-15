@@ -17,6 +17,18 @@ import * as cond from '@/utils/conditions';
 import * as highlight from '@/utils/highlight';
 import * as findUtil from '@/utils/find';
 
+// A null-safe stand-in for editingField that won't crash when libs probe it.
+window.__ASF_NULL_FIELD = new Proxy({}, {
+    get: (target, prop) => {
+        // Allow `hasOwnProperty` to be called on the proxy.
+        if (prop === 'hasOwnProperty') return (key) => Object.prototype.hasOwnProperty.call(target, key);
+        // Safely return an empty string for any other property access.
+        return '';
+    },
+    has: () => true,
+});
+
+
 export default function alpineApp() {
     return {
         // STATE
@@ -49,6 +61,8 @@ export default function alpineApp() {
         // LIFECYCLE
         init() {
             themeSvc.initTheme(this);
+            // Initialize editingField to the safe null object.
+            this.editingField = window.__ASF_NULL_FIELD;
             this.customSearchLinks = window.ayecodeSettingsFramework?.custom_search_links || [];
             configSvc.loadConfiguration(this);
 
@@ -106,7 +120,6 @@ export default function alpineApp() {
         // NEW COMPUTED PROPERTIES FOR NESTING
         get parentFields() {
             const fields = this.settings[this.activePageConfig?.id] || [];
-            // **THE FIX**: Treat null, undefined, and 0 as root-level items.
             return fields.filter(f => !f._parent_id || f._parent_id == 0);
         },
         childFields(parentId) {
@@ -121,7 +134,7 @@ export default function alpineApp() {
         goToSearchResult(result)      { searchSvc.goToSearchResult(this, result); },
         goToSection(sectionId, ss='') {
             if (this.activePageConfig?.type === 'form_builder') {
-                this.editingField = null;
+                this.editingField = window.__ASF_NULL_FIELD;
                 this.leftColumnView = 'field_list';
             }
             routerSvc.goToSection(this, sectionId, ss);
@@ -129,7 +142,7 @@ export default function alpineApp() {
         goToCustomLink(link)          { searchSvc.goToCustomLink(this, link); },
         switchSection(sectionId)      {
             if (this.activePageConfig?.type === 'form_builder') {
-                this.editingField = null;
+                this.editingField = window.__ASF_NULL_FIELD;
                 this.leftColumnView = 'field_list';
             }
             routerSvc.switchSection(this, sectionId);
@@ -141,11 +154,9 @@ export default function alpineApp() {
         setInitialSection()           { routerSvc.setInitialSection(this); },
         async saveSettings()          { await settingsSvc.saveSettings(this); },
         discardChanges()              { settingsSvc.discardChanges(this); },
-        // shouldShowField(field)        { return cond.shouldShowField(this, field); },
         shouldShowField(field) {
-            // **THE FIX**: Check if we are editing a field. If so, use the 'editingField'
-            // as the data source for the condition. Otherwise, use the main 'settings' object.
-            const context = this.editingField ? this.editingField : this.settings;
+            // Check if editingField is a real object before using it as context.
+            const context = this.editingField && this.editingField._uid ? this.editingField : this.settings;
             return cond.shouldShowField(context, field);
         },
 
@@ -153,6 +164,11 @@ export default function alpineApp() {
         evaluateSimpleComparison(e)   { return cond.evaluateSimpleComparison(e); },
 
         renderField(field, modelPrefix = 'settings') {
+            // Add a safety check to prevent rendering an invalid field schema.
+            if (!field || typeof field !== 'object' || !field.type) {
+                console.warn('[ASF] renderField: skipped invalid schema', field);
+                return '';
+            }
             return settingsSvc.renderFieldCompat(field, modelPrefix);
         },
         selectImage(fieldId)          { mediaSvc.selectImage(this, fieldId); },
@@ -174,7 +190,6 @@ export default function alpineApp() {
             let actualTemplate = optionTemplate;
             let defaultsToApply = null;
 
-            // Check if this is a "skeleton" field that just provides defaults for a base field.
             if (optionTemplate.base_id) {
                 const allTemplates = this.activePageConfig.templates.flatMap(g => g.options);
                 actualTemplate = allTemplates.find(t => t.id === optionTemplate.base_id);
@@ -183,11 +198,9 @@ export default function alpineApp() {
                     alert(`Error: Base template with id '${optionTemplate.base_id}' could not be found.`);
                     return;
                 }
-                // Store the defaults from the skeleton to apply them after the base field is created.
                 defaultsToApply = optionTemplate.defaults || {};
             }
 
-            // This is the standard logic for creating a new field instance from a template.
             const buildFieldData = (fields) => {
                 return fields.reduce((acc, field) => {
                     if (field.id) {
@@ -208,19 +221,14 @@ export default function alpineApp() {
             };
 
             const newField = buildFieldData(actualTemplate.fields);
-
-            // Add the form builder metadata.
-            // CRITICAL: The template_id is the ID of the *actual* base field.
             newField._uid = 'new_' + Date.now();
             newField.is_new = true;
             newField.template_id = actualTemplate.id;
-            newField.fields = actualTemplate.fields; // Keep the schema
+            newField.fields = actualTemplate.fields;
             newField._template_icon = actualTemplate.icon;
 
-            // If we have defaults from a skeleton, loop through and apply them.
             if (defaultsToApply) {
                 for (const key in defaultsToApply) {
-                    // Only apply if the property exists on the new field object.
                     if (Object.prototype.hasOwnProperty.call(newField, key)) {
                         newField[key] = defaultsToApply[key];
                     }
@@ -231,9 +239,24 @@ export default function alpineApp() {
             this.editField(newField);
         },
         editField(field) {
-            this.editingField = field;
-            this.leftColumnView = 'field_settings';
-            setTimeout(() => this.reinitializePlugins(), 50);
+            // If another field is already open, close the panel first to force a full teardown.
+            if (this.editingField && this.editingField._uid && this.editingField._uid !== field._uid) {
+                this.leftColumnView = 'field_list';
+                this.editingField = window.__ASF_NULL_FIELD;
+
+                // Use nextTick to ensure Alpine processes the changes before we reopen the panel.
+                this.$nextTick(() => {
+                    this.editingField = field;
+                    this.leftColumnView = 'field_settings';
+                    // Re-initialize plugins for the new context.
+                    this.$nextTick(() => this.reinitializePlugins());
+                });
+            } else {
+                // Otherwise, just open the editor.
+                this.editingField = field;
+                this.leftColumnView = 'field_settings';
+                this.$nextTick(() => this.reinitializePlugins());
+            }
         },
         deleteField(field) {
             if (!confirm('Are you sure you want to delete this field?')) return;
@@ -244,7 +267,7 @@ export default function alpineApp() {
             }
             this.settings[this.activePageConfig.id] = fields.filter(f => f._parent_id !== field._uid);
             if (this.editingField && this.editingField._uid === field._uid) {
-                this.editingField = null;
+                this.editingField = window.__ASF_NULL_FIELD;
                 this.leftColumnView = 'field_list';
             }
         },
@@ -269,7 +292,6 @@ export default function alpineApp() {
             const oldIndex = items.indexOf(movedItem);
             items.splice(oldIndex, 1);
 
-            // **THE FIX**: When checking for siblings, account for the fact that a root-level parentId might be null or 0.
             const targetSiblings = items.filter(i => {
                 const targetParentId = parentId === null ? 0 : parentId;
                 const itemParentId = i._parent_id === null ? 0 : i._parent_id;
