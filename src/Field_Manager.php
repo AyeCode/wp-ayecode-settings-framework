@@ -247,6 +247,10 @@ class Field_Manager {
 				$sanitized_field['is_new'] = (bool) $field['is_new'];
 			}
 
+			// Sanitize our new conditions property
+			if ( isset( $field['conditions'] ) && is_array( $field['conditions'] ) ) {
+				$sanitized_field['conditions'] = $this->sanitize_conditions( $field['conditions'] );
+			}
 
 			// Handle nested fields for 'group' types
 			if ( isset( $field['type'] ) && $field['type'] === 'group' && isset( $field['fields'] ) ) {
@@ -272,6 +276,42 @@ class Field_Manager {
 
 		return $sanitized_fields;
 	}
+
+	/**
+	 * Sanitizes the conditional logic rules array.
+	 *
+	 * @param array $conditions The raw conditions array.
+	 * @return array The sanitized conditions array.
+	 */
+	private function sanitize_conditions( $conditions ) {
+		$sanitized_conditions = [];
+		if ( ! is_array( $conditions ) ) {
+			return $sanitized_conditions;
+		}
+
+		foreach ( $conditions as $condition ) {
+			if ( ! is_array( $condition ) ) {
+				continue;
+			}
+			$clean_condition = [];
+			if ( isset( $condition['action'] ) ) {
+				$clean_condition['action'] = sanitize_text_field( $condition['action'] );
+			}
+			if ( isset( $condition['field'] ) ) {
+				$clean_condition['field'] = sanitize_text_field( $condition['field'] );
+			}
+			if ( isset( $condition['condition'] ) ) {
+				$clean_condition['condition'] = sanitize_text_field( $condition['condition'] );
+			}
+			if ( isset( $condition['value'] ) ) {
+				$clean_condition['value'] = sanitize_text_field( $condition['value'] );
+			}
+			$sanitized_conditions[] = $clean_condition;
+		}
+
+		return $sanitized_conditions;
+	}
+
 
 	/**
 	 * Gathers all default values from the configuration.

@@ -36,6 +36,7 @@ import '@/renderer/fields/linkButton';
 import '@/renderer/fields/gdMap';
 import '@/renderer/fields/helperTags';
 import '@/renderer/fields/customRenderer';
+import '@/renderer/fields/conditions';
 
 // Optional extras (match your old file types if used)
 import '@/renderer/fields/file';

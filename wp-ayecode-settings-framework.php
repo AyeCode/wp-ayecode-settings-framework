@@ -112,6 +112,23 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                                         [ 'id' => 'placeholder', 'type' => 'text', 'label' => 'Placeholder' ],
                                                                         [ 'id' => 'is_required', 'type' => 'toggle', 'label' => 'Is Required' ],
                                                                         [ 'id' => 'is_active', 'type' => 'toggle', 'label' => 'Is Active', 'default' => true ],
+                                                                        [
+                                                                                'id' => 'conditions_wrapper',
+                                                                                'type' => 'accordion',
+                                                                                'fields' => [
+                                                                                        [
+                                                                                                'id' => 'conditions_panel',
+                                                                                                'label' => 'Conditional Fields',
+                                                                                                'description' => 'Setup conditional logic to show/hide this field based on other fields value or conditions.',
+                                                                                                'fields' => [
+                                                                                                        [
+                                                                                                                'id' => 'conditions',
+                                                                                                                'type' => 'conditions'
+                                                                                                        ]
+                                                                                                ]
+                                                                                        ]
+                                                                                ]
+                                                                        ]
                                                                 ]
                                                         ],
                                                         [

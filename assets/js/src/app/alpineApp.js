@@ -126,6 +126,19 @@ export default function alpineApp() {
             const fields = this.settings[this.activePageConfig?.id] || [];
             return fields.filter(f => f._parent_id == parentId);
         },
+        get otherFields() {
+            if (!this.activePageConfig || this.activePageConfig.type !== 'form_builder' || !this.editingField?._uid) {
+                return [];
+            }
+            const allFields = this.settings[this.activePageConfig.id] || [];
+            return allFields
+                .filter(f => f._uid !== this.editingField._uid)
+                .map(f => ({
+                    label: f.label,
+                    value: f.key || f.htmlvar_name || f._uid, // Fallback logic is now centralized here
+                    _uid: f._uid
+                }));
+        },
 
         // METHODS
         toggleTheme()                 { themeSvc.toggleTheme(this); },
@@ -239,6 +252,10 @@ export default function alpineApp() {
             this.editField(newField);
         },
         editField(field) {
+            if (!field.conditions) {
+                field.conditions = [];
+            }
+
             // If another field is already open, close the panel first to force a full teardown.
             if (this.editingField && this.editingField._uid && this.editingField._uid !== field._uid) {
                 this.leftColumnView = 'field_list';
@@ -324,6 +341,20 @@ export default function alpineApp() {
 
             this.settings[sectionId] = items;
             this.sortIteration++;
+        },
+        addCondition() {
+            if (!this.editingField.conditions) {
+                this.editingField.conditions = [];
+            }
+            this.editingField.conditions.push({
+                action: '',
+                field: '',
+                condition: '',
+                value: ''
+            });
+        },
+        removeCondition(index) {
+            this.editingField.conditions.splice(index, 1);
         },
         getTemplateForField(field) {
             if (!field || !field.template_id) return null;
