@@ -49,7 +49,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                     <h6 class="text-muted" x-text="group.group_title"></h6>
                     <ul class="row row-cols-2 gy-0 gx-1 px-0">
                         <template x-for="option in group.options" :key="option.title">
-                            <li class="col" @click="addField(option)">
+                            <li class="col list-unstyled" @click="addField(option)">
                                 <span class="btn btn-sm btn-outline-secondary w-100 c-pointer d-block text-start">
                                     <i :class="option.icon || 'fa-solid fa-plus'" class="fa-fw me-2 text-muted"></i>
                                     <span x-text="option.title"></span>
@@ -78,25 +78,31 @@ if ( ! defined( 'ABSPATH' ) ) {
                             'border-primary': editingField && editingField._uid === field._uid,
                             'border-warning': field.hasOwnProperty('is_active') && !field.is_active
                          }"
-                         x-sort:handle="'.c-move'"
                     >
                         <div class="d-flex justify-content-between align-items-center">
-                            <div class="d-flex align-items-center">
-                                <span class="c-move me-3 text-muted"><i class="fa-solid fa-grip-vertical"></i></span>
-                                <a href="#" @click.prevent="editField(field)" class="fw-bold text-decoration-none text-body">
-                                    <i :class="field.icon || getTemplateForField(field)?.icon || 'fa-solid fa-pen-to-square'" class="fa-fw me-2 text-muted"></i>
+                            <div class="d-flex align-items-center flex-grow-1 c-pointer" @click.prevent="editField(field)">
+                                <span class="c-move me-3 text-muted" x-sort:handle><i class="fa-solid fa-grip-vertical"></i></span>
+                                <i :class="field.icon || getTemplateForField(field)?.icon || 'fa-solid fa-pen-to-square'" class="fa-fw me-2 text-muted"></i>
+                                <a href="#" class="fw-bold text-decoration-none text-body">
                                     <span x-text="field.label"></span>
                                     <span class="ms-2 text-muted small" x-text="'(' + field.type + ')'"></span>
                                 </a>
                             </div>
-                            <div>
+
+                            <div class="d-flex align-items-center justify-content-end" style="width: 80px;">
                                 <template x-if="field.hasOwnProperty('is_active') && !field.is_active">
                                     <i class="fas fa-exclamation-triangle text-warning me-2" title="Inactive" data-bs-toggle="tooltip"></i>
                                 </template>
                                 <template x-if="activePageConfig.default_top && parentFields[0]._uid === field._uid">
                                     <i class="fas fa-check-circle me-2 text-primary" title="Default option" data-bs-toggle="tooltip"></i>
                                 </template>
-                                <button class="btn btn-sm btn-outline-danger" @click="deleteField(field)" x-show="!field._is_default">
+                                <button class="btn btn-sm btn-icon text-muted" @click.prevent="editField(field)" data-bs-toggle="tooltip" title="Edit Field">
+                                    <i class="fa-solid fa-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-icon text-muted hover-text-danger" @click="deleteField(field)" x-show="!field._is_default" data-bs-toggle="tooltip" title="Delete Field">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                                <button class="btn btn-sm btn-icon text-muted opacity-25" x-show="field._is_default" data-bs-toggle="tooltip" title="Default field, can't be deleted">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </div>
@@ -115,22 +121,28 @@ if ( ! defined( 'ABSPATH' ) ) {
                                         'border-warning': childField.hasOwnProperty('is_active') && !childField.is_active
                                      }"
                                      x-sort:item="childField._uid"
-                                     x-sort:handle="'.c-move'"
                                 >
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <div class="d-flex align-items-center">
-                                            <span class="c-move me-3 text-muted"><i class="fa-solid fa-grip-vertical"></i></span>
-                                            <a href="#" @click.prevent="editField(childField)" class="fw-bold text-decoration-none text-body">
-                                                <i :class="childField.icon || getTemplateForField(childField)?.icon || 'fa-solid fa-pen-to-square'" class="fa-fw me-2 text-muted"></i>
+                                        <div class="d-flex align-items-center flex-grow-1 c-pointer" @click.prevent="editField(childField)">
+                                            <span class="c-move me-3 text-muted" x-sort:handle><i class="fa-solid fa-grip-vertical"></i></span>
+                                            <i :class="childField.icon || getTemplateForField(childField)?.icon || 'fa-solid fa-pen-to-square'" class="fa-fw me-2 text-muted"></i>
+                                            <a href="#" class="fw-bold text-decoration-none text-body">
                                                 <span x-text="childField.label"></span>
                                                 <span class="ms-2 text-muted small" x-text="'(' + childField.type + ')'"></span>
                                             </a>
                                         </div>
-                                        <div>
+
+                                        <div class="d-flex align-items-center justify-content-end" style="width: 80px;">
                                             <template x-if="childField.hasOwnProperty('is_active') && !childField.is_active">
                                                 <i class="fas fa-exclamation-triangle text-warning me-2" title="Inactive" data-bs-toggle="tooltip"></i>
                                             </template>
-                                            <button class="btn btn-sm btn-outline-danger" @click="deleteField(childField)" x-show="!childField._is_default">
+                                            <button class="btn btn-sm btn-icon text-muted" @click.prevent="editField(childField)" data-bs-toggle="tooltip" title="Edit Field">
+                                                <i class="fa-solid fa-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-icon text-muted hover-text-danger" @click="deleteField(childField)" x-show="!childField._is_default" data-bs-toggle="tooltip" title="Delete Field">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-icon text-muted opacity-25" x-show="childField._is_default"  data-bs-toggle="tooltip" title="Default field, can't be deleted">
                                                 <i class="fa-solid fa-trash-can"></i>
                                             </button>
                                         </div>

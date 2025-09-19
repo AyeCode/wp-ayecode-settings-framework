@@ -252,10 +252,12 @@ export default function alpineApp() {
             this.editField(newField);
         },
         editField(field) {
+            // THE FIX: Find and remove any orphaned tooltips before changing the view.
+            document.querySelector('.tooltip')?.remove();
+
             if (!field.conditions) {
                 field.conditions = [];
             }
-
             // If another field is already open, close the panel first to force a full teardown.
             if (this.editingField && this.editingField._uid && this.editingField._uid !== field._uid) {
                 this.leftColumnView = 'field_list';
