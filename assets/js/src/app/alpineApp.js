@@ -1,6 +1,5 @@
 // assets/js/src/app/alpineApp.js
 
-// Small glue-only Alpine component. All real logic lives in /services & /utils.
 import * as configSvc from '@/services/config';
 import * as settingsSvc from '@/services/settings';
 import * as routerSvc from '@/services/hashRouter';
@@ -17,12 +16,9 @@ import * as cond from '@/utils/conditions';
 import * as highlight from '@/utils/highlight';
 import * as findUtil from '@/utils/find';
 
-// A null-safe stand-in for editingField that won't crash when libs probe it.
 window.__ASF_NULL_FIELD = new Proxy({}, {
     get: (target, prop) => {
-        // Allow `hasOwnProperty` to be called on the proxy.
         if (prop === 'hasOwnProperty') return (key) => Object.prototype.hasOwnProperty.call(target, key);
-        // Safely return an empty string for any other property access.
         return '';
     },
     has: () => true,
@@ -61,7 +57,6 @@ export default function alpineApp() {
         // LIFECYCLE
         init() {
             themeSvc.initTheme(this);
-            // Initialize editingField to the safe null object.
             this.editingField = window.__ASF_NULL_FIELD;
             this.customSearchLinks = window.ayecodeSettingsFramework?.custom_search_links || [];
             configSvc.loadConfiguration(this);
@@ -117,7 +112,6 @@ export default function alpineApp() {
         get isActionRunning()       { return actionsSvc.isAnyActionRunning(this); },
         get groupedSearchResults()  { return searchSvc.groupedSearchResults(this); },
 
-        // NEW COMPUTED PROPERTIES FOR NESTING
         get parentFields() {
             const fields = this.settings[this.activePageConfig?.id] || [];
             return fields.filter(f => !f._parent_id || f._parent_id == 0);
@@ -135,7 +129,7 @@ export default function alpineApp() {
                 .filter(f => f._uid !== this.editingField._uid)
                 .map(f => ({
                     label: f.label,
-                    value: f.key || f.htmlvar_name || f._uid, // Fallback logic is now centralized here
+                    value: f.key || f.htmlvar_name || f._uid,
                     _uid: f._uid
                 }));
         },
@@ -168,7 +162,6 @@ export default function alpineApp() {
         async saveSettings()          { await settingsSvc.saveSettings(this); },
         discardChanges()              { settingsSvc.discardChanges(this); },
         shouldShowField(field) {
-            // Check if editingField is a real object before using it as context.
             const context = this.editingField && this.editingField._uid ? this.editingField : this.settings;
             return cond.shouldShowField(context, field);
         },
@@ -177,7 +170,6 @@ export default function alpineApp() {
         evaluateSimpleComparison(e)   { return cond.evaluateSimpleComparison(e); },
 
         renderField(field, modelPrefix = 'settings') {
-            // Add a safety check to prevent rendering an invalid field schema.
             if (!field || typeof field !== 'object' || !field.type) {
                 console.warn('[ASF] renderField: skipped invalid schema', field);
                 return '';
@@ -199,6 +191,27 @@ export default function alpineApp() {
         async saveForm() {
             await settingsSvc.saveFormBuilder(this);
         },
+
+        countFieldsByTemplateId(optionTemplate) {
+            const allFields = this.settings[this.activePageConfig.id] || [];
+            const idToCheck = (optionTemplate.defaults && optionTemplate.defaults.field_type_key)
+                ? optionTemplate.defaults.field_type_key
+                : (optionTemplate.base_id || optionTemplate.id);
+
+            return allFields.filter(field => {
+                const keyToCompare = field.field_type_key || field.template_id;
+                return keyToCompare === idToCheck;
+            }).length;
+        },
+
+        handleFieldClick(option) {
+            if (option.limit && this.countFieldsByTemplateId(option) >= option.limit) {
+                window.aui_toast?.('asf-limit-reached', 'error', 'This field is single use only and is already being used.');
+                return;
+            }
+            this.addField(option);
+        },
+
         addField(optionTemplate) {
             let actualTemplate = optionTemplate;
             let defaultsToApply = null;
@@ -252,26 +265,21 @@ export default function alpineApp() {
             this.editField(newField);
         },
         editField(field) {
-            // THE FIX: Find and remove any orphaned tooltips before changing the view.
             document.querySelector('.tooltip')?.remove();
 
             if (!field.conditions) {
                 field.conditions = [];
             }
-            // If another field is already open, close the panel first to force a full teardown.
             if (this.editingField && this.editingField._uid && this.editingField._uid !== field._uid) {
                 this.leftColumnView = 'field_list';
                 this.editingField = window.__ASF_NULL_FIELD;
 
-                // Use nextTick to ensure Alpine processes the changes before we reopen the panel.
                 this.$nextTick(() => {
                     this.editingField = field;
                     this.leftColumnView = 'field_settings';
-                    // Re-initialize plugins for the new context.
                     this.$nextTick(() => this.reinitializePlugins());
                 });
             } else {
-                // Otherwise, just open the editor.
                 this.editingField = field;
                 this.leftColumnView = 'field_settings';
                 this.$nextTick(() => this.reinitializePlugins());

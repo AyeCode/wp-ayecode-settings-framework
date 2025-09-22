@@ -49,12 +49,17 @@ if ( ! defined( 'ABSPATH' ) ) {
                     <h6 class="text-muted" x-text="group.group_title"></h6>
                     <ul class="row row-cols-2 gy-0 gx-1 px-0">
                         <template x-for="option in group.options" :key="option.title">
-                            <li class="col list-unstyled" @click="addField(option)">
-                                <span class="btn btn-sm btn-outline-secondary w-100 c-pointer d-block text-start">
-                                    <i :class="option.icon || 'fa-solid fa-plus'" class="fa-fw me-2 text-muted"></i>
-                                    <span x-text="option.title"></span>
-                                </span>
-                            </li>
+                            <template x-if="!option.hidden">
+                                <li class="col list-unstyled"
+                                    @click="handleFieldClick(option)"
+                                    :class="{ 'opacity-50': option.limit && countFieldsByTemplateId(option) >= option.limit }">
+                                    <span class="btn btn-sm btn-outline-secondary w-100 d-block text-start"
+                                          :class="{ 'c-pointer': !option.limit || countFieldsByTemplateId(option) < option.limit }">
+                                        <i :class="option.icon || 'fa-solid fa-plus'" class="fa-fw me-2 text-muted"></i>
+                                        <span x-text="option.title"></span>
+                                    </span>
+                                </li>
+                            </template>
                         </template>
                     </ul>
                 </div>
