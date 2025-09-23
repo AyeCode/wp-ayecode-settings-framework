@@ -112,6 +112,29 @@ export default function alpineApp() {
         get isActionRunning()       { return actionsSvc.isAnyActionRunning(this); },
         get groupedSearchResults()  { return searchSvc.groupedSearchResults(this); },
 
+        /**
+         * START: New computed property to find all duplicate keys
+         */
+        get duplicateKeys() {
+            const uniqueKeyProp = this.activePageConfig?.unique_key_property;
+            if (!uniqueKeyProp) {
+                return [];
+            }
+            const allFields = this.settings[this.activePageConfig.id] || [];
+            const keyCounts = allFields.reduce((acc, field) => {
+                const key = field[uniqueKeyProp];
+                if (key) {
+                    acc[key] = (acc[key] || 0) + 1;
+                }
+                return acc;
+            }, {});
+
+            return Object.keys(keyCounts).filter(key => keyCounts[key] > 1);
+        },
+        /**
+         * END: New computed property
+         */
+
         get parentFields() {
             const fields = this.settings[this.activePageConfig?.id] || [];
             return fields.filter(f => !f._parent_id || f._parent_id == 0);
@@ -169,12 +192,13 @@ export default function alpineApp() {
         evaluateCondition(rule)       { return cond.evaluateCondition(this, rule); },
         evaluateSimpleComparison(e)   { return cond.evaluateSimpleComparison(e); },
 
-        renderField(field, modelPrefix = 'settings') {
+        renderField(field, modelPrefix = 'settings', pageConfig = null) {
             if (!field || typeof field !== 'object' || !field.type) {
                 console.warn('[ASF] renderField: skipped invalid schema', field);
                 return '';
             }
-            return settingsSvc.renderFieldCompat(field, modelPrefix);
+            const configToUse = pageConfig || this.activePageConfig;
+            return settingsSvc.renderFieldCompat(field, modelPrefix, configToUse);
         },
         selectImage(fieldId)          { mediaSvc.selectImage(this, fieldId); },
         removeImage(fieldId)          { mediaSvc.removeImage(this, fieldId); },

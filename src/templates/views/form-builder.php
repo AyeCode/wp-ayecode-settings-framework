@@ -29,8 +29,8 @@ if ( ! defined( 'ABSPATH' ) ) {
                         <div>
                             <template x-for="(fieldSchema, index) in editingField.fields" :key="index">
                                 <div x-show="fieldSchema.type !== 'hidden'">
-                                    <div class="py-4"
-                                         x-html="renderField(fieldSchema, 'editingField')"
+                                    <div class="pb-4"
+                                         x-html="renderField(fieldSchema, 'editingField', activePageConfig)"
                                          x-effect="$nextTick(() => Alpine.initTree($el))"></div>
                                 </div>
                             </template>
@@ -50,13 +50,21 @@ if ( ! defined( 'ABSPATH' ) ) {
                     <ul class="row row-cols-2 gy-0 gx-1 px-0">
                         <template x-for="option in group.options" :key="option.title">
                             <template x-if="!option.hidden">
-                                <li class="col list-unstyled"
+                                <li class="col list-unstyled position-relative"
                                     @click="handleFieldClick(option)"
                                     :class="{ 'opacity-50': option.limit && countFieldsByTemplateId(option) >= option.limit }">
                                     <span class="btn btn-sm btn-outline-secondary w-100 d-block text-start"
                                           :class="{ 'c-pointer': !option.limit || countFieldsByTemplateId(option) < option.limit }">
                                         <i :class="option.icon || 'fa-solid fa-plus'" class="fa-fw me-2 text-muted"></i>
                                         <span x-text="option.title"></span>
+
+                                        <template x-if="option.description">
+                                            <i class="fa-solid fa-circle-question text-body-tertiary fs-sm position-absolute end-0 top-0 mt-2 me-2"
+                                               data-bs-toggle="tooltip"
+                                               :data-bs-title="option.description"
+                                               @click.stop>
+                                            </i>
+                                        </template>
                                     </span>
                                 </li>
                             </template>
@@ -78,79 +86,88 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <div class="mb-2"
                      x-sort:item="field._uid"
                 >
-                    <div class="px-3 py-2 border rounded bg-light-subtle"
-                         :class="{
-                            'border-primary': editingField && editingField._uid === field._uid,
-                            'border-warning': field.hasOwnProperty('is_active') && !field.is_active
-                         }"
-                    >
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="d-flex align-items-center flex-grow-1 c-pointer" @click.prevent="editField(field)">
-                                <span class="c-move me-3 text-muted" x-sort:handle><i class="fa-solid fa-grip-vertical"></i></span>
-                                <i :class="field.icon || getTemplateForField(field)?.icon || 'fa-solid fa-pen-to-square'" class="fa-fw me-2 text-muted"></i>
-                                <a href="#" class="fw-bold text-decoration-none text-body">
-                                    <span x-text="field.label"></span>
-                                    <span class="ms-2 text-muted small" x-text="'(' + field.type + ')'"></span>
-                                </a>
-                            </div>
+                    <div :class="{ 'border border-danger rounded p-2': duplicateKeys.includes(field[activePageConfig.unique_key_property]) }">
+                        <div class="px-3 py-2 border rounded bg-light-subtle"
+                             :class="{
+                                'border-primary': editingField && editingField._uid === field._uid,
+                                'border-warning': field.hasOwnProperty('is_active') && !field.is_active,
+                             }"
+                        >
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center flex-grow-1 c-pointer" @click.prevent="editField(field)">
+                                    <span class="c-move me-3 text-muted" x-sort:handle><i class="fa-solid fa-grip-vertical"></i></span>
+                                    <i :class="field.icon || getTemplateForField(field)?.icon || 'fa-solid fa-pen-to-square'" class="fa-fw me-2 text-muted"></i>
+                                    <a href="#" class="fw-bold text-decoration-none text-body">
+                                        <span x-text="field.label"></span>
+                                        <span class="ms-2 text-muted small" x-text="'(' + field.type + ')'"></span>
+                                    </a>
+                                </div>
 
-                            <div class="d-flex align-items-center justify-content-end" style="width: 80px;">
-                                <template x-if="field.hasOwnProperty('is_active') && !field.is_active">
-                                    <i class="fas fa-exclamation-triangle text-warning me-2" title="Inactive" data-bs-toggle="tooltip"></i>
-                                </template>
-                                <template x-if="activePageConfig.default_top && parentFields[0]._uid === field._uid">
-                                    <i class="fas fa-check-circle me-2 text-primary" title="Default option" data-bs-toggle="tooltip"></i>
-                                </template>
-                                <button class="btn btn-sm btn-icon text-muted" @click.prevent="editField(field)" data-bs-toggle="tooltip" title="Edit Field">
-                                    <i class="fa-solid fa-pencil"></i>
-                                </button>
-                                <button class="btn btn-sm btn-icon text-muted hover-text-danger" @click="deleteField(field)" x-show="!field._is_default" data-bs-toggle="tooltip" title="Delete Field">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                                <button class="btn btn-sm btn-icon text-muted opacity-25" x-show="field._is_default" data-bs-toggle="tooltip" title="Default field, can't be deleted">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
+                                <div class="d-flex align-items-center justify-content-end" style="width: 80px;">
+                                    <template x-if="field.hasOwnProperty('is_active') && !field.is_active">
+                                        <i class="fas fa-exclamation-triangle text-warning me-2" title="Inactive" data-bs-toggle="tooltip"></i>
+                                    </template>
+                                    <template x-if="activePageConfig.default_top && parentFields[0]._uid === field._uid">
+                                        <i class="fas fa-check-circle me-2 text-primary" title="Default option" data-bs-toggle="tooltip"></i>
+                                    </template>
+                                    <button class="btn btn-sm btn-icon text-muted" @click.prevent="editField(field)" data-bs-toggle="tooltip" title="Edit Field">
+                                        <i class="fa-solid fa-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-icon text-muted hover-text-danger" @click="deleteField(field)" x-show="!field._is_default" data-bs-toggle="tooltip" title="Delete Field">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-icon text-muted opacity-25" x-show="field._is_default" data-bs-toggle="tooltip" title="Default field, can't be deleted">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
+                        <div x-show="duplicateKeys.includes(field[activePageConfig.unique_key_property])" class="text-danger small mt-1 ps-2" x-cloak>
+                            Warning: This field key is a duplicate.
+                        </div>
                     </div>
-
                     <template x-if="activePageConfig.nestable">
                         <div class="ms-4 child-fields"
                              x-sort:group="{ name: 'fields' }"
                              x-sort="(item, pos) => handleSort(item, pos, field._uid)"
                         >
                             <template x-for="childField in childFields(field._uid)" :key="sortIteration + '-' + childField._uid">
-                                <div class="px-3 py-2 border rounded bg-light-subtle mt-2"
-                                     :class="{
-                                        'border-primary': editingField && editingField._uid === childField._uid,
-                                        'border-warning': childField.hasOwnProperty('is_active') && !childField.is_active
-                                     }"
-                                     x-sort:item="childField._uid"
-                                >
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div class="d-flex align-items-center flex-grow-1 c-pointer" @click.prevent="editField(childField)">
-                                            <span class="c-move me-3 text-muted" x-sort:handle><i class="fa-solid fa-grip-vertical"></i></span>
-                                            <i :class="childField.icon || getTemplateForField(childField)?.icon || 'fa-solid fa-pen-to-square'" class="fa-fw me-2 text-muted"></i>
-                                            <a href="#" class="fw-bold text-decoration-none text-body">
-                                                <span x-text="childField.label"></span>
-                                                <span class="ms-2 text-muted small" x-text="'(' + childField.type + ')'"></span>
-                                            </a>
-                                        </div>
+                                <div class="mt-2" :class="{ 'border border-danger rounded p-2': duplicateKeys.includes(childField[activePageConfig.unique_key_property]) }">
+                                    <div class="px-3 py-2 border rounded bg-light-subtle"
+                                         :class="{
+                                            'border-primary': editingField && editingField._uid === childField._uid,
+                                            'border-warning': childField.hasOwnProperty('is_active') && !childField.is_active
+                                        }"
+                                         x-sort:item="childField._uid"
+                                    >
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center flex-grow-1 c-pointer" @click.prevent="editField(childField)">
+                                                <span class="c-move me-3 text-muted" x-sort:handle><i class="fa-solid fa-grip-vertical"></i></span>
+                                                <i :class="childField.icon || getTemplateForField(childField)?.icon || 'fa-solid fa-pen-to-square'" class="fa-fw me-2 text-muted"></i>
+                                                <a href="#" class="fw-bold text-decoration-none text-body">
+                                                    <span x-text="childField.label"></span>
+                                                    <span class="ms-2 text-muted small" x-text="'(' + childField.type + ')'"></span>
+                                                </a>
+                                            </div>
 
-                                        <div class="d-flex align-items-center justify-content-end" style="width: 80px;">
-                                            <template x-if="childField.hasOwnProperty('is_active') && !childField.is_active">
-                                                <i class="fas fa-exclamation-triangle text-warning me-2" title="Inactive" data-bs-toggle="tooltip"></i>
-                                            </template>
-                                            <button class="btn btn-sm btn-icon text-muted" @click.prevent="editField(childField)" data-bs-toggle="tooltip" title="Edit Field">
-                                                <i class="fa-solid fa-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-icon text-muted hover-text-danger" @click="deleteField(childField)" x-show="!childField._is_default" data-bs-toggle="tooltip" title="Delete Field">
-                                                <i class="fa-solid fa-trash-can"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-icon text-muted opacity-25" x-show="childField._is_default"  data-bs-toggle="tooltip" title="Default field, can't be deleted">
-                                                <i class="fa-solid fa-trash-can"></i>
-                                            </button>
+                                            <div class="d-flex align-items-center justify-content-end" style="width: 80px;">
+                                                <template x-if="childField.hasOwnProperty('is_active') && !childField.is_active">
+                                                    <i class="fas fa-exclamation-triangle text-warning me-2" title="Inactive" data-bs-toggle="tooltip"></i>
+                                                </template>
+                                                <button class="btn btn-sm btn-icon text-muted" @click.prevent="editField(childField)" data-bs-toggle="tooltip" title="Edit Field">
+                                                    <i class="fa-solid fa-pencil"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-icon text-muted hover-text-danger" @click="deleteField(childField)" x-show="!childField._is_default" data-bs-toggle="tooltip" title="Delete Field">
+                                                    <i class="fa-solid fa-trash-can"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-icon text-muted opacity-25" x-show="childField._is_default"  data-bs-toggle="tooltip" title="Default field, can't be deleted">
+                                                    <i class="fa-solid fa-trash-can"></i>
+                                                </button>
+                                            </div>
                                         </div>
+                                    </div>
+                                    <div x-show="duplicateKeys.includes(childField[activePageConfig.unique_key_property])" class="text-danger small mt-1 ps-2" x-cloak>
+                                        Warning: This field key is a duplicate.
                                     </div>
                                 </div>
                             </template>

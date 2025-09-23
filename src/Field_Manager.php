@@ -332,15 +332,59 @@ class Field_Manager {
 	}
 
 	/**
+	 * Validates an array of form builder fields to ensure a specified key is unique.
+	 *
+	 * @param array  $fields The array of field objects from the form builder.
+	 * @param string $unique_key_prop The property to check for uniqueness (e.g., 'key').
+	 * @return true|\WP_Error True if all keys are unique, otherwise a WP_Error object.
+	 */
+	public function validate_form_builder_fields( $fields, $unique_key_prop ) {
+		if ( empty( $unique_key_prop ) || ! is_array( $fields ) ) {
+			return true; // No uniqueness rule defined, or not a valid field array.
+		}
+
+		$keys = [];
+		foreach ( $fields as $field ) {
+			if ( isset( $field[$unique_key_prop] ) && ! empty( $field[$unique_key_prop] ) ) {
+				$key_value = $field[$unique_key_prop];
+				if ( in_array( $key_value, $keys, true ) ) {
+					return new \WP_Error(
+						'duplicate_field_key',
+						sprintf(
+							__( 'Save failed. The field key "%s" is used more than once. Field keys must be unique.', 'ayecode-settings-framework' ),
+							esc_html( $key_value )
+						)
+					);
+				}
+				$keys[] = $key_value;
+			}
+		}
+		return true;
+	}
+
+	/**
 	 * Validates a full array of settings against the configuration rules.
 	 *
 	 * @param array $settings The settings to validate.
 	 * @return true|\WP_Error True if valid, or a WP_Error object on failure.
 	 */
 	public function validate_settings( $settings ) {
-		// This method can be expanded with the validation logic from the original Ajax_Handler
-		// to provide server-side validation before saving.
-		// For now, we'll return true.
+		$field_map = $this->get_field_map();
+
+		foreach ($settings as $setting_key => $setting_value) {
+			if (isset($field_map[$setting_key]) && $field_map[$setting_key]['type'] === 'form_builder') {
+
+				// Get the unique key property from the config, default to 'key' for safety.
+				$unique_key_prop = isset($field_map[$setting_key]['unique_key_property']) ? $field_map[$setting_key]['unique_key_property'] : 'key';
+
+				$result = $this->validate_form_builder_fields($setting_value, $unique_key_prop);
+
+				if (is_wp_error($result)) {
+					return $result;
+				}
+			}
+		}
+
 		return true;
 	}
 }

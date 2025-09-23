@@ -89,6 +89,7 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                 'name'  => __( 'Listing Form Builder', 'wp-ayecode-settings-framework' ),
                                 'icon'  => 'fa-solid fa-edit',
                                 'type'  => 'form_builder',
+                                'unique_key_property' => 'key', // <-- THIS IS THE NEW CONFIGURATION KEY
                                 'nestable' => true,
                                 'default_top' => true,
                                 'templates' => [
