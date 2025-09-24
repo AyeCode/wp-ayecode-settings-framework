@@ -126,7 +126,8 @@ if ( ! defined( 'ABSPATH' ) ) {
                             Warning: This field key is a duplicate.
                         </div>
                     </div>
-                    <template x-if="activePageConfig.nestable">
+
+                    <template x-if="activePageConfig.nestable || getTemplateForField(field)?.allowed_children">
                         <div class="ms-4 child-fields"
                              x-sort:group="{ name: 'fields' }"
                              x-sort="(item, pos) => handleSort(item, pos, field._uid)"

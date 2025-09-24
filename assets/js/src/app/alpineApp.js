@@ -112,9 +112,6 @@ export default function alpineApp() {
         get isActionRunning()       { return actionsSvc.isAnyActionRunning(this); },
         get groupedSearchResults()  { return searchSvc.groupedSearchResults(this); },
 
-        /**
-         * START: New computed property to find all duplicate keys
-         */
         get duplicateKeys() {
             const uniqueKeyProp = this.activePageConfig?.unique_key_property;
             if (!uniqueKeyProp) {
@@ -131,10 +128,6 @@ export default function alpineApp() {
 
             return Object.keys(keyCounts).filter(key => keyCounts[key] > 1);
         },
-        /**
-         * END: New computed property
-         */
-
         get parentFields() {
             const fields = this.settings[this.activePageConfig?.id] || [];
             return fields.filter(f => !f._parent_id || f._parent_id == 0);
@@ -329,9 +322,33 @@ export default function alpineApp() {
         handleSort(item, position, parentId = null) {
             const sectionId = this.activePageConfig.id;
             let items = [...this.settings[sectionId]];
-
             const movedItem = items.find(i => i._uid == item);
+
             if (!movedItem) return;
+
+            // --- START: UNIFIED VALIDATION LOGIC ---
+            if (parentId) {
+                const parentField = items.find(i => i._uid == parentId);
+                const parentTemplate = this.getTemplateForField(parentField);
+                const movedItemTemplate = this.getTemplateForField(movedItem);
+
+                // Check for field-specific rules first
+                if (parentTemplate && parentTemplate.allowed_children) {
+                    // This is the fix: check for the wildcard '*'
+                    if (parentTemplate.allowed_children[0] !== '*' && (!movedItemTemplate || !parentTemplate.allowed_children.includes(movedItemTemplate.id))) {
+                        alert(`A "${movedItemTemplate?.title}" field cannot be placed inside a "${parentTemplate.title}".`);
+                        this.sortIteration++; // Force re-render
+                        return;
+                    }
+                }
+                // If no specific rules, fall back to the global 'nestable' check
+                else if (!this.activePageConfig.nestable) {
+                    alert('Nesting is not enabled for this field.');
+                    this.sortIteration++; // Force re-render
+                    return;
+                }
+            }
+            // --- END: UNIFIED VALIDATION LOGIC ---
 
             if (parentId !== null) {
                 const hasChildren = items.some(i => i._parent_id === movedItem._uid);

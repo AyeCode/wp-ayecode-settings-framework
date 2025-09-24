@@ -176,6 +176,11 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                                 'icon'     => 'fa-solid fa-heading',
                                                                 'limit'    => 1,
                                                                 'base_id'  => 'core_text', // <-- The actual field type to create.
+                                                                'nestable' => true, // Make this field a container
+                                                                'allowed_children' => [ // Define what it can contain
+                                                                        'core_text',
+                                                                        'core_textarea'
+                                                                ],
                                                                 'defaults' => [           // <-- The values to apply to the new instance.
                                                                         'label'       => 'Listing Title',
                                                                         'key'         => 'listing_title',
@@ -189,6 +194,10 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                                 'title'   => 'Location Group',
                                                                 'icon'    => 'fa-solid fa-map-marker-alt',
                                                                 'base_id' => 'core_text', // This could extend any field, here as an example
+                                                                'nestable' => true, // Make this field a container too
+                                                                'allowed_children' => [ // But this one can only hold select fields
+                                                                        'core_select'
+                                                                ],
                                                                 'defaults'  => [
                                                                         'label' => 'Location Details',
                                                                         'key'   => 'location_details',
