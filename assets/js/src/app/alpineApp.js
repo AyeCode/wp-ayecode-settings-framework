@@ -24,7 +24,6 @@ window.__ASF_NULL_FIELD = new Proxy({}, {
     has: () => true,
 });
 
-
 export default function alpineApp() {
     return {
         // STATE
@@ -206,6 +205,19 @@ export default function alpineApp() {
 
         // Form Builder Methods
         async saveForm() {
+            // Final normalisation: ensure root items persist as 0 (not null/undefined),
+            // mirror to tab_parent (and basic tab_level if present).
+            const sectionId = this.activePageConfig.id;
+            const items = this.settings[sectionId] || [];
+
+            items.forEach(f => {
+                const parent = (f._parent_id === null || f._parent_id === undefined) ? 0 : f._parent_id;
+                f._parent_id = parent;
+                if ('tab_parent' in f) f.tab_parent = parent;
+                // Basic tab_level: 0 for root, 1 for children (adjust if you support deeper nesting)
+                if ('tab_level' in f) f.tab_level = parent ? 1 : 0;
+            });
+
             await settingsSvc.saveFormBuilder(this);
         },
 
@@ -270,6 +282,11 @@ export default function alpineApp() {
             newField.fields = actualTemplate.fields;
             newField._template_icon = actualTemplate.icon;
 
+            // Ensure new fields default to root
+            newField._parent_id = 0;
+            if ('tab_parent' in newField) newField.tab_parent = 0;
+            if ('tab_level' in newField) newField.tab_level = 0;
+
             if (defaultsToApply) {
                 for (const key in defaultsToApply) {
                     if (Object.prototype.hasOwnProperty.call(newField, key)) {
@@ -281,6 +298,7 @@ export default function alpineApp() {
             this.settings[this.activePageConfig.id].push(newField);
             this.editField(newField);
         },
+
         editField(field) {
             document.querySelector('.tooltip')?.remove();
 
@@ -302,6 +320,7 @@ export default function alpineApp() {
                 this.$nextTick(() => this.reinitializePlugins());
             }
         },
+
         deleteField(field) {
             if (field._is_default) {
                 alert('This is a default field and cannot be deleted.');
@@ -319,6 +338,7 @@ export default function alpineApp() {
                 this.leftColumnView = 'field_list';
             }
         },
+
         handleSort(item, position, parentId = null) {
             const sectionId = this.activePageConfig.id;
             let items = [...this.settings[sectionId]];
@@ -326,29 +346,24 @@ export default function alpineApp() {
 
             if (!movedItem) return;
 
-            // --- START: UNIFIED VALIDATION LOGIC ---
+            // validation (unchanged)
             if (parentId) {
                 const parentField = items.find(i => i._uid == parentId);
                 const parentTemplate = this.getTemplateForField(parentField);
                 const movedItemTemplate = this.getTemplateForField(movedItem);
 
-                // Check for field-specific rules first
                 if (parentTemplate && parentTemplate.allowed_children) {
-                    // This is the fix: check for the wildcard '*'
                     if (parentTemplate.allowed_children[0] !== '*' && (!movedItemTemplate || !parentTemplate.allowed_children.includes(movedItemTemplate.id))) {
                         alert(`A "${movedItemTemplate?.title}" field cannot be placed inside a "${parentTemplate.title}".`);
                         this.sortIteration++; // Force re-render
                         return;
                     }
-                }
-                // If no specific rules, fall back to the global 'nestable' check
-                else if (!this.activePageConfig.nestable) {
+                } else if (!this.activePageConfig.nestable) {
                     alert('Nesting is not enabled for this field.');
                     this.sortIteration++; // Force re-render
                     return;
                 }
             }
-            // --- END: UNIFIED VALIDATION LOGIC ---
 
             if (parentId !== null) {
                 const hasChildren = items.some(i => i._parent_id === movedItem._uid);
@@ -359,13 +374,17 @@ export default function alpineApp() {
                 }
             }
 
-            movedItem._parent_id = parentId;
+            // *** FIX: normalise parent and mirror ***
+            const newParent = (parentId === null ? 0 : parentId);
+            movedItem._parent_id = newParent;
+            if ('tab_parent' in movedItem) movedItem.tab_parent = newParent;
+            if ('tab_level' in movedItem) movedItem.tab_level = newParent ? 1 : 0;
 
             const oldIndex = items.indexOf(movedItem);
             items.splice(oldIndex, 1);
 
             const targetSiblings = items.filter(i => {
-                const targetParentId = parentId === null ? 0 : parentId;
+                const targetParentId = newParent === 0 ? 0 : newParent;
                 const itemParentId = i._parent_id === null ? 0 : i._parent_id;
                 return itemParentId == targetParentId;
             });
@@ -376,10 +395,10 @@ export default function alpineApp() {
                 const lastSibling = targetSiblings.length > 0 ? targetSiblings[targetSiblings.length - 1] : null;
                 if (lastSibling) {
                     const lastSiblingIndex = items.indexOf(lastSibling);
-                    const lastChildIndex = items.findLastIndex(i => i._parent_id === lastSibling._uid);
+                    const lastChildIndex = items.findLastIndex ? items.findLastIndex(i => i._parent_id === lastSibling._uid) : -1;
                     newIndex = lastChildIndex !== -1 ? lastChildIndex + 1 : lastSiblingIndex + 1;
-                } else if (parentId) {
-                    newIndex = items.findIndex(i => i._uid === parentId) + 1;
+                } else if (newParent) {
+                    newIndex = items.findIndex(i => i._uid === newParent) + 1;
                 } else {
                     newIndex = items.length;
                 }
@@ -393,6 +412,7 @@ export default function alpineApp() {
             this.settings[sectionId] = items;
             this.sortIteration++;
         },
+
         addCondition() {
             if (!this.editingField.conditions) {
                 this.editingField.conditions = [];

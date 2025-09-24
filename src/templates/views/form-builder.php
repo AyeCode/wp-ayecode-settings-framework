@@ -83,7 +83,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                 x-sort="(item, pos) => handleSort(item, pos, null)"
         >
             <template x-for="field in parentFields" :key="sortIteration + '-' + field._uid">
-                <div class="mb-2"
+                <div class="my-2"
                      x-sort:item="field._uid"
                 >
                     <div :class="{ 'border border-danger rounded p-2': duplicateKeys.includes(field[activePageConfig.unique_key_property]) }">
@@ -133,13 +133,15 @@ if ( ! defined( 'ABSPATH' ) ) {
                              x-sort="(item, pos) => handleSort(item, pos, field._uid)"
                         >
                             <template x-for="childField in childFields(field._uid)" :key="sortIteration + '-' + childField._uid">
-                                <div class="mt-2" :class="{ 'border border-danger rounded p-2': duplicateKeys.includes(childField[activePageConfig.unique_key_property]) }">
+                                <!-- FIX: x-sort:item must be on the immediate child of this list -->
+                                <div class="my-2"
+                                     x-sort:item="childField._uid"
+                                     :class="{ 'border border-danger rounded p-2': duplicateKeys.includes(childField[activePageConfig.unique_key_property]) }">
                                     <div class="px-3 py-2 border rounded bg-light-subtle"
                                          :class="{
                                             'border-primary': editingField && editingField._uid === childField._uid,
                                             'border-warning': childField.hasOwnProperty('is_active') && !childField.is_active
                                         }"
-                                         x-sort:item="childField._uid"
                                     >
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div class="d-flex align-items-center flex-grow-1 c-pointer" @click.prevent="editField(childField)">
