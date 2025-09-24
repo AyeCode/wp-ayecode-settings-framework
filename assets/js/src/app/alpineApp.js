@@ -52,6 +52,8 @@ export default function alpineApp() {
         leftColumnView: 'field_list',
         editingField: null,
         sortIteration: 0,
+        activeSyncListeners: [],
+        initialTargetValues: {},
 
         // LIFECYCLE
         init() {
@@ -99,6 +101,14 @@ export default function alpineApp() {
             searchSvc.setupSearchModal(this);
             pluginsSvc.setupEventListeners(this);
             pluginsSvc.reinitializePlugins(this);
+
+            // Watch for the editor view closing to clean up sync listeners
+            this.$watch('leftColumnView', (newValue, oldValue) => {
+                if (newValue === 'field_list' && oldValue === 'field_settings') {
+                    this.clearSyncListeners();
+                }
+            });
+
             console.log('AyeCode Settings Framework initialized');
         },
 
@@ -113,18 +123,13 @@ export default function alpineApp() {
 
         get duplicateKeys() {
             const uniqueKeyProp = this.activePageConfig?.unique_key_property;
-            if (!uniqueKeyProp) {
-                return [];
-            }
+            if (!uniqueKeyProp) return [];
             const allFields = this.settings[this.activePageConfig.id] || [];
             const keyCounts = allFields.reduce((acc, field) => {
                 const key = field[uniqueKeyProp];
-                if (key) {
-                    acc[key] = (acc[key] || 0) + 1;
-                }
+                if (key) acc[key] = (acc[key] || 0) + 1;
                 return acc;
             }, {});
-
             return Object.keys(keyCounts).filter(key => keyCounts[key] > 1);
         },
         get parentFields() {
@@ -136,9 +141,7 @@ export default function alpineApp() {
             return fields.filter(f => f._parent_id == parentId);
         },
         get otherFields() {
-            if (!this.activePageConfig || this.activePageConfig.type !== 'form_builder' || !this.editingField?._uid) {
-                return [];
-            }
+            if (!this.activePageConfig || this.activePageConfig.type !== 'form_builder' || !this.editingField?._uid) return [];
             const allFields = this.settings[this.activePageConfig.id] || [];
             return allFields
                 .filter(f => f._uid !== this.editingField._uid)
@@ -150,87 +153,71 @@ export default function alpineApp() {
         },
 
         // METHODS
-        toggleTheme()                 { themeSvc.toggleTheme(this); },
-        reinitializePlugins()         { pluginsSvc.reinitializePlugins(this); },
-        changeView(fn)                { pluginsSvc.changeView(this, fn); },
-        goToSearchResult(result)      { searchSvc.goToSearchResult(this, result); },
-        goToSection(sectionId, ss='') {
+        toggleTheme() { themeSvc.toggleTheme(this); },
+        reinitializePlugins() { pluginsSvc.reinitializePlugins(this); },
+        changeView(fn) { pluginsSvc.changeView(this, fn); },
+        goToSearchResult(result) { searchSvc.goToSearchResult(this, result); },
+        goToSection(sectionId, ss = '') {
             if (this.activePageConfig?.type === 'form_builder') {
                 this.editingField = window.__ASF_NULL_FIELD;
                 this.leftColumnView = 'field_list';
             }
             routerSvc.goToSection(this, sectionId, ss);
         },
-        goToCustomLink(link)          { searchSvc.goToCustomLink(this, link); },
-        switchSection(sectionId)      {
+        goToCustomLink(link) { searchSvc.goToCustomLink(this, link); },
+        switchSection(sectionId) {
             if (this.activePageConfig?.type === 'form_builder') {
                 this.editingField = window.__ASF_NULL_FIELD;
                 this.leftColumnView = 'field_list';
             }
             routerSvc.switchSection(this, sectionId);
         },
-        switchSubsection(ssId)        { routerSvc.switchSubsection(this, ssId); },
-        highlightField(fieldId)       { highlight.highlightField(this, fieldId); },
-        handleUrlHash()               { routerSvc.handleUrlHash(this); },
-        updateUrlHash(fieldId=null)   { routerSvc.updateUrlHash(this, fieldId); },
-        setInitialSection()           { routerSvc.setInitialSection(this); },
-        async saveSettings()          { await settingsSvc.saveSettings(this); },
-        discardChanges()              { settingsSvc.discardChanges(this); },
+        switchSubsection(ssId) { routerSvc.switchSubsection(this, ssId); },
+        highlightField(fieldId) { highlight.highlightField(this, fieldId); },
+        handleUrlHash() { routerSvc.handleUrlHash(this); },
+        updateUrlHash(fieldId = null) { routerSvc.updateUrlHash(this, fieldId); },
+        setInitialSection() { routerSvc.setInitialSection(this); },
+        async saveSettings() { await settingsSvc.saveSettings(this); },
+        discardChanges() { settingsSvc.discardChanges(this); },
         shouldShowField(field) {
             const context = this.editingField && this.editingField._uid ? this.editingField : this.settings;
             return cond.shouldShowField(context, field);
         },
-
-        evaluateCondition(rule)       { return cond.evaluateCondition(this, rule); },
-        evaluateSimpleComparison(e)   { return cond.evaluateSimpleComparison(e); },
-
+        evaluateCondition(rule) { return cond.evaluateCondition(this, rule); },
+        evaluateSimpleComparison(e) { return cond.evaluateSimpleComparison(e); },
         renderField(field, modelPrefix = 'settings', pageConfig = null) {
-            if (!field || typeof field !== 'object' || !field.type) {
-                console.warn('[ASF] renderField: skipped invalid schema', field);
-                return '';
-            }
+            if (!field || typeof field !== 'object' || !field.type) return '';
             const configToUse = pageConfig || this.activePageConfig;
             return settingsSvc.renderFieldCompat(field, modelPrefix, configToUse);
         },
-        selectImage(fieldId)          { mediaSvc.selectImage(this, fieldId); },
-        removeImage(fieldId)          { mediaSvc.removeImage(this, fieldId); },
-        initGdMap(fieldId, lat, lng)  { mapsSvc.initGdMap(this, fieldId, lat, lng); },
-        initChoice(fieldId)           { pluginsSvc.initChoice(this, fieldId); },
-        initChoices(fieldId)          { pluginsSvc.initChoices(this, fieldId); },
-        async executePageAction()     { await actionsSvc.executePageAction(this); },
-        async executeAction(fieldId)  { await actionsSvc.executeAction(this, fieldId); },
-        handleFileUpload(e, pid, h)   { uploadsSvc.handleFileUpload(this, e, pid, h); },
+        selectImage(fieldId) { mediaSvc.selectImage(this, fieldId); },
+        removeImage(fieldId) { mediaSvc.removeImage(this, fieldId); },
+        initGdMap(fieldId, lat, lng) { mapsSvc.initGdMap(this, fieldId, lat, lng); },
+        initChoice(fieldId) { pluginsSvc.initChoice(this, fieldId); },
+        initChoices(fieldId) { pluginsSvc.initChoices(this, fieldId); },
+        async executePageAction() { await actionsSvc.executePageAction(this); },
+        async executeAction(fieldId) { await actionsSvc.executeAction(this, fieldId); },
+        handleFileUpload(e, pid, h) { uploadsSvc.handleFileUpload(this, e, pid, h); },
         async removeUploadedFile(pid, h) { await uploadsSvc.removeUploadedFile(this, pid, h); },
-        async loadCustomPageContent(id){ await customPageSvc.loadCustomPageContent(this, id); },
+        async loadCustomPageContent(id) { await customPageSvc.loadCustomPageContent(this, id); },
 
         // Form Builder Methods
         async saveForm() {
-            // Final normalisation: ensure root items persist as 0 (not null/undefined),
-            // mirror to tab_parent (and basic tab_level if present).
             const sectionId = this.activePageConfig.id;
             const items = this.settings[sectionId] || [];
-
             items.forEach(f => {
                 const parent = (f._parent_id === null || f._parent_id === undefined) ? 0 : f._parent_id;
                 f._parent_id = parent;
                 if ('tab_parent' in f) f.tab_parent = parent;
-                // Basic tab_level: 0 for root, 1 for children (adjust if you support deeper nesting)
                 if ('tab_level' in f) f.tab_level = parent ? 1 : 0;
             });
-
             await settingsSvc.saveFormBuilder(this);
         },
 
         countFieldsByTemplateId(optionTemplate) {
             const allFields = this.settings[this.activePageConfig.id] || [];
-            const idToCheck = (optionTemplate.defaults && optionTemplate.defaults.field_type_key)
-                ? optionTemplate.defaults.field_type_key
-                : (optionTemplate.base_id || optionTemplate.id);
-
-            return allFields.filter(field => {
-                const keyToCompare = field.field_type_key || field.template_id;
-                return keyToCompare === idToCheck;
-            }).length;
+            const idToCheck = (optionTemplate.defaults && optionTemplate.defaults.field_type_key) ? optionTemplate.defaults.field_type_key : (optionTemplate.base_id || optionTemplate.id);
+            return allFields.filter(field => (field.field_type_key || field.template_id) === idToCheck).length;
         },
 
         handleFieldClick(option) {
@@ -248,7 +235,6 @@ export default function alpineApp() {
             if (optionTemplate.base_id) {
                 const allTemplates = this.activePageConfig.templates.flatMap(g => g.options);
                 actualTemplate = allTemplates.find(t => t.id === optionTemplate.base_id);
-
                 if (!actualTemplate) {
                     alert(`Error: Base template with id '${optionTemplate.base_id}' could not be found.`);
                     return;
@@ -258,19 +244,11 @@ export default function alpineApp() {
 
             const buildFieldData = (fields) => {
                 return fields.reduce((acc, field) => {
-                    if (field.id) {
-                        acc[field.id] = field.default !== undefined ? field.default : null;
-                    }
-                    if (field.type === 'group' && field.fields) {
-                        Object.assign(acc, buildFieldData(field.fields));
-                    }
-                    if (field.type === 'accordion' && field.fields) {
-                        field.fields.forEach(panel => {
-                            if (panel.fields) {
-                                Object.assign(acc, buildFieldData(panel.fields));
-                            }
-                        });
-                    }
+                    if (field.id) acc[field.id] = field.default !== undefined ? field.default : null;
+                    if (field.type === 'group' && field.fields) Object.assign(acc, buildFieldData(field.fields));
+                    if (field.type === 'accordion' && field.fields) field.fields.forEach(panel => {
+                        if (panel.fields) Object.assign(acc, buildFieldData(panel.fields));
+                    });
                     return acc;
                 }, {});
             };
@@ -281,43 +259,120 @@ export default function alpineApp() {
             newField.template_id = actualTemplate.id;
             newField.fields = actualTemplate.fields;
             newField._template_icon = actualTemplate.icon;
-
-            // Ensure new fields default to root
             newField._parent_id = 0;
             if ('tab_parent' in newField) newField.tab_parent = 0;
             if ('tab_level' in newField) newField.tab_level = 0;
 
             if (defaultsToApply) {
                 for (const key in defaultsToApply) {
-                    if (Object.prototype.hasOwnProperty.call(newField, key)) {
-                        newField[key] = defaultsToApply[key];
-                    }
+                    if (Object.prototype.hasOwnProperty.call(newField, key)) newField[key] = defaultsToApply[key];
                 }
+            }
+
+            const uniqueKeyProp = this.activePageConfig?.unique_key_property;
+            if (uniqueKeyProp && newField[uniqueKeyProp]) {
+                const allFields = this.settings[this.activePageConfig.id] || [];
+                let newKey = newField[uniqueKeyProp];
+                let counter = 2;
+                while (allFields.some(f => f[uniqueKeyProp] === newKey)) {
+                    newKey = `${newField[uniqueKeyProp]}${counter}`;
+                    counter++;
+                }
+                newField[uniqueKeyProp] = newKey;
             }
 
             this.settings[this.activePageConfig.id].push(newField);
             this.editField(newField);
         },
 
-        editField(field) {
-            document.querySelector('.tooltip')?.remove();
+        slugify(str) {
+            return String(str).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '_').replace(/-+/g, '_');
+        },
 
-            if (!field.conditions) {
-                field.conditions = [];
+        findSchemaById(fields, id) {
+            for (const field of fields) {
+                if (field.id === id) return field;
+                if (field.fields) {
+                    const found = this.findSchemaById(field.fields, id);
+                    if (found) return found;
+                }
             }
+            return null;
+        },
+
+        handleSync(sourceFieldId, newValue) {
+            if (!this.editingField || !this.editingField._uid) return;
+
+            const template = this.getTemplateForField(this.editingField);
+            if (!template) return;
+
+            const sourceFieldSchema = this.findSchemaById(template.fields, sourceFieldId);
+
+            if (!sourceFieldSchema || !sourceFieldSchema.syncs_with) return;
+
+            sourceFieldSchema.syncs_with.forEach(rule => {
+                const targetFieldId = rule.target;
+                if (this.editingField[targetFieldId] !== this.initialTargetValues[targetFieldId]) return;
+                const transformedValue = rule.transform === 'slugify' ? this.slugify(newValue) : newValue;
+                this.editingField[targetFieldId] = transformedValue;
+                this.initialTargetValues[targetFieldId] = transformedValue;
+            });
+        },
+
+        editField(field) {
+            this.clearSyncListeners();
+            const template = this.getTemplateForField(field);
+
+            if (template) field.fields = template.fields;
+
+            document.querySelector('.tooltip')?.remove();
+            if (!field.conditions) field.conditions = [];
+            this.initialTargetValues = {};
+
+            const setupWatchers = () => {
+                const traverseAndWatch = (fields) => {
+                    if (!Array.isArray(fields)) return;
+                    fields.forEach(f => {
+                        if (f.syncs_with && Array.isArray(f.syncs_with)) {
+                            f.syncs_with.forEach(rule => {
+                                if (field[rule.target] !== undefined) this.initialTargetValues[rule.target] = field[rule.target];
+                            });
+                            const unwatch = this.$watch(`editingField.${f.id}`, (newValue) => { this.handleSync(f.id, newValue); });
+                            this.activeSyncListeners.push(unwatch);
+                        }
+                        if (f.fields) traverseAndWatch(f.fields);
+                    });
+                };
+                traverseAndWatch(field.fields);
+            };
+
             if (this.editingField && this.editingField._uid && this.editingField._uid !== field._uid) {
                 this.leftColumnView = 'field_list';
                 this.editingField = window.__ASF_NULL_FIELD;
-
                 this.$nextTick(() => {
                     this.editingField = field;
                     this.leftColumnView = 'field_settings';
-                    this.$nextTick(() => this.reinitializePlugins());
+                    this.$nextTick(() => {
+                        setupWatchers();
+                        this.reinitializePlugins();
+                    });
                 });
             } else {
                 this.editingField = field;
                 this.leftColumnView = 'field_settings';
-                this.$nextTick(() => this.reinitializePlugins());
+                this.$nextTick(() => {
+                    setupWatchers();
+                    this.reinitializePlugins();
+                });
+            }
+        },
+
+        clearSyncListeners() {
+            while(this.activeSyncListeners.length > 0) {
+                const unwatch = this.activeSyncListeners.pop();
+                if (typeof unwatch === 'function') {
+                    unwatch();
+                }
             }
         },
 
@@ -329,9 +384,7 @@ export default function alpineApp() {
             if (!confirm('Are you sure you want to delete this field?')) return;
             let fields = this.settings[this.activePageConfig.id];
             const index = fields.findIndex(f => f._uid === field._uid);
-            if (index > -1) {
-                fields.splice(index, 1);
-            }
+            if (index > -1) fields.splice(index, 1);
             this.settings[this.activePageConfig.id] = fields.filter(f => f._parent_id !== field._uid);
             if (this.editingField && this.editingField._uid === field._uid) {
                 this.editingField = window.__ASF_NULL_FIELD;
@@ -346,7 +399,6 @@ export default function alpineApp() {
 
             if (!movedItem) return;
 
-            // validation (unchanged)
             if (parentId) {
                 const parentField = items.find(i => i._uid == parentId);
                 const parentTemplate = this.getTemplateForField(parentField);
@@ -355,26 +407,22 @@ export default function alpineApp() {
                 if (parentTemplate && parentTemplate.allowed_children) {
                     if (parentTemplate.allowed_children[0] !== '*' && (!movedItemTemplate || !parentTemplate.allowed_children.includes(movedItemTemplate.id))) {
                         alert(`A "${movedItemTemplate?.title}" field cannot be placed inside a "${parentTemplate.title}".`);
-                        this.sortIteration++; // Force re-render
+                        this.sortIteration++;
                         return;
                     }
                 } else if (!this.activePageConfig.nestable) {
                     alert('Nesting is not enabled for this field.');
-                    this.sortIteration++; // Force re-render
-                    return;
-                }
-            }
-
-            if (parentId !== null) {
-                const hasChildren = items.some(i => i._parent_id === movedItem._uid);
-                if (hasChildren) {
-                    alert('Items that already have children cannot be nested.');
                     this.sortIteration++;
                     return;
                 }
             }
 
-            // *** FIX: normalise parent and mirror ***
+            if (parentId !== null && items.some(i => i._parent_id === movedItem._uid)) {
+                alert('Items that already have children cannot be nested.');
+                this.sortIteration++;
+                return;
+            }
+
             const newParent = (parentId === null ? 0 : parentId);
             movedItem._parent_id = newParent;
             if ('tab_parent' in movedItem) movedItem.tab_parent = newParent;
@@ -383,12 +431,7 @@ export default function alpineApp() {
             const oldIndex = items.indexOf(movedItem);
             items.splice(oldIndex, 1);
 
-            const targetSiblings = items.filter(i => {
-                const targetParentId = newParent === 0 ? 0 : newParent;
-                const itemParentId = i._parent_id === null ? 0 : i._parent_id;
-                return itemParentId == targetParentId;
-            });
-
+            const targetSiblings = items.filter(i => (i._parent_id === null ? 0 : i._parent_id) == newParent);
             let newIndex;
 
             if (position >= targetSiblings.length) {
@@ -408,21 +451,13 @@ export default function alpineApp() {
             }
 
             items.splice(newIndex, 0, movedItem);
-
             this.settings[sectionId] = items;
             this.sortIteration++;
         },
 
         addCondition() {
-            if (!this.editingField.conditions) {
-                this.editingField.conditions = [];
-            }
-            this.editingField.conditions.push({
-                action: '',
-                field: '',
-                condition: '',
-                value: ''
-            });
+            if (!this.editingField.conditions) this.editingField.conditions = [];
+            this.editingField.conditions.push({ action: '', field: '', condition: '', value: '' });
         },
         removeCondition(index) {
             this.editingField.conditions.splice(index, 1);
