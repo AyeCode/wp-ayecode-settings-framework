@@ -103,9 +103,12 @@ if ( ! defined( 'ABSPATH' ) ) {
                                     </a>
                                 </div>
 
-                                <div class="d-flex align-items-center justify-content-end" style="width: 80px;">
+                                <div class="d-flex align-items-center justify-content-end" style="width: 100px;">
                                     <template x-if="field.hasOwnProperty('is_active') && !field.is_active">
                                         <i class="fas fa-exclamation-triangle text-warning me-2" title="Inactive" data-bs-toggle="tooltip"></i>
+                                    </template>
+                                    <template x-if="field.conditions && field.conditions.length > 0">
+                                        <i class="fas fa-eye text-warning me-2" title="Has conditional logic" data-bs-toggle="tooltip"></i>
                                     </template>
                                     <template x-if="activePageConfig.default_top && parentFields[0]._uid === field._uid">
                                         <i class="fas fa-check-circle me-2 text-primary" title="Default option" data-bs-toggle="tooltip"></i>
@@ -133,7 +136,6 @@ if ( ! defined( 'ABSPATH' ) ) {
                              x-sort="(item, pos) => handleSort(item, pos, field._uid)"
                         >
                             <template x-for="childField in childFields(field._uid)" :key="sortIteration + '-' + childField._uid">
-                                <!-- FIX: x-sort:item must be on the immediate child of this list -->
                                 <div class="my-2"
                                      x-sort:item="childField._uid"
                                      :class="{ 'border border-danger rounded p-2': duplicateKeys.includes(childField[activePageConfig.unique_key_property]) }">
@@ -156,6 +158,9 @@ if ( ! defined( 'ABSPATH' ) ) {
                                             <div class="d-flex align-items-center justify-content-end" style="width: 80px;">
                                                 <template x-if="childField.hasOwnProperty('is_active') && !childField.is_active">
                                                     <i class="fas fa-exclamation-triangle text-warning me-2" title="Inactive" data-bs-toggle="tooltip"></i>
+                                                </template>
+                                                <template x-if="childField.conditions && childField.conditions.length > 0">
+                                                    <i class="fas fa-eye text-warning me-2" title="Has conditional logic" data-bs-toggle="tooltip"></i>
                                                 </template>
                                                 <button class="btn btn-sm btn-icon text-muted" @click.prevent="editField(childField)" data-bs-toggle="tooltip" title="Edit Field">
                                                     <i class="fa-solid fa-pencil"></i>

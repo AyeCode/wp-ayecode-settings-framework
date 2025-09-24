@@ -1,10 +1,29 @@
 import { registerRenderer } from '../index';
 
 registerRenderer('conditions', (field) => {
-    // Note: This renderer models against `editingField.conditions`, not `settings.conditions`.
-    // This is because it's designed to be used within the form builder's field settings panel.
+    // Read config from the renderer's field
+    const key  = field && field.warning_key ? String(field.warning_key) : null;
+    const list = Array.isArray(field && field.warning_fields) ? field.warning_fields.slice(0) : [];
+
+    // Only allow safe identifiers for dot access (no brackets in Alpine)
+    const safeIdent = key && /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key) ? key : null;
+
+    // Build a flat OR-chain with no braces/parentheses/arrays in the Alpine expression
+    // e.g. editingField && editingField.htmlvar_name==="post_title" || editingField && ...
+    const orChain = (safeIdent && list.length)
+        ? list.map(v => `editingField && editingField.${safeIdent}===${JSON.stringify(v)}`).join(' || ')
+        : '';
+
+    // Escape double quotes for HTML attributes
+    const exprAttr = orChain.replace(/"/g, '&quot;');
+
     return `
     <div>
+        ${orChain ? `
+        <div class="alert alert-warning small" x-show="${exprAttr}">
+            This is a mandatory field. If hidden when submitted, it will fail.
+        </div>` : ''}
+
         <template x-for="(condition, index) in editingField.conditions" :key="index">
             <div class="row g-2 mb-2 align-items-center">
                 <div class="col">
@@ -19,13 +38,7 @@ registerRenderer('conditions', (field) => {
                     <select
                         class="form-select form-select-sm"
                         x-model="condition.field"
-                        x-effect="
-                            $nextTick(() => {
-                                if ($el.value !== condition.field) {
-                                    $el.value = condition.field;
-                                }
-                            });
-                        "
+                        x-effect="$nextTick(()=>($el.value!==condition.field)&&($el.value=condition.field))"
                     >
                         <option value="">FIELD</option>
                         <template x-for="otherField in otherFields" :key="otherField._uid">
@@ -46,7 +59,10 @@ registerRenderer('conditions', (field) => {
                     </select>
                 </div>
                 <div class="col">
-                    <input type="text" class="form-control form-control-sm" x-model="condition.value" placeholder="VALUE" :disabled="condition.condition === 'empty' || condition.condition === 'not empty'">
+                    <input type="text" class="form-control form-control-sm"
+                        x-model="condition.value"
+                        placeholder="VALUE"
+                        :disabled="condition.condition === 'empty' || condition.condition === 'not empty'">
                 </div>
                 <div class="col-auto">
                     <button class="btn btn-sm btn-outline-danger" @click="removeCondition(index)">
@@ -55,6 +71,7 @@ registerRenderer('conditions', (field) => {
                 </div>
             </div>
         </template>
+
         <button class="btn btn-sm btn-primary mt-2" @click="addCondition()">
             <i class="fa-solid fa-plus me-1"></i> Add Rule
         </button>

@@ -124,7 +124,9 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                                                                 'fields' => [
                                                                                                         [
                                                                                                                 'id' => 'conditions',
-                                                                                                                'type' => 'conditions'
+                                                                                                                'type' => 'conditions',
+                                                                                                                'warning_key' => 'htmlvar_name',
+                                                                                                                'warning_fields' => ['post_title', 'post_category', 'address'],
                                                                                                         ]
                                                                                                 ]
                                                                                         ]
