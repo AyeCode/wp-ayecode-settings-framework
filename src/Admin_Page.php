@@ -73,6 +73,19 @@ class Admin_Page {
                 opacity: 0.5 !important;
                 border: 1px solid #0a90ff;
             }
+            /* Style for highlighting required field error */
+            .asf-field-error{
+                transition: background-color 0.3s ease-in-out;
+                background-color: rgba(255, 0, 8, 0.1) !important;
+            }
+            /*.asf-field-error .form-control,*/
+            /*.asf-field-error .form-select,*/
+            /*.asf-field-error .form-check-input {*/
+            /*    border-color: #dc3545 !important;*/
+            /*}*/
+            /*.asf-field-error .form-label {*/
+            /*    color: #dc3545 !important;*/
+            /*}*/
         </style>
 
         <div class="bsui" x-data="ayecodeSettingsApp()" style="margin-left: -20px !important;">

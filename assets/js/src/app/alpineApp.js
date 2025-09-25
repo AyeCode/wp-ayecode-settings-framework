@@ -203,6 +203,11 @@ export default function alpineApp() {
 
         // Form Builder Methods
         async saveForm() {
+            // **THE FIX**: Validate the currently open field editor before saving the whole form.
+            if (this.leftColumnView === 'field_settings' && !this.validateEditingField()) {
+                return; // Stop if the open field is invalid
+            }
+
             const sectionId = this.activePageConfig.id;
             const items = this.settings[sectionId] || [];
             items.forEach(f => {
@@ -317,6 +322,62 @@ export default function alpineApp() {
                 this.editingField[targetFieldId] = transformedValue;
                 this.initialTargetValues[targetFieldId] = transformedValue;
             });
+        },
+
+        validateEditingField() {
+            if (!this.editingField || !this.editingField.fields) return true;
+
+            const settingsPane = document.getElementById('asf-field-settings');
+            if (settingsPane) {
+                settingsPane.querySelectorAll('.asf-field-error').forEach(el => el.classList.remove('asf-field-error'));
+            }
+
+            const recursiveValidate = (fields) => {
+                for (const fieldSchema of fields) {
+                    if (fieldSchema.extra_attributes?.required) {
+                        const value = this.editingField[fieldSchema.id];
+                        if (value === '' || value === null || value === undefined) {
+                            this.showNotification(`Error: The "${fieldSchema.label || fieldSchema.id}" field is required.`, 'error');
+                            this.$nextTick(() => {
+                                const invalidEl = document.getElementById(fieldSchema.id);
+                                if (invalidEl) {
+                                    const accordionCollapse = invalidEl.closest('.accordion-collapse');
+                                    if (accordionCollapse && !accordionCollapse.classList.contains('show')) {
+                                        const bsCollapse = new bootstrap.Collapse(accordionCollapse);
+                                        bsCollapse.show();
+                                    }
+
+                                    const wrapper = invalidEl.closest('.row');
+                                    if (wrapper) {
+                                        wrapper.classList.add('asf-field-error');
+                                        wrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        setTimeout(() => {
+                                            wrapper.classList.remove('asf-field-error');
+                                        }, 3500);
+                                    }
+                                }
+                            });
+                            return false;
+                        }
+                    }
+                    if (fieldSchema.fields && Array.isArray(fieldSchema.fields)) {
+                        if (!recursiveValidate(fieldSchema.fields)) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            };
+
+            return recursiveValidate(this.editingField.fields);
+        },
+
+
+        closeEditingField() {
+            if (this.validateEditingField()) {
+                this.leftColumnView = 'field_list';
+                this.$nextTick(() => { this.editingField = window.__ASF_NULL_FIELD });
+            }
         },
 
         editField(field) {

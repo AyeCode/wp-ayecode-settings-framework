@@ -1,3 +1,5 @@
+// assets/js/src/services/settings.js
+
 // Settings load/save/discard + renderer compat + computed flags
 export function loadSettings(ctx) {
     ctx.settings = window.ayecodeSettingsFramework?.settings || {};
@@ -6,7 +8,56 @@ export function loadSettings(ctx) {
     ctx.originalImagePreviews = JSON.parse(JSON.stringify(ctx.imagePreviews));
 }
 
+/**
+ * Validates a standard settings page before saving by checking for the 'required' attribute.
+ *
+ * @param {object} ctx - The Alpine.js context.
+ * @returns {boolean} - True if all required fields are filled, false otherwise.
+ */
+function validateStandardSettings(ctx) {
+    if (!ctx.activePageConfig || !ctx.activePageConfig.fields) {
+        return true;
+    }
+
+    // Clear previous errors
+    document.querySelectorAll('.asf-field-error').forEach(el => el.classList.remove('asf-field-error'));
+
+    const fields = Object.values(ctx.activePageConfig.fields);
+
+    for (const field of fields) {
+        const isRequired = field.extra_attributes?.required;
+
+        if (isRequired) {
+            const value = ctx.settings[field.id];
+            if (value === '' || value === null || value === undefined || (Array.isArray(value) && value.length === 0)) {
+                ctx.showNotification(`Error: The "${field.label || field.id}" field is required.`, 'error');
+
+                // **THE FIX**: Highlight the invalid field on standard settings pages.
+                const invalidEl = document.getElementById(field.id);
+                if (invalidEl) {
+                    const wrapper = invalidEl.closest('.row');
+                    if (wrapper) {
+                        wrapper.classList.add('asf-field-error');
+                        wrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        // Remove the highlight after 3.5 seconds
+                        setTimeout(() => {
+                            wrapper.classList.remove('asf-field-error');
+                        }, 3500);
+                    }
+                }
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+
 export async function saveSettings(ctx) {
+    if (!validateStandardSettings(ctx)) {
+        return; // Stop the function if validation fails.
+    }
+
     ctx.isLoading = true;
     try {
         const res = await fetch(window.ayecodeSettingsFramework.ajax_url, {
@@ -34,6 +85,7 @@ export async function saveSettings(ctx) {
         ctx.isLoading = false;
     }
 }
+
 
 /**
  * Saves only the data for a specific setting key, typically a complex one like a form builder.
@@ -83,8 +135,6 @@ export async function saveFormBuilder(ctx) {
             ctx.settings[settingId] = hydratedData;
             ctx.originalSettings[settingId] = JSON.parse(JSON.stringify(hydratedData));
 
-            // **THE FIX**: If a field was being edited, find its updated version
-            // in the hydrated data and update the `editingField` object.
             if (editingUid && editingUid.toString().startsWith('new_')) {
                 const newFieldData = hydratedData.find(f => f._uid !== editingUid && f.is_new !== true);
                 const stillEditing = hydratedData.find(field => field.template_id === ctx.editingField.template_id && !ctx.originalSettings[settingId].some(orig => orig._uid === field._uid));
@@ -94,10 +144,8 @@ export async function saveFormBuilder(ctx) {
                 }
             }
 
-            // **THE FIX**: Close the edit window on successful save
             ctx.leftColumnView = 'field_list';
-            ctx.editingField = null;
-
+            ctx.editingField = window.__ASF_NULL_FIELD;
 
             ctx.showNotification(data.data?.message || 'Form saved!', 'success');
         } else {
@@ -134,8 +182,6 @@ export function renderFieldCompat(field, modelPrefix = 'settings') {
         html = `<div class="alert alert-warning">Field renderer for type "${field.type}" not found.</div>`;
     }
 
-    // If using a different model prefix (like for the form builder's editing pane),
-    // replace the hardcoded "settings." with the correct prefix.
     if (modelPrefix !== 'settings') {
         const replacementRegex = new RegExp(`(x-model|:checked|@click|x-show)="(settings|\\s*settings)\\.`, 'g');
         html = html.replace(replacementRegex, `$1="${modelPrefix}.`);
@@ -154,7 +200,6 @@ export function isSettingsPage(ctx) {
     if (nonSettingsTypes.includes(t)) return false;
 
     const fields = page.fields;
-    // **THE FIX**: Check for fields in a way that works for both objects and arrays.
     if (!fields || Object.keys(fields).length === 0) {
         return false;
     }
@@ -164,7 +209,6 @@ export function isSettingsPage(ctx) {
         return arr.some(f => (f.type === 'group' && f.fields) ? hasSavable(Object.values(f.fields)) : !nonSavable.includes(f.type));
     };
 
-    // **THE FIX**: Convert fields to an array before checking for savable types.
     return hasSavable(Object.values(fields));
 }
 
@@ -178,13 +222,12 @@ export function hasUnsavedChanges(ctx) {
         const currentData = ctx.settings[settingId] || [];
         const originalData = ctx.originalSettings[settingId] || [];
 
-        // Create sanitized copies for comparison
         const sanitizedCurrent = JSON.parse(JSON.stringify(currentData)).map(f => {
-            delete f.fields; // Remove the schema before comparing
+            delete f.fields;
             return f;
         });
         const sanitizedOriginal = JSON.parse(JSON.stringify(originalData)).map(f => {
-            delete f.fields; // Remove the schema before comparing
+            delete f.fields;
             return f;
         });
 
@@ -194,7 +237,6 @@ export function hasUnsavedChanges(ctx) {
     // Logic for Standard Settings pages
     if (isSettingsPage(ctx)) {
         const check = (fields) => {
-            // **THE FIX**: Use Object.values to handle both arrays and objects.
             for (const f of Object.values(fields)) {
                 if (f.type === 'group' && f.fields) {
                     if (check(f.fields)) return true;
@@ -211,6 +253,5 @@ export function hasUnsavedChanges(ctx) {
         return check(page.fields || {});
     }
 
-    // For all other page types, there are no savable changes.
     return false;
 }

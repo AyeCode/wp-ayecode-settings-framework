@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h4 class="mb-0">Field Settings</h4>
                     <button type="button" class="btn-close"
-                            @click="leftColumnView = 'field_list'; $nextTick(() => { editingField = window.__ASF_NULL_FIELD })"
+                            @click="closeEditingField()"
                     ></button>
                 </div>
                 <div class="border rounded p-3 bg-body">
@@ -35,7 +35,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                                 </div>
                             </template>
                             <button class="btn btn-primary w-100"
-                                    @click="leftColumnView = 'field_list'; $nextTick(() => { editingField = window.__ASF_NULL_FIELD })">Done</button>
+                                    @click="closeEditingField()">Done</button>
                         </div>
                     </template>
                 </div>
