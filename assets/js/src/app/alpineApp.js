@@ -54,6 +54,8 @@ export default function alpineApp() {
         sortIteration: 0,
         activeSyncListeners: [],
         initialTargetValues: {},
+        isValidating: false,
+        lastEditFieldCall: 0,
 
         // LIFECYCLE
         init() {
@@ -102,14 +104,12 @@ export default function alpineApp() {
             pluginsSvc.setupEventListeners(this);
             pluginsSvc.reinitializePlugins(this);
 
-            // Watch for the editor view closing to clean up sync listeners
             this.$watch('leftColumnView', (newValue, oldValue) => {
                 if (newValue === 'field_list' && oldValue === 'field_settings') {
                     this.clearSyncListeners();
                 }
             });
 
-            console.log('AyeCode Settings Framework initialized');
         },
 
         // COMPUTEDS
@@ -203,9 +203,8 @@ export default function alpineApp() {
 
         // Form Builder Methods
         async saveForm() {
-            // **THE FIX**: Validate the currently open field editor before saving the whole form.
             if (this.leftColumnView === 'field_settings' && !this.validateEditingField()) {
-                return; // Stop if the open field is invalid
+                return;
             }
 
             const sectionId = this.activePageConfig.id;
@@ -305,135 +304,182 @@ export default function alpineApp() {
             return null;
         },
 
+        validateEditingField() {
+            if (this.isValidating) {
+                return true;
+            }
+            this.isValidating = true;
+
+            try {
+                if (!this.editingField || !this.editingField.fields) return true;
+
+                const settingsPane = document.getElementById('asf-field-settings');
+                if (settingsPane) {
+                    settingsPane.querySelectorAll('.asf-field-error').forEach(el => el.classList.remove('asf-field-error'));
+                }
+
+                const recursiveValidate = (fields) => {
+                    for (const fieldSchema of fields) {
+                        if (fieldSchema.extra_attributes?.required) {
+                            const value = this.editingField[fieldSchema.id];
+                            if (value === '' || value === null || value === undefined) {
+                                this.showNotification(`Error: The "${fieldSchema.label || fieldSchema.id}" field is required.`, 'error');
+                                this.$nextTick(() => {
+                                    const invalidEl = document.getElementById(fieldSchema.id);
+                                    if (invalidEl) {
+                                        const accordionCollapse = invalidEl.closest('.accordion-collapse');
+                                        if (accordionCollapse && !accordionCollapse.classList.contains('show')) {
+                                            const bsCollapse = new bootstrap.Collapse(accordionCollapse);
+                                            bsCollapse.show();
+                                        }
+
+                                        const wrapper = invalidEl.closest('.row');
+                                        if (wrapper) {
+                                            wrapper.classList.add('asf-field-error');
+                                            wrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                            setTimeout(() => {
+                                                wrapper.classList.remove('asf-field-error');
+                                            }, 3500);
+                                        }
+                                    }
+                                });
+                                return false;
+                            }
+                        }
+                        if (fieldSchema.fields && Array.isArray(fieldSchema.fields)) {
+                            if (!recursiveValidate(fieldSchema.fields)) {
+                                return false;
+                            }
+                        }
+                    }
+                    return true;
+                };
+
+                return recursiveValidate(this.editingField.fields);
+            } finally {
+                this.isValidating = false;
+            }
+        },
+
+        editField(field) {
+            const now = performance.now();
+            if (now - this.lastEditFieldCall < 100) {
+                return;
+            }
+            this.lastEditFieldCall = now;
+
+            if (this.editingField?._uid === field._uid) {
+                return;
+            }
+
+            const fieldToEdit = field;
+
+            if (this.editingField && this.editingField._uid && this.editingField._uid !== field._uid) {
+                this.clearSyncListeners();
+                if (!this.validateEditingField()) {
+                    this.$nextTick(() => {
+                        this.setupWatchersForField(this.editingField);
+                    });
+                    return;
+                }
+            } else {
+                this.clearSyncListeners();
+            }
+
+            this.editingField = window.__ASF_NULL_FIELD;
+            this.leftColumnView = 'field_list';
+
+            this.$nextTick(() => {
+                const template = this.getTemplateForField(fieldToEdit);
+                if (template) {
+                    fieldToEdit.fields = template.fields;
+                }
+
+                document.querySelector('.tooltip')?.remove();
+                this.initialTargetValues = {};
+                this.editingField = fieldToEdit;
+                this.leftColumnView = 'field_settings';
+
+                this.$nextTick(() => {
+                    this.setupWatchersForField(fieldToEdit);
+                    this.reinitializePlugins();
+                });
+            });
+        },
+
+        setupWatchersForField(field) {
+            if (!field || !field.fields) return;
+
+            const traverseAndWatch = (fields) => {
+                if (!Array.isArray(fields)) return;
+
+                fields.forEach(f => {
+                    if (f.syncs_with && Array.isArray(f.syncs_with)) {
+                        f.syncs_with.forEach(rule => {
+                            if (field[rule.target] !== undefined) {
+                                this.initialTargetValues[rule.target] = field[rule.target];
+                            }
+                        });
+
+                        const unwatch = this.$watch(`editingField.${f.id}`, (newValue) => {
+                            if (this.editingField._uid === field._uid) {
+                                this.handleSync(f.id, newValue);
+                            }
+                        });
+
+                        this.activeSyncListeners.push(unwatch);
+                    }
+
+                    if (f.fields) {
+                        traverseAndWatch(f.fields);
+                    }
+                });
+            };
+
+            traverseAndWatch(field.fields);
+        },
+
         handleSync(sourceFieldId, newValue) {
-            if (!this.editingField || !this.editingField._uid) return;
+            if (!this.editingField || !this.editingField._uid || !this.editingField.fields) return;
 
             const template = this.getTemplateForField(this.editingField);
             if (!template) return;
 
             const sourceFieldSchema = this.findSchemaById(template.fields, sourceFieldId);
-
             if (!sourceFieldSchema || !sourceFieldSchema.syncs_with) return;
 
             sourceFieldSchema.syncs_with.forEach(rule => {
                 const targetFieldId = rule.target;
+
                 if (this.editingField[targetFieldId] !== this.initialTargetValues[targetFieldId]) return;
+
                 const transformedValue = rule.transform === 'slugify' ? this.slugify(newValue) : newValue;
                 this.editingField[targetFieldId] = transformedValue;
                 this.initialTargetValues[targetFieldId] = transformedValue;
             });
         },
 
-        validateEditingField() {
-            if (!this.editingField || !this.editingField.fields) return true;
-
-            const settingsPane = document.getElementById('asf-field-settings');
-            if (settingsPane) {
-                settingsPane.querySelectorAll('.asf-field-error').forEach(el => el.classList.remove('asf-field-error'));
-            }
-
-            const recursiveValidate = (fields) => {
-                for (const fieldSchema of fields) {
-                    if (fieldSchema.extra_attributes?.required) {
-                        const value = this.editingField[fieldSchema.id];
-                        if (value === '' || value === null || value === undefined) {
-                            this.showNotification(`Error: The "${fieldSchema.label || fieldSchema.id}" field is required.`, 'error');
-                            this.$nextTick(() => {
-                                const invalidEl = document.getElementById(fieldSchema.id);
-                                if (invalidEl) {
-                                    const accordionCollapse = invalidEl.closest('.accordion-collapse');
-                                    if (accordionCollapse && !accordionCollapse.classList.contains('show')) {
-                                        const bsCollapse = new bootstrap.Collapse(accordionCollapse);
-                                        bsCollapse.show();
-                                    }
-
-                                    const wrapper = invalidEl.closest('.row');
-                                    if (wrapper) {
-                                        wrapper.classList.add('asf-field-error');
-                                        wrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                        setTimeout(() => {
-                                            wrapper.classList.remove('asf-field-error');
-                                        }, 3500);
-                                    }
-                                }
-                            });
-                            return false;
-                        }
-                    }
-                    if (fieldSchema.fields && Array.isArray(fieldSchema.fields)) {
-                        if (!recursiveValidate(fieldSchema.fields)) {
-                            return false;
-                        }
-                    }
-                }
-                return true;
-            };
-
-            return recursiveValidate(this.editingField.fields);
-        },
-
-
-        closeEditingField() {
-            if (this.validateEditingField()) {
-                this.leftColumnView = 'field_list';
-                this.$nextTick(() => { this.editingField = window.__ASF_NULL_FIELD });
-            }
-        },
-
-        editField(field) {
-            this.clearSyncListeners();
-            const template = this.getTemplateForField(field);
-
-            if (template) field.fields = template.fields;
-
-            document.querySelector('.tooltip')?.remove();
-            if (!field.conditions) field.conditions = [];
-            this.initialTargetValues = {};
-
-            const setupWatchers = () => {
-                const traverseAndWatch = (fields) => {
-                    if (!Array.isArray(fields)) return;
-                    fields.forEach(f => {
-                        if (f.syncs_with && Array.isArray(f.syncs_with)) {
-                            f.syncs_with.forEach(rule => {
-                                if (field[rule.target] !== undefined) this.initialTargetValues[rule.target] = field[rule.target];
-                            });
-                            const unwatch = this.$watch(`editingField.${f.id}`, (newValue) => { this.handleSync(f.id, newValue); });
-                            this.activeSyncListeners.push(unwatch);
-                        }
-                        if (f.fields) traverseAndWatch(f.fields);
-                    });
-                };
-                traverseAndWatch(field.fields);
-            };
-
-            if (this.editingField && this.editingField._uid && this.editingField._uid !== field._uid) {
-                this.leftColumnView = 'field_list';
-                this.editingField = window.__ASF_NULL_FIELD;
-                this.$nextTick(() => {
-                    this.editingField = field;
-                    this.leftColumnView = 'field_settings';
-                    this.$nextTick(() => {
-                        setupWatchers();
-                        this.reinitializePlugins();
-                    });
-                });
-            } else {
-                this.editingField = field;
-                this.leftColumnView = 'field_settings';
-                this.$nextTick(() => {
-                    setupWatchers();
-                    this.reinitializePlugins();
-                });
-            }
-        },
-
         clearSyncListeners() {
             while(this.activeSyncListeners.length > 0) {
                 const unwatch = this.activeSyncListeners.pop();
                 if (typeof unwatch === 'function') {
-                    unwatch();
+                    try {
+                        unwatch();
+                    } catch (e) {
+                        console.error('Error clearing watcher:', e);
+                    }
                 }
+            }
+            this.activeSyncListeners = [];
+        },
+
+        closeEditingField() {
+            if (this.validateEditingField()) {
+                this.clearSyncListeners();
+                this.leftColumnView = 'field_list';
+                this.$nextTick(() => {
+                    this.editingField = window.__ASF_NULL_FIELD;
+                });
             }
         },
 
@@ -517,7 +563,9 @@ export default function alpineApp() {
         },
 
         addCondition() {
-            if (!this.editingField.conditions) this.editingField.conditions = [];
+            if (!this.editingField.conditions) {
+                this.editingField.conditions = [];
+            }
             this.editingField.conditions.push({ action: '', field: '', condition: '', value: '' });
         },
         removeCondition(index) {
