@@ -24,6 +24,19 @@ window.__ASF_NULL_FIELD = new Proxy({}, {
     has: () => true,
 });
 
+// Helper function for addField
+function buildFieldData(fields) {
+    return fields.reduce((acc, field) => {
+        if (field.id) acc[field.id] = field.default !== undefined ? field.default : null;
+        if (field.type === 'group' && field.fields) Object.assign(acc, buildFieldData(field.fields));
+        if (field.type === 'accordion' && field.fields) field.fields.forEach(panel => {
+            if (panel.fields) Object.assign(acc, buildFieldData(panel.fields));
+        });
+        return acc;
+    }, {});
+};
+
+
 export default function alpineApp() {
     return {
         // STATE
@@ -328,22 +341,13 @@ export default function alpineApp() {
                 defaultsToApply = optionTemplate.defaults || {};
             }
 
-            const buildFieldData = (fields) => {
-                return fields.reduce((acc, field) => {
-                    if (field.id) acc[field.id] = field.default !== undefined ? field.default : null;
-                    if (field.type === 'group' && field.fields) Object.assign(acc, buildFieldData(field.fields));
-                    if (field.type === 'accordion' && field.fields) field.fields.forEach(panel => {
-                        if (panel.fields) Object.assign(acc, buildFieldData(panel.fields));
-                    });
-                    return acc;
-                }, {});
-            };
+            // --- THE FIX: Deep clone all data to prevent shared references ---
+            const newField = JSON.parse(JSON.stringify(buildFieldData(actualTemplate.fields)));
 
-            const newField = buildFieldData(actualTemplate.fields);
             newField._uid = 'new_' + Date.now();
             newField.is_new = true;
             newField.template_id = actualTemplate.id;
-            newField.fields = actualTemplate.fields;
+            newField.fields = JSON.parse(JSON.stringify(actualTemplate.fields)); // Deep clone schema
             newField._template_icon = actualTemplate.icon;
             newField._parent_id = 0;
             if ('tab_parent' in newField) newField.tab_parent = 0;
@@ -351,7 +355,9 @@ export default function alpineApp() {
 
             if (defaultsToApply) {
                 for (const key in defaultsToApply) {
-                    if (Object.prototype.hasOwnProperty.call(newField, key)) newField[key] = defaultsToApply[key];
+                    if (Object.prototype.hasOwnProperty.call(newField, key)) {
+                        newField[key] = JSON.parse(JSON.stringify(defaultsToApply[key])); // Deep clone defaults
+                    }
                 }
             }
 
@@ -370,6 +376,7 @@ export default function alpineApp() {
             this.settings[this.activePageConfig.id].push(newField);
             this._internalEditField(newField);
         },
+
 
         slugify(str) {
             return String(str).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '_').replace(/-+/g, '_');
@@ -481,14 +488,8 @@ export default function alpineApp() {
 
         editField(field) {
             if (this.activePageConfig.type === 'form_builder' && this.hasUnsavedChanges) {
-                // If we are in the form builder and have unsaved changes,
-                // we assume the user is just switching between fields to edit them.
-                // The changes are preserved in the main `settings` object and are not lost.
-                // Therefore, we can directly call the internal method without a prompt.
                 this._internalEditField(field);
             } else {
-                // For any other case (like navigating away from the form builder page entirely),
-                // we use the full confirmation flow.
                 this.navigateTo(() => this._internalEditField(field));
             }
         },
