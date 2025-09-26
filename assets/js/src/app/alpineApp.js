@@ -480,7 +480,17 @@ export default function alpineApp() {
         },
 
         editField(field) {
-            this.navigateTo(() => this._internalEditField(field));
+            if (this.activePageConfig.type === 'form_builder' && this.hasUnsavedChanges) {
+                // If we are in the form builder and have unsaved changes,
+                // we assume the user is just switching between fields to edit them.
+                // The changes are preserved in the main `settings` object and are not lost.
+                // Therefore, we can directly call the internal method without a prompt.
+                this._internalEditField(field);
+            } else {
+                // For any other case (like navigating away from the form builder page entirely),
+                // we use the full confirmation flow.
+                this.navigateTo(() => this._internalEditField(field));
+            }
         },
 
         setupWatchersForField(field) {
@@ -527,7 +537,6 @@ export default function alpineApp() {
             sourceFieldSchema.syncs_with.forEach(rule => {
                 const targetFieldId = rule.target;
 
-                // Only sync if the target field is empty.
                 const targetValue = this.editingField[targetFieldId];
                 if (targetValue && String(targetValue).trim() !== '') return;
 
@@ -566,10 +575,7 @@ export default function alpineApp() {
                 return;
             }
 
-            // Use await to pause execution until the user responds to the confirmation.
-            const confirmed = await aui_confirm('','','', true);
-
-            // If the user confirmed, proceed with the deletion logic.
+            const confirmed = await aui_confirm('Are you sure you want to delete this field?', 'Delete Field', 'Cancel', true);
             if (!confirmed) return;
 
             let fields = this.settings[this.activePageConfig.id];
@@ -578,10 +584,8 @@ export default function alpineApp() {
                 fields.splice(index, 1);
             }
 
-            // Also remove any children this field might have had.
             this.settings[this.activePageConfig.id] = fields.filter(f => f._parent_id !== field._uid);
 
-            // If the deleted field was being edited, close the editor pane.
             if (this.editingField && this.editingField._uid === field._uid) {
                 this.editingField = window.__ASF_NULL_FIELD;
                 this.leftColumnView = 'field_list';
