@@ -480,7 +480,6 @@ export default function alpineApp() {
                 this.leftColumnView = 'field_settings';
 
                 this.$nextTick(() => {
-                    this.setupWatchersForField(field);
                     this.reinitializePlugins();
                 });
             });
@@ -494,60 +493,44 @@ export default function alpineApp() {
             }
         },
 
-        setupWatchersForField(field) {
-            if (!field || !field.fields) return;
+        handleFocusSync(sourceFieldId) {
+            if (!this.editingField || !this.editingField.fields) return;
 
-            const traverseAndWatch = (fields) => {
-                if (!Array.isArray(fields)) return;
+            const field = this.editingField;
+            const sourceFieldSchema = this.findSchemaById(field.fields, sourceFieldId);
 
-                fields.forEach(f => {
-                    if (f.syncs_with && Array.isArray(f.syncs_with)) {
-                        f.syncs_with.forEach(rule => {
-                            if (field[rule.target] !== undefined) {
-                                this.initialTargetValues[rule.target] = field[rule.target];
-                            }
-                        });
-
-                        const unwatch = this.$watch(`editingField.${f.id}`, (newValue) => {
-                            if (this.editingField._uid === field._uid) {
-                                this.handleSync(f.id, newValue);
-                            }
-                        });
-
-                        this.activeSyncListeners.push(unwatch);
-                    }
-
-                    if (f.fields) {
-                        traverseAndWatch(f.fields);
-                    }
-                });
-            };
-
-            traverseAndWatch(field.fields);
-        },
-
-        handleSync(sourceFieldId, newValue) {
-            if (!this.editingField || !this.editingField._uid || !this.editingField.fields) return;
-
-            const template = this.getTemplateForField(this.editingField);
-            if (!template) return;
-
-            const sourceFieldSchema = this.findSchemaById(template.fields, sourceFieldId);
             if (!sourceFieldSchema || !sourceFieldSchema.syncs_with) return;
 
-            sourceFieldSchema.syncs_with.forEach(rule => {
-                const targetFieldId = rule.target;
+            // Check if source field is empty
+            const sourceValue = field[sourceFieldId];
+            if (sourceValue && String(sourceValue).trim() !== '') {
+                return;
+            }
 
-                const targetValue = this.editingField[targetFieldId];
-                if (targetValue && String(targetValue).trim() !== '') return;
-
-                const transformedValue = rule.transform === 'slugify' ? this.slugify(newValue) : newValue;
-                this.editingField[targetFieldId] = transformedValue;
+            // Check if all target fields are also empty
+            const allTargetsEmpty = sourceFieldSchema.syncs_with.every(rule => {
+                const targetValue = field[rule.target];
+                return !targetValue || String(targetValue).trim() === '';
             });
+
+            if (!allTargetsEmpty) {
+                return;
+            }
+
+            // If all conditions are met, set up a temporary watcher
+            const unwatch = this.$watch(`editingField.${sourceFieldId}`, (newValue) => {
+                sourceFieldSchema.syncs_with.forEach(rule => {
+                    const transformedValue = rule.transform === 'slugify' ? this.slugify(newValue) : newValue;
+                    this.editingField[rule.target] = transformedValue;
+                });
+            });
+
+            // Store the watcher cleanup function to be called when the editor closes.
+            this.activeSyncListeners.push(unwatch);
         },
 
         clearSyncListeners() {
-            while(this.activeSyncListeners.length > 0) {
+            while (this.activeSyncListeners.length > 0) {
                 const unwatch = this.activeSyncListeners.pop();
                 if (typeof unwatch === 'function') {
                     try {
@@ -557,7 +540,6 @@ export default function alpineApp() {
                     }
                 }
             }
-            this.activeSyncListeners = [];
         },
 
         closeEditingField() {

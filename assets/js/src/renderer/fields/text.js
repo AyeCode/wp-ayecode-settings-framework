@@ -21,7 +21,7 @@ function renderTextLike(field) {
     }
 
     const type = field.type || 'text';
-    const input = `<input type="${type}" class="form-control ${customClass}" id="${field.id}" name="${field.id}" x-model="settings.${field.id}" placeholder="${escapedPlaceholder}" ${extra} ${activePlaceholderAttrs}>`;
+    const input = `<input type="${type}" class="form-control ${customClass}" id="${field.id}" name="${field.id}" x-model="settings.${field.id}" placeholder="${escapedPlaceholder}" ${extra} ${activePlaceholderAttrs} @focus="handleFocusSync('${field.id}')">`;
     const finalInput = field.input_group_right ? `<div class="input-group">${input}${field.input_group_right}</div>` : input;
     const customDescHtml = renderCustomDesc(field);
 

@@ -275,7 +275,7 @@ export function renderFieldCompat(field, modelPrefix = 'settings') {
     }
 
     if (modelPrefix !== 'settings') {
-        const replacementRegex = new RegExp(`(x-model|:checked|@click|x-show)="(settings|\\s*settings)\\.`, 'g');
+        const replacementRegex = new RegExp(`(x-model|:checked|@click|@focus|x-show)="(settings|\\s*settings)\\.`, 'g');
         html = html.replace(replacementRegex, `$1="${modelPrefix}.`);
     }
 
