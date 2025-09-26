@@ -153,32 +153,114 @@ export default function alpineApp() {
         },
 
         // METHODS
+
+        /**
+         * Shows a custom modal with three choices: Save, Discard, Cancel.
+         * @returns {Promise<string>} A promise that resolves to 'save', 'discard', or 'cancel'.
+         */
+        confirmWithThreeButtons() {
+            return new Promise(resolve => {
+                // Make the resolve function globally accessible for the inline onclick handlers.
+                // This function will handle both resolving the promise and closing the modal.
+                window.asfConfirmResolve = (choice) => {
+                    const modalEl = document.querySelector('.aui-modal.show'); // Find the currently visible modal
+                    if (modalEl) {
+                        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                        if (modalInstance) {
+                            // Hide the modal using the correct Bootstrap API
+                            modalInstance.hide();
+                        }
+                    }
+                    resolve(choice);
+                };
+
+                const body = `
+                    <h3 class='h4 py-3 text-center text-dark'>You have unsaved changes.</h3>
+                    <p class='text-center text-muted'>What would you like to do?</p>
+                    <div class='d-flex justify-content-center mt-4'>
+                        <button class='btn btn-outline-secondary w-100 me-2' onclick='window.asfConfirmResolve("cancel")'>Cancel</button>
+                        <button class='btn btn-danger w-100 me-2' onclick='window.asfConfirmResolve("discard")'>Discard</button>
+                        <button class='btn btn-primary w-100' onclick='window.asfConfirmResolve("save")'>Save & Continue</button>
+                    </div>
+                `;
+                aui_modal('', body, '', false, '', '');
+            });
+        },
+
+        /**
+         * Central navigation handler. Checks for unsaved changes before proceeding.
+         * @param {Function} navigationAction The function to execute to change the view.
+         */
+        async navigateTo(navigationAction) {
+            if (this.hasUnsavedChanges) {
+                const userChoice = await this.confirmWithThreeButtons();
+
+                if (userChoice === 'save') {
+                    const saveSuccess = this.activePageConfig.type === 'form_builder'
+                        ? await this.saveForm()
+                        : await this.saveSettings();
+
+                    if (saveSuccess) {
+                        navigationAction();
+                    } else {
+                        this.showNotification('Save failed. Navigation cancelled.', 'error');
+                    }
+                } else if (userChoice === 'discard') {
+                    this.discardChanges(false); // Pass false to skip native confirm
+                    navigationAction();
+                }
+                // If 'cancel', do nothing.
+
+            } else {
+                navigationAction();
+            }
+        },
+
         toggleTheme() { themeSvc.toggleTheme(this); },
         reinitializePlugins() { pluginsSvc.reinitializePlugins(this); },
         changeView(fn) { pluginsSvc.changeView(this, fn); },
-        goToSearchResult(result) { searchSvc.goToSearchResult(this, result); },
+
+        // --- Refactored Navigation Methods ---
+        goToSearchResult(result) {
+            this.navigateTo(() => searchSvc.goToSearchResult(this, result));
+        },
         goToSection(sectionId, ss = '') {
-            if (this.activePageConfig?.type === 'form_builder') {
-                this.editingField = window.__ASF_NULL_FIELD;
-                this.leftColumnView = 'field_list';
-            }
-            routerSvc.goToSection(this, sectionId, ss);
+            this.navigateTo(() => {
+                if (this.activePageConfig?.type === 'form_builder') {
+                    this.editingField = window.__ASF_NULL_FIELD;
+                    this.leftColumnView = 'field_list';
+                }
+                routerSvc.goToSection(this, sectionId, ss);
+            });
         },
-        goToCustomLink(link) { searchSvc.goToCustomLink(this, link); },
+        goToCustomLink(link) {
+            this.navigateTo(() => searchSvc.goToCustomLink(this, link));
+        },
         switchSection(sectionId) {
-            if (this.activePageConfig?.type === 'form_builder') {
-                this.editingField = window.__ASF_NULL_FIELD;
-                this.leftColumnView = 'field_list';
-            }
-            routerSvc.switchSection(this, sectionId);
+            this.navigateTo(() => {
+                if (this.activePageConfig?.type === 'form_builder') {
+                    this.editingField = window.__ASF_NULL_FIELD;
+                    this.leftColumnView = 'field_list';
+                }
+                routerSvc.switchSection(this, sectionId);
+            });
         },
-        switchSubsection(ssId) { routerSvc.switchSubsection(this, ssId); },
+        switchSubsection(ssId) {
+            this.navigateTo(() => routerSvc.switchSubsection(this, ssId));
+        },
+
         highlightField(fieldId) { highlight.highlightField(this, fieldId); },
         handleUrlHash() { routerSvc.handleUrlHash(this); },
         updateUrlHash(fieldId = null) { routerSvc.updateUrlHash(this, fieldId); },
         setInitialSection() { routerSvc.setInitialSection(this); },
-        async saveSettings() { await settingsSvc.saveSettings(this); },
-        discardChanges() { settingsSvc.discardChanges(this); },
+
+        async saveSettings() {
+            return await settingsSvc.saveSettings(this);
+        },
+        async discardChanges(useConfirm = true) {
+            await settingsSvc.discardChanges(this, useConfirm);
+        },
+
         shouldShowField(field) {
             const context = this.editingField && this.editingField._uid ? this.editingField : this.settings;
             return cond.shouldShowField(context, field);
@@ -204,7 +286,7 @@ export default function alpineApp() {
         // Form Builder Methods
         async saveForm() {
             if (this.leftColumnView === 'field_settings' && !this.validateEditingField()) {
-                return;
+                return false;
             }
 
             const sectionId = this.activePageConfig.id;
@@ -215,7 +297,7 @@ export default function alpineApp() {
                 if ('tab_parent' in f) f.tab_parent = parent;
                 if ('tab_level' in f) f.tab_level = parent ? 1 : 0;
             });
-            await settingsSvc.saveFormBuilder(this);
+            return await settingsSvc.saveFormBuilder(this);
         },
 
         countFieldsByTemplateId(optionTemplate) {
@@ -286,7 +368,7 @@ export default function alpineApp() {
             }
 
             this.settings[this.activePageConfig.id].push(newField);
-            this.editField(newField);
+            this._internalEditField(newField);
         },
 
         slugify(str) {
@@ -361,25 +443,17 @@ export default function alpineApp() {
             }
         },
 
-        editField(field) {
+        _internalEditField(field) {
             const now = performance.now();
-            if (now - this.lastEditFieldCall < 100) {
-                return;
-            }
+            if (now - this.lastEditFieldCall < 100) return;
             this.lastEditFieldCall = now;
 
-            if (this.editingField?._uid === field._uid) {
-                return;
-            }
-
-            const fieldToEdit = field;
+            if (this.editingField?._uid === field._uid) return;
 
             if (this.editingField && this.editingField._uid && this.editingField._uid !== field._uid) {
                 this.clearSyncListeners();
                 if (!this.validateEditingField()) {
-                    this.$nextTick(() => {
-                        this.setupWatchersForField(this.editingField);
-                    });
+                    this.$nextTick(() => this.setupWatchersForField(this.editingField));
                     return;
                 }
             } else {
@@ -390,21 +464,23 @@ export default function alpineApp() {
             this.leftColumnView = 'field_list';
 
             this.$nextTick(() => {
-                const template = this.getTemplateForField(fieldToEdit);
-                if (template) {
-                    fieldToEdit.fields = template.fields;
-                }
+                const template = this.getTemplateForField(field);
+                if (template) field.fields = template.fields;
 
                 document.querySelector('.tooltip')?.remove();
                 this.initialTargetValues = {};
-                this.editingField = fieldToEdit;
+                this.editingField = field;
                 this.leftColumnView = 'field_settings';
 
                 this.$nextTick(() => {
-                    this.setupWatchersForField(fieldToEdit);
+                    this.setupWatchersForField(field);
                     this.reinitializePlugins();
                 });
             });
+        },
+
+        editField(field) {
+            this.navigateTo(() => this._internalEditField(field));
         },
 
         setupWatchersForField(field) {
@@ -451,11 +527,12 @@ export default function alpineApp() {
             sourceFieldSchema.syncs_with.forEach(rule => {
                 const targetFieldId = rule.target;
 
-                if (this.editingField[targetFieldId] !== this.initialTargetValues[targetFieldId]) return;
+                // Only sync if the target field is empty.
+                const targetValue = this.editingField[targetFieldId];
+                if (targetValue && String(targetValue).trim() !== '') return;
 
                 const transformedValue = rule.transform === 'slugify' ? this.slugify(newValue) : newValue;
                 this.editingField[targetFieldId] = transformedValue;
-                this.initialTargetValues[targetFieldId] = transformedValue;
             });
         },
 
@@ -483,16 +560,28 @@ export default function alpineApp() {
             }
         },
 
-        deleteField(field) {
+        async deleteField(field) {
             if (field._is_default) {
                 alert('This is a default field and cannot be deleted.');
                 return;
             }
-            if (!confirm('Are you sure you want to delete this field?')) return;
+
+            // Use await to pause execution until the user responds to the confirmation.
+            const confirmed = await aui_confirm('','','', true);
+
+            // If the user confirmed, proceed with the deletion logic.
+            if (!confirmed) return;
+
             let fields = this.settings[this.activePageConfig.id];
             const index = fields.findIndex(f => f._uid === field._uid);
-            if (index > -1) fields.splice(index, 1);
+            if (index > -1) {
+                fields.splice(index, 1);
+            }
+
+            // Also remove any children this field might have had.
             this.settings[this.activePageConfig.id] = fields.filter(f => f._parent_id !== field._uid);
+
+            // If the deleted field was being edited, close the editor pane.
             if (this.editingField && this.editingField._uid === field._uid) {
                 this.editingField = window.__ASF_NULL_FIELD;
                 this.leftColumnView = 'field_list';

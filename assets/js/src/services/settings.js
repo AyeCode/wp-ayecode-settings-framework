@@ -154,7 +154,7 @@ function validateStandardSettings(ctx) {
 
 export async function saveSettings(ctx) {
     if (!validateStandardSettings(ctx)) {
-        return;
+        return false;
     }
     ctx.isLoading = true;
     try {
@@ -173,12 +173,15 @@ export async function saveSettings(ctx) {
             ctx.originalSettings = JSON.parse(JSON.stringify(ctx.settings));
             ctx.originalImagePreviews = JSON.parse(JSON.stringify(ctx.imagePreviews));
             ctx.showNotification(data.data?.message || ctx.strings.saved, 'success');
+            return true;
         } else {
             ctx.showNotification(data.data?.message || ctx.strings.error, 'error');
+            return false;
         }
     } catch (e) {
         console.error('Save error:', e);
         ctx.showNotification(ctx.strings.error, 'error');
+        return false;
     } finally {
         ctx.isLoading = false;
     }
@@ -226,21 +229,33 @@ export async function saveFormBuilder(ctx) {
             ctx.leftColumnView = 'field_list';
             ctx.editingField = window.__ASF_NULL_FIELD;
             ctx.showNotification(data.data?.message || 'Form saved!', 'success');
+            return true;
         } else {
             ctx.showNotification(data.data?.message || ctx.strings.error, 'error');
+            return false;
         }
     } catch (e) {
         console.error('Save error:', e);
         ctx.showNotification(ctx.strings.error, 'error');
+        return false;
     } finally {
         ctx.isLoading = false;
     }
 }
 
-export function discardChanges(ctx) {
-    if (confirm(ctx.strings.confirm_discard)) {
+export async function discardChanges(ctx, useConfirm = true) {
+    const performDiscard = () => {
         ctx.settings = JSON.parse(JSON.stringify(ctx.originalSettings));
         ctx.imagePreviews = JSON.parse(JSON.stringify(ctx.originalImagePreviews));
+    };
+
+    if (useConfirm) {
+        const confirmed = await aui_confirm(ctx.strings.confirm_discard, 'Discard', 'Cancel', true, true);
+        if (confirmed) {
+            performDiscard();
+        }
+    } else {
+        performDiscard();
     }
 }
 
