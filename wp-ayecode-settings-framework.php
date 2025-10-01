@@ -44,11 +44,28 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
     public function __construct() {
         parent::__construct(); // IMPORTANT: Always call the parent constructor!
 
+        // Include the new manager class for API keys.
+        require_once __DIR__ . '/AyeCode_API_Key_Manager_Example.php';
+
         // Add hooks for this specific settings page's tools.
         // The hooks are dynamic based on the page_slug.
         add_action( 'asf_execute_tool_' . $this->page_slug, [ $this, 'handle_demo_tool_action' ], 10, 2 );
         add_action( 'asf_render_content_pane_' . $this->page_slug, [ $this, 'handle_demo_content_pane' ], 10, 1 );
     }
+
+    /**
+     * Helper function to get a list of users for select dropdowns.
+     * @return array
+     */
+    public function get_user_options() {
+        $users = get_users(['fields' => ['ID', 'display_name']]);
+        $options = [];
+        foreach ($users as $user) {
+            $options[$user->ID] = $user->display_name;
+        }
+        return $options;
+    }
+
 
     /**
      * Provides the settings configuration array for this specific page.
@@ -212,6 +229,65 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                         ]
                                 ]
                         ],
+
+                    // NEW: API Keys List Table Section
+                        [
+                                'id'    => 'api_keys',
+                                'name'  => __( 'API Keys', 'wp-ayecode-settings-framework' ),
+                                'icon'  => 'fa-solid fa-key',
+                                'type'  => 'list_table',
+
+                                'table_config' => [
+                                        'singular' => 'API Key',
+                                        'plural'   => 'API Keys',
+                                        'ajax_action_get' => 'get_api_keys',
+
+                                        'columns' => [
+                                                'description'   => [ 'label' => 'Description' ],
+                                                'truncated_key' => [ 'label' => 'Key Ending In' ],
+                                                'permissions'   => [ 'label' => 'Permissions' ],
+                                                'last_access'   => [ 'label' => 'Last Access' ],
+                                        ],
+                                ],
+
+                                'modal_config' => [
+                                        'title_add'  => 'Add New API Key',
+                                        'title_edit' => 'Edit API Key',
+                                        'ajax_action_create' => 'create_api_key',
+                                        'ajax_action_update' => 'update_api_key',
+                                        'ajax_action_delete' => 'delete_api_key',
+
+                                        'fields' => [
+                                                [
+                                                        'id'      => 'description',
+                                                        'type'    => 'text',
+                                                        'label'   => __( 'Description', 'wp-ayecode-settings-framework' ),
+                                                        'extra_attributes' => ['required' => true]
+                                                ],
+                                                [
+                                                        'id'      => 'user_id',
+                                                        'type'    => 'select',
+                                                        'label'   => __( 'User', 'wp-ayecode-settings-framework' ),
+                                                        'options' => $this->get_user_options()
+                                                ],
+                                                [
+                                                        'id'      => 'permissions',
+                                                        'type'    => 'select',
+                                                        'label'   => __( 'Permissions', 'wp-ayecode-settings-framework' ),
+                                                        'options' => ['read' => 'Read', 'write' => 'Write', 'read_write' => 'Read/Write'],
+                                                        'default' => 'read_write'
+                                                ]
+                                        ]
+                                ],
+                                'post_create_view' => [
+                                        'title'   => 'API Key Generated Successfully',
+                                        'message' => 'Please copy your Consumer Key and Consumer Secret. You will not be shown the secret key again.',
+                                        'fields'  => [
+                                                [ 'id' => 'consumer_key', 'type' => 'text', 'label' => 'Consumer Key', 'extra_attributes' => ['readonly' => true, 'onclick' => 'this.select();'] ],
+                                                [ 'id' => 'consumer_secret', 'type' => 'text', 'label' => 'Consumer Secret', 'extra_attributes' => ['readonly' => true, 'onclick' => 'this.select();'] ],
+                                        ]
+                                ]
+                        ],
                         [
                                 'id' => 'accordion_demo',
                                 'name' => __('Accordion Demo', 'wp-ayecode-settings-framework'),
@@ -361,7 +437,28 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
      * @param array  $post_data   The full $_POST data from the request.
      */
     public function handle_demo_tool_action( $tool_action, $post_data ) {
+        $api_manager = new \AyeCode\SettingsFramework\AyeCode_API_Key_Manager();
+        $data = isset($post_data['data']) ? json_decode(stripslashes($post_data['data']), true) : [];
+
         switch ( $tool_action ) {
+            // API Key Actions
+            case 'get_api_keys':
+                wp_send_json_success( $api_manager->get_keys() );
+                break;
+            case 'create_api_key':
+                $result = $api_manager->create_key( $data['user_id'], $data['description'], $data['permissions'] );
+                wp_send_json_success( $result );
+                break;
+            case 'update_api_key':
+                $result = $api_manager->update_key( $data['id'], $data['description'], $data['permissions'] );
+                wp_send_json_success( $result );
+                break;
+            case 'delete_api_key':
+                $result = $api_manager->revoke_key( $data['id'] );
+                wp_send_json_success( $result );
+                break;
+
+            // Existing Tool Actions
             case 'demo_clear_cache_success':
                 $this->handle_clear_cache();
                 break;

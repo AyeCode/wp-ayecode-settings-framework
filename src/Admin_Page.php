@@ -122,6 +122,11 @@ class Admin_Page {
                                             <?php include $templates_dir . 'views/import-page.php'; ?>
                                         </template>
 
+                                        <?php // View for the new list table ?>
+                                        <template x-if="activePageConfig.type === 'list_table'">
+                                            <?php include $templates_dir . 'views/list-table.php'; ?>
+                                        </template>
+
                                         <?php // View for the new form builder ?>
                                         <template x-if="activePageConfig.type === 'form_builder'">
                                             <?php include $templates_dir . 'views/form-builder.php'; ?>
