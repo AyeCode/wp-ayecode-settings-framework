@@ -100,6 +100,34 @@ function ayecodeSettingsApp() {
         },
 
         /**
+         * Renders a table cell with custom logic based on column type.
+         */
+        renderCell(columnKey, item) {
+            const columnConfig = this.activePageConfig.table_config.columns[columnKey];
+            const value = item[columnKey];
+
+            if (columnConfig && columnConfig.type) {
+                switch (columnConfig.type) {
+                    case 'user':
+                        if (!item.user_name) return 'N/A';
+                        return `<a href="${item.user_profile_url}">${item.user_name}</a>`;
+                    case 'date':
+                        return new Date(value).toLocaleDateString();
+                    case 'badge':
+                        let badgeClass = 'bg-secondary';
+                        if (value === 'read_write') badgeClass = 'bg-primary';
+                        if (value === 'read') badgeClass = 'bg-info';
+                        return `<span class="badge ${badgeClass}">${value}</span>`;
+                }
+            }
+
+            // Default behavior: escape and display raw text
+            const el = document.createElement('div');
+            el.textContent = value;
+            return el.innerHTML;
+        },
+
+        /**
          * Helper to initialize data for an action page or import page.
          */
         initializeActionPageData(pageConfig) {

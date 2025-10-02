@@ -125,7 +125,6 @@ export default function listTableComponent(config) {
         },
 
         open_modal(item = null) {
-            // ... (no changes to this method)
             if (item) {
                 this.isEditing = true;
                 this.editingItem = JSON.parse(JSON.stringify(item));
@@ -135,6 +134,9 @@ export default function listTableComponent(config) {
                 this.config.modal_config.fields.forEach(field => {
                     if (field.default !== undefined) {
                         this.editingItem[field.id] = field.default;
+                    } else if (field.type === 'select' && field.options && Object.keys(field.options).length > 0) {
+                        // If it's a select field with no default, automatically use the first option.
+                        this.editingItem[field.id] = Object.keys(field.options)[0];
                     }
                 });
             }
@@ -142,7 +144,18 @@ export default function listTableComponent(config) {
         },
 
         async save_item() {
-            // ... (no changes to this method)
+            // Loop through fields to find any that are required.
+            for (const field of this.config.modal_config.fields) {
+                if (field.extra_attributes?.required) {
+                    const value = this.editingItem[field.id];
+                    // If the value is empty or just whitespace, show an error and stop.
+                    if (!value || String(value).trim() === '') {
+                        showNotification(this, `The "${field.label || field.id}" field is required.`, 'error');
+                        return; // Stop the save process.
+                    }
+                }
+            }
+
             const action = this.isEditing
                 ? this.config.modal_config.ajax_action_update
                 : this.config.modal_config.ajax_action_create;

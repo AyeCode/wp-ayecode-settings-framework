@@ -93,7 +93,7 @@ class Admin_Page {
 
                 <?php include $templates_dir . 'partials/header.php'; ?>
 
-                <div class="asf-settings-page d-flex" style="min-height: calc(100vh - 107px);">
+                <div class="asf-settings-page d-flex" style="min-height: calc(100vh - 105px);">
 
                     <?php include $templates_dir . 'partials/sidebar.php'; ?>
 
