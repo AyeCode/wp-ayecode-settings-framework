@@ -17,16 +17,61 @@ if ( ! defined( 'ABSPATH' ) ) {
 class AyeCode_API_Key_Manager {
 
 	/**
-	 * Retrieves all API keys from the database.
-	 * In a real plugin, this would query a custom table. For this demo, we'll use options.
+	 * Retrieves API keys from the database, optionally filtering by status and other criteria.
 	 *
+	 * @param string $status  The status to filter by (e.g., 'read', 'write'). Defaults to 'all'.
+	 * @param array  $filters An associative array of additional filters (e.g., ['permissions' => 'read']).
 	 * @return array
 	 */
-	public function get_keys() {
-		// We add a unique option for the list table data, separate from the main settings.
+	public function get_keys( $status = 'all', $filters = [] ) {
 		$keys = get_option( 'ayecode_framework_demo_api_keys', [] );
+		$results = $keys;
+
+		// Apply Status Filter (Primary Filter)
+		if ( 'all' !== $status && ! empty( $status ) ) {
+			$results = array_filter( $results, function( $key ) use ( $status ) {
+				return isset( $key['permissions'] ) && $key['permissions'] === $status;
+			} );
+		}
+
+		// Apply Custom Filters
+		if ( ! empty( $filters ) && is_array( $filters ) ) {
+			foreach ( $filters as $filter_key => $filter_value ) {
+				// Only filter if a specific value is chosen (not 'all' or empty)
+				if ( 'all' !== $filter_value && ! empty( $filter_value ) ) {
+					$results = array_filter( $results, function( $key ) use ( $filter_key, $filter_value ) {
+						return isset( $key[ $filter_key ] ) && $key[ $filter_key ] === $filter_value;
+					} );
+				}
+			}
+		}
+
 		// Ensure the array is indexed correctly for the frontend.
-		return array_values($keys);
+		return array_values($results);
+	}
+
+	/**
+	 * Gets the counts for each status.
+	 * @return array Associative array of [status => count].
+	 */
+	public function get_status_counts() {
+		$all_keys = get_option( 'ayecode_framework_demo_api_keys', [] );
+		$counts = [
+			'read' => 0,
+			'write' => 0,
+			'read_write' => 0,
+		];
+
+		foreach ($all_keys as $key) {
+			if (isset($key['permissions']) && isset($counts[$key['permissions']])) {
+				$counts[$key['permissions']]++;
+			}
+		}
+
+		// Add the 'all' count
+		$counts['all'] = count($all_keys);
+
+		return $counts;
 	}
 
 	/**
@@ -36,7 +81,7 @@ class AyeCode_API_Key_Manager {
 	 * @return array|null The key details or null if not found.
 	 */
 	public function get_key_details( $key_id ) {
-		$keys = $this->get_keys();
+		$keys = $this->get_keys('all'); // Ensure we search all keys
 		foreach ($keys as $key) {
 			if ($key['id'] == $key_id) {
 				return $key;
@@ -54,7 +99,7 @@ class AyeCode_API_Key_Manager {
 	 * @return array The newly created key, including the unhashed secret for one-time display.
 	 */
 	public function create_key( $user_id, $description, $permissions ) {
-		$keys = $this->get_keys();
+		$keys = $this->get_keys('all'); // Get all keys to append
 
 		// 1. Generate new key parts.
 		$consumer_key    = 'ck_' . wp_generate_password( 32, false );
@@ -93,7 +138,7 @@ class AyeCode_API_Key_Manager {
 	 * @return array The updated key.
 	 */
 	public function update_key( $key_id, $description, $permissions ) {
-		$keys = $this->get_keys();
+		$keys = $this->get_keys('all');
 		$updated_key = null;
 
 		foreach ($keys as $index => $key) {
@@ -116,7 +161,7 @@ class AyeCode_API_Key_Manager {
 	 * @return bool True on success.
 	 */
 	public function revoke_key( $key_id ) {
-		$keys = $this->get_keys();
+		$keys = $this->get_keys('all');
 		$keys_after_deletion = [];
 
 		foreach ($keys as $key) {

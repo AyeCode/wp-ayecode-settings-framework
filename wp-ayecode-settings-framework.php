@@ -73,6 +73,8 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
      * @return array The configuration array.
      */
     public function get_config() {
+        $api_manager = new \AyeCode\SettingsFramework\AyeCode_API_Key_Manager();
+
         return [
                 'sections' => [
                         [
@@ -247,6 +249,28 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                 'truncated_key' => [ 'label' => 'Key Ending In' ],
                                                 'permissions'   => [ 'label' => 'Permissions' ],
                                                 'last_access'   => [ 'label' => 'Last Access' ],
+                                        ],
+
+                                        'statuses' => [
+                                                'status_key' => 'permissions',
+                                                'labels' => [
+                                                        'read' => 'Read Only',
+                                                        'write' => 'Write Only',
+                                                        'read_write' => 'Read/Write',
+                                                ],
+                                                'counts' => $api_manager->get_status_counts(),
+                                                'default_status' => 'all',
+                                        ],
+                                        'filters' => [
+                                                [
+                                                        'id' => 'permissions',
+                                                        'placeholder' => 'All Permissions',
+                                                        'options' => [
+                                                                'read' => 'Read',
+                                                                'write' => 'Write',
+                                                                'read_write' => 'Read/Write',
+                                                        ],
+                                                ],
                                         ],
                                 ],
 
@@ -439,11 +463,13 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
     public function handle_demo_tool_action( $tool_action, $post_data ) {
         $api_manager = new \AyeCode\SettingsFramework\AyeCode_API_Key_Manager();
         $data = isset($post_data['data']) ? json_decode(stripslashes($post_data['data']), true) : [];
+        $status = isset($post_data['status']) ? sanitize_text_field($post_data['status']) : 'all';
+        $filters = isset($post_data['filters']) ? json_decode(stripslashes($post_data['filters']), true) : [];
 
         switch ( $tool_action ) {
             // API Key Actions
             case 'get_api_keys':
-                wp_send_json_success( $api_manager->get_keys() );
+                wp_send_json_success( $api_manager->get_keys( $status, $filters ) );
                 break;
             case 'create_api_key':
                 $result = $api_manager->create_key( $data['user_id'], $data['description'], $data['permissions'] );

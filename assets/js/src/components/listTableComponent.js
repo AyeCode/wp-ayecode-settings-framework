@@ -22,6 +22,8 @@ export default function listTableComponent(config) {
         searchQuery: '',
         sortColumn: '',
         sortDirection: 'asc',
+        currentStatus: 'all',
+        currentFilters: {},
 
         /**
          * A computed property that automatically filters and sorts the items.
@@ -50,7 +52,7 @@ export default function listTableComponent(config) {
 
                     // Basic type checking for sorting
                     if (typeof valA === 'number' && typeof valB === 'number') {
-                        return this.sortDirection === 'asc' ? valA - valB : valB - valA;
+                        return this.sortDirection === 'asc' ? valA - valB : valB - a;
                     }
 
                     // Default to string comparison
@@ -65,12 +67,32 @@ export default function listTableComponent(config) {
 
         init() {
             this.modalInstance = new bootstrap.Modal(this.$refs.editModal);
+            // Set default status from config if available
+            if (this.config.table_config.statuses && this.config.table_config.statuses.default_status) {
+                this.currentStatus = this.config.table_config.statuses.default_status;
+            }
+
+            // Initialize currentFilters based on the config
+            if (this.config.table_config.filters) {
+                this.config.table_config.filters.forEach(filter => {
+                    this.currentFilters[filter.id] = ''; // Default to empty (all)
+                });
+            }
+
             this.load_items();
 
             this.$refs.editModal.addEventListener('hidden.bs.modal', () => {
                 this.editingItem = {};
                 this.isEditing = false;
             });
+
+            // Watch for changes in filters and reload the data
+            this.$watch('currentFilters', () => this.load_items(), { deep: true });
+        },
+
+        filter_by_status(status) {
+            this.currentStatus = status;
+            this.load_items();
         },
 
         /**
@@ -89,7 +111,6 @@ export default function listTableComponent(config) {
         },
 
         async do_ajax(tool_action, data = {}) {
-            // ... (no changes to this method)
             this.isSaving = true;
             try {
                 const response = await fetch(window.ayecodeSettingsFramework.ajax_url, {
@@ -100,6 +121,8 @@ export default function listTableComponent(config) {
                         nonce: window.ayecodeSettingsFramework.tool_nonce,
                         tool_action: tool_action,
                         data: JSON.stringify(data),
+                        status: this.currentStatus, // Send the current status
+                        filters: JSON.stringify(this.currentFilters), // Send the current filters
                     })
                 });
                 const result = await response.json();
@@ -115,8 +138,8 @@ export default function listTableComponent(config) {
         },
 
         async load_items() {
-            // ... (no changes to this method)
             this.isLoading = true;
+            this.items = [];
             const result = await this.do_ajax(this.config.table_config.ajax_action_get);
             if (result && result.success) {
                 this.items = result.data;
@@ -174,7 +197,6 @@ export default function listTableComponent(config) {
         },
 
         async delete_item(itemId) {
-            // ... (no changes to this method)
             const confirmed = await window.aui_confirm('Are you sure you want to delete this item? This cannot be undone.', 'Delete', 'Cancel', true, true);
             if (confirmed) {
                 await this.do_ajax(this.config.modal_config.ajax_action_delete, { id: itemId });
@@ -183,7 +205,6 @@ export default function listTableComponent(config) {
         },
 
         change_view(newView) {
-            // ... (no changes to this method)
             this.view = newView;
             if (newView === 'list') {
                 this.load_items();
@@ -191,12 +212,10 @@ export default function listTableComponent(config) {
         },
 
         render_field(field, modelPrefix) {
-            // ... (no changes to this method)
             return renderFieldCompat(field, modelPrefix);
         },
 
         should_show_field(field, context) {
-            // ... (no changes to this method)
             return evaluateShowIf(context, field);
         }
     };

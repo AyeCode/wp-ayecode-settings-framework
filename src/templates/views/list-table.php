@@ -10,16 +10,50 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 
     <div x-show="view === 'list'">
 
-        <div class="d-flex justify-content-end my-4" x-show="items.length > 0">
 
-            <button class="btn btn-primary me-auto" @click="open_modal()" x-show="config.post_create_view">
-                <i class="fa-solid fa-plus me-1"></i>
-                <span x-text="'Add ' + (config.table_config.singular || 'Item')"></span>
-            </button>
 
-            <div class="input-group" style="max-width: 250px;">
-                <span class="input-group-text bg-transparent"><i class="fa-solid fa-magnifying-glass"></i></span>
-                <input type="search" class="form-control" x-model.debounce.300ms="searchQuery" placeholder="Search...">
+        <div class="d-flex justify-content-between my-4">
+            <div>
+                <button class="btn btn-primary btn-sm" @click="open_modal()" x-show="config.post_create_view">
+                    <i class="fa-solid fa-plus me-1"></i>
+                    <span x-text="'Add ' + (config.table_config.singular || 'Item')"></span>
+                </button>
+            </div>
+
+            <div class="d-flex align-items-center">
+                <template x-for="filter in config.table_config.filters" :key="filter.id">
+                    <select class="form-select form-select-sm me-2" x-model="currentFilters[filter.id]" style="min-width: 150px;">
+                        <option value="" x-text="filter.placeholder || 'Select...'"></option>
+                        <template x-for="[optionValue, optionLabel] in Object.entries(filter.options)" :key="optionValue">
+                            <option :value="optionValue" x-text="optionLabel"></option>
+                        </template>
+                    </select>
+                </template>
+
+                <div class="input-group input-group-sm" style="max-width: 250px;">
+                    <span class="input-group-text bg-transparent"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="search" class="form-control" x-model.debounce.300ms="searchQuery" placeholder="Search...">
+                </div>
+            </div>
+        </div>
+
+        <div class="" x-show="config.table_config.statuses && config.table_config.statuses.status_key" x-cloak>
+            <div class="list-group list-group-horizontal w-auto d-inline-flex mb-3">
+                <a href="#"
+                   class="list-group-item list-group-item-action d-flex fw-normal py-2 fs-xs "
+                   :class="{ 'active': currentStatus === 'all' }"
+                   @click.prevent="filter_by_status('all')">
+                    All <span class="count ms-1" x-text="'(' + (config.table_config.statuses.counts.all || 0) + ')'"></span>
+                </a>
+                <template x-for="([status, label], index) in Object.entries(config.table_config.statuses.labels || {})" :key="status">
+                    <a href="#"
+                       class="list-group-item list-group-item-action d-flex fw-normal py-2 fs-xs "
+                       :class="{ 'active': currentStatus === status }"
+                       @click.prevent="filter_by_status(status)">
+                        <span x-text="label"></span>
+                        <span class="count ms-1" x-text="'(' + (config.table_config.statuses.counts[status] || 0) + ')'"></span>
+                    </a>
+                </template>
             </div>
         </div>
 
@@ -32,7 +66,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
             </div>
         </template>
 
-        <div class="table-responsive" x-show="items.length > 0" x-cloak>
+        <div class="table-responsive" x-show="items.length > 0 && !isLoading" x-cloak>
             <table class="table table-hover bg-body rounded-3 align-middle table-borderless table-striped">
                 <thead class="bg-light-subtle">
                 <tr>
