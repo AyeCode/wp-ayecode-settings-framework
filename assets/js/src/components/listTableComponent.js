@@ -24,6 +24,8 @@ export default function listTableComponent(config) {
         sortDirection: 'asc',
         currentStatus: 'all',
         currentFilters: {},
+        selectedItems: [],
+        bulkAction: '',
 
         /**
          * A computed property that automatically filters and sorts the items.
@@ -67,9 +69,15 @@ export default function listTableComponent(config) {
 
         init() {
             this.modalInstance = new bootstrap.Modal(this.$refs.editModal);
-            // Set default status from config if available
-            if (this.config.table_config.statuses && this.config.table_config.statuses.default_status) {
-                this.currentStatus = this.config.table_config.statuses.default_status;
+
+            // THE FIX: Only access statuses properties if the config exists.
+            if (this.config.table_config.statuses && this.config.table_config.statuses.status_key) {
+                if (this.config.table_config.statuses.default_status) {
+                    this.currentStatus = this.config.table_config.statuses.default_status;
+                }
+                if (!this.config.table_config.statuses.counts) {
+                    this.config.table_config.statuses.counts = {};
+                }
             }
 
             // Initialize currentFilters based on the config
@@ -93,6 +101,44 @@ export default function listTableComponent(config) {
         filter_by_status(status) {
             this.currentStatus = status;
             this.load_items();
+        },
+
+        update_counts(newCounts) {
+            if (newCounts && this.config.table_config.statuses) {
+                this.config.table_config.statuses.counts = newCounts;
+            }
+        },
+
+        toggle_select_all(event) {
+            if (event.target.checked) {
+                this.selectedItems = this.filteredItems.map(item => item.id);
+            } else {
+                this.selectedItems = [];
+            }
+        },
+
+        async apply_bulk_action() {
+            if (!this.bulkAction || this.selectedItems.length === 0) {
+                showNotification(this, 'Please select an action and at least one item.', 'error');
+                return;
+            }
+
+            const confirmed = await window.aui_confirm(`You are about to perform the action "${this.config.table_config.bulk_actions[this.bulkAction]}" on ${this.selectedItems.length} items. Are you sure?`, 'Confirm', 'Cancel', true, true);
+
+            if (confirmed) {
+                const result = await this.do_ajax(this.config.table_config.ajax_action_bulk, {
+                    action: this.bulkAction,
+                    item_ids: this.selectedItems
+                });
+
+                if (result && result.success) {
+                    // THE FIX: Provide a default success message.
+                    showNotification(this, result.data?.message || 'Action applied successfully!', 'success');
+                    this.selectedItems = [];
+                    this.bulkAction = '';
+                    this.load_items();
+                }
+            }
         },
 
         /**
@@ -126,9 +172,17 @@ export default function listTableComponent(config) {
                     })
                 });
                 const result = await response.json();
+
+                // THE FIX: Provide default messages if none are returned.
                 if (!result.success) {
+                    // Use optional chaining (?.) to safely access nested properties.
+                    // If `data` or `data.message` is missing, fall back to a generic error.
                     showNotification(this, result.data?.message || 'An error occurred.', 'error');
+                } else {
+                    // For successful actions, also check for a message and provide a default.
+                    // We'll add this to the calling functions for better context.
                 }
+
                 return result;
             } catch (error) {
                 showNotification(this, 'A network error occurred during the request.', 'error');
@@ -141,9 +195,23 @@ export default function listTableComponent(config) {
             this.isLoading = true;
             this.items = [];
             const result = await this.do_ajax(this.config.table_config.ajax_action_get);
+
             if (result && result.success) {
-                this.items = result.data;
+                // THE FIX:
+                // 1. Always update counts if they exist in the response.
+                if (result.data && result.data.counts) {
+                    this.update_counts(result.data.counts);
+                }
+
+                // 2. Safely update items, defaulting to an empty array.
+                // This handles both response shapes: { items: [...] } or just [...]
+                if (result.data && result.data.items !== undefined) {
+                    this.items = result.data.items || [];
+                } else {
+                    this.items = result.data || [];
+                }
             }
+
             this.isLoading = false;
         },
 
@@ -199,8 +267,12 @@ export default function listTableComponent(config) {
         async delete_item(itemId) {
             const confirmed = await window.aui_confirm('Are you sure you want to delete this item? This cannot be undone.', 'Delete', 'Cancel', true, true);
             if (confirmed) {
-                await this.do_ajax(this.config.modal_config.ajax_action_delete, { id: itemId });
-                this.load_items();
+                const result = await this.do_ajax(this.config.modal_config.ajax_action_delete, { id: itemId });
+                if (result && result.success) {
+                    // THE FIX: Provide a default success message.
+                    showNotification(this, result.data?.message || 'Item deleted successfully.', 'success');
+                    this.load_items();
+                }
             }
         },
 

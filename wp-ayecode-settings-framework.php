@@ -243,6 +243,7 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                         'singular' => 'API Key',
                                         'plural'   => 'API Keys',
                                         'ajax_action_get' => 'get_api_keys',
+                                        'ajax_action_bulk' => 'bulk_api_key_action',
 
                                         'columns' => [
                                                 'description'   => [ 'label' => 'Description' ],
@@ -258,7 +259,6 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                         'write' => 'Write Only',
                                                         'read_write' => 'Read/Write',
                                                 ],
-                                                'counts' => $api_manager->get_status_counts(),
                                                 'default_status' => 'all',
                                         ],
                                         'filters' => [
@@ -271,6 +271,9 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                                 'read_write' => 'Read/Write',
                                                         ],
                                                 ],
+                                        ],
+                                        'bulk_actions' => [
+                                                'delete' => 'Delete',
                                         ],
                                 ],
 
@@ -469,7 +472,24 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
         switch ( $tool_action ) {
             // API Key Actions
             case 'get_api_keys':
-                wp_send_json_success( $api_manager->get_keys( $status, $filters ) );
+                $items = $api_manager->get_keys( $status, $filters );
+                $response = ['items' => $items];
+
+                // Only add counts if statuses are configured for this table
+                $config = $this->get_config();
+                $table_uses_statuses = false;
+                foreach ($config['sections'] as $section) {
+                    if ($section['id'] === 'api_keys' && isset($section['table_config']['statuses']['status_key'])) {
+                        $table_uses_statuses = true;
+                        break;
+                    }
+                }
+
+                if ($table_uses_statuses) {
+                    $response['counts'] = $api_manager->get_status_counts();
+                }
+
+                wp_send_json_success($response);
                 break;
             case 'create_api_key':
                 $result = $api_manager->create_key( $data['user_id'], $data['description'], $data['permissions'] );
@@ -477,11 +497,29 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                 break;
             case 'update_api_key':
                 $result = $api_manager->update_key( $data['id'], $data['description'], $data['permissions'] );
-                wp_send_json_success( $result );
+                wp_send_json_success( [
+                        'updated_key' => $result,
+                ] );
                 break;
             case 'delete_api_key':
-                $result = $api_manager->revoke_key( $data['id'] );
-                wp_send_json_success( $result );
+                $api_manager->revoke_key( $data['id'] );
+                wp_send_json_success( [
+                        'message' => 'API Key revoked.',
+                ] );
+                break;
+            case 'bulk_api_key_action':
+                $item_ids = isset($data['item_ids']) ? $data['item_ids'] : [];
+                $action = isset($data['action']) ? $data['action'] : '';
+
+                if ($action === 'delete') {
+                    foreach ($item_ids as $id) {
+                        $api_manager->revoke_key(absint($id));
+                    }
+                }
+
+                wp_send_json_success([
+                        'message' => 'Bulk action completed successfully.',
+                ]);
                 break;
 
             // Existing Tool Actions

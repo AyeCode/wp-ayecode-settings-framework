@@ -11,13 +11,58 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
     <div x-show="view === 'list'">
 
 
+        <div class="d-flex mt-3">
 
-        <div class="d-flex justify-content-between my-4">
-            <div>
+            <template x-if="config.table_config.statuses && config.table_config.statuses.status_key">
+                <div x-cloak>
+                    <div class="list-group list-group-horizontal w-auto d-inline-flex">
+                        <a href="#"
+                           class="list-group-item list-group-item-action d-flex fw-normal py-2 fs-xs "
+                           :class="{ 'active': currentStatus === 'all' }"
+                           @click.prevent="filter_by_status('all')">
+                            All <span class="count ms-1" x-text="'(' + (config.table_config.statuses.counts.all || 0) + ')'"></span>
+                        </a>
+                        <template x-for="([status, label], index) in Object.entries(config.table_config.statuses.labels || {})" :key="status">
+                            <a href="#"
+                               class="list-group-item list-group-item-action d-flex fw-normal py-2 fs-xs "
+                               :class="{ 'active': currentStatus === status }"
+                               @click.prevent="filter_by_status(status)">
+                                <span x-text="label"></span>
+                                <span class="count ms-1" x-text="'(' + (config.table_config.statuses.counts[status] || 0) + ')'"></span>
+                            </a>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            <div class="ms-auto">
                 <button class="btn btn-primary btn-sm" @click="open_modal()" x-show="config.post_create_view">
                     <i class="fa-solid fa-plus me-1"></i>
                     <span x-text="'Add ' + (config.table_config.singular || 'Item')"></span>
                 </button>
+            </div>
+
+
+        </div>
+
+
+
+        <div class="d-flex justify-content-between mb-3 mt-4">
+            <div>
+
+
+                <div class="" x-show="config.table_config.bulk_actions" x-cloak >
+                    <div class="d-flex align-items-center">
+                        <select class="form-select form-select-sm me-2" x-model="bulkAction" style="width: auto;">
+                            <option value="">Bulk actions</option>
+                            <template x-for="(label, action) in config.table_config.bulk_actions" :key="action">
+                                <option :value="action" x-text="label"></option>
+                            </template>
+                        </select>
+                        <button class="btn btn-sm btn-secondary" @click="apply_bulk_action()" :disabled="selectedItems.length === 0">Apply</button>
+                    </div>
+                </div>
+
             </div>
 
             <div class="d-flex align-items-center">
@@ -31,45 +76,32 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                 </template>
 
                 <div class="input-group input-group-sm" style="max-width: 250px;">
-                    <span class="input-group-text bg-transparent"><i class="fa-solid fa-magnifying-glass"></i></span>
                     <input type="search" class="form-control" x-model.debounce.300ms="searchQuery" placeholder="Search...">
+                    <span class="input-group-text bg-transparent"><i class="fa-solid fa-magnifying-glass"></i></span>
                 </div>
             </div>
         </div>
 
-        <div class="" x-show="config.table_config.statuses && config.table_config.statuses.status_key" x-cloak>
-            <div class="list-group list-group-horizontal w-auto d-inline-flex mb-3">
-                <a href="#"
-                   class="list-group-item list-group-item-action d-flex fw-normal py-2 fs-xs "
-                   :class="{ 'active': currentStatus === 'all' }"
-                   @click.prevent="filter_by_status('all')">
-                    All <span class="count ms-1" x-text="'(' + (config.table_config.statuses.counts.all || 0) + ')'"></span>
-                </a>
-                <template x-for="([status, label], index) in Object.entries(config.table_config.statuses.labels || {})" :key="status">
-                    <a href="#"
-                       class="list-group-item list-group-item-action d-flex fw-normal py-2 fs-xs "
-                       :class="{ 'active': currentStatus === status }"
-                       @click.prevent="filter_by_status(status)">
-                        <span x-text="label"></span>
-                        <span class="count ms-1" x-text="'(' + (config.table_config.statuses.counts[status] || 0) + ')'"></span>
-                    </a>
-                </template>
-            </div>
-        </div>
+
 
         <template x-if="!items.length && !isLoading">
             <div class="text-center p-5 border rounded bg-body">
-                <p x-text="'No ' + (config.table_config.plural.toLowerCase() || 'items') + ' found.'"></p>
-                <button class="btn btn-primary btn-lg" @click="open_modal()" x-show="config.post_create_view">
+                <p x-show="!config.table_config.statuses || currentStatus === 'all'" x-text="'No ' + (config.table_config.plural.toLowerCase() || 'items') + ' found.'"></p>
+                <p x-show="config.table_config.statuses && currentStatus !== 'all'" x-cloak x-text="'No ' + (config.table_config.plural.toLowerCase() || 'items') + ' found in this view.'"></p>
+
+                <button class="btn btn-primary btn-lg" @click="open_modal()" x-show="config.post_create_view && (!config.table_config.statuses || currentStatus === 'all')">
                     <span x-text="'Create Your First ' + (config.table_config.singular || 'Item')"></span>
                 </button>
             </div>
         </template>
 
-        <div class="table-responsive" x-show="items.length > 0 && !isLoading" x-cloak>
-            <table class="table table-hover bg-body rounded-3 align-middle table-borderless table-striped">
+        <div class="table-responsive  border rounded" x-show="items.length > 0 && !isLoading" x-cloak>
+            <table class="table table-hover bg-body rounded-3 align-middle table-borderless table-striped mb-0">
                 <thead class="bg-light-subtle">
                 <tr>
+                    <th scope="col" class="check-column" style="width: 2.5em;" x-show="config.table_config.bulk_actions" x-cloak>
+                        <input type="checkbox" @change="toggle_select_all($event)">
+                    </th>
                     <template x-for="[columnKey, column] in Object.entries(config.table_config.columns)" :key="columnKey">
                         <th scope="col" @click="sort_by(columnKey)" class="c-pointer ">
                             <span x-text="column.label"></span>
@@ -84,6 +116,9 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                 <tbody>
                 <template x-for="item in filteredItems" :key="item.id">
                     <tr>
+                        <td class="check-column" x-show="config.table_config.bulk_actions" x-cloak>
+                            <input type="checkbox" :value="item.id" x-model="selectedItems">
+                        </td>
                         <template x-for="columnKey in Object.keys(config.table_config.columns)" :key="columnKey">
                             <td x-html="item[columnKey]"></td>
                         </template>
@@ -98,7 +133,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                     </tr>
                 </template>
                 <tr x-show="filteredItems.length === 0">
-                    <td :colspan="Object.keys(config.table_config.columns).length + 1" class="text-center text-muted py-4">
+                    <td :colspan="Object.keys(config.table_config.columns).length + (config.table_config.bulk_actions ? 1 : 0) + 1" class="text-center text-muted py-4">
                         No items match your search.
                     </td>
                 </tr>
