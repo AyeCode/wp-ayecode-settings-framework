@@ -7,6 +7,9 @@ import alpineApp from '@/app/alpineApp';
 // ---- Import our new, modular list table component ----
 import listTableComponent from '@/components/listTableComponent';
 
+// Import the dashboard component
+import dashboardComponent from '@/components/dashboardComponent';
+
 // ---- Renderer dispatcher (publishes window.asfFieldRenderer and fallback logic) ----
 import '@/renderer/index';
 
@@ -78,6 +81,9 @@ document.addEventListener("alpine:init", () => {
         // Register our new list table component globally with Alpine.
         // Now, any element with `x-data="listTableComponent"` will use our new component.
         window.Alpine.data('listTableComponent', listTableComponent);
+
+        // Register the dashboard component
+        window.Alpine.data('dashboardComponent', dashboardComponent);
     } else {
         console.log("x-sort directive not found ❌");
     }

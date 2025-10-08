@@ -127,6 +127,11 @@ class Admin_Page {
                                             <?php include $templates_dir . 'views/list-table.php'; ?>
                                         </template>
 
+                                        <?php // NEW: View for the Dashboard ?>
+                                        <template x-if="activePageConfig.type === 'dashboard'">
+                                            <?php include $templates_dir . 'views/dashboard-page.php'; ?>
+                                        </template>
+
                                         <?php // View for the new form builder ?>
                                         <template x-if="activePageConfig.type === 'form_builder'">
                                             <?php include $templates_dir . 'views/form-builder.php'; ?>

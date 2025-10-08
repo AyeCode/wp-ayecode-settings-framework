@@ -39,7 +39,13 @@ abstract class Settings_Framework {
      */
     public static $import_temp_url;
 
-    /**
+	/**
+	 * Instance of the new Widget_Ajax_Handler.
+	 * @var Widget_Ajax_Handler
+	 */
+	protected $widget_ajax_handler;
+
+	/**
      * Define constants after WordPress is initialized.
      */
     public static function define_path_constants() {
@@ -200,8 +206,9 @@ abstract class Settings_Framework {
         $this->field_manager = new Field_Manager( $this );
         $this->admin_page    = new Admin_Page( $this );
         $this->ajax_handler  = new Ajax_Handler( $this );
+	    $this->widget_ajax_handler = new Widget_Ajax_Handler( $this );
 
-        // Register core hooks.
+	    // Register core hooks.
         add_action( 'admin_menu', [ $this, 'add_admin_menu' ] );
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 
@@ -268,7 +275,8 @@ abstract class Settings_Framework {
         $base_path = dirname( __FILE__ );
         require_once $base_path . '/Admin_Page.php';
         require_once $base_path . '/Ajax_Handler.php';
-        require_once $base_path . '/Field_Renderer.php'; // Kept for static helpers.
+	    require_once $base_path . '/Widget_Ajax_Handler.php';
+	    require_once $base_path . '/Field_Renderer.php'; // Kept for static helpers.
         require_once $base_path . '/Field_Manager.php';   // The new decoupled field manager.
     }
 
@@ -447,6 +455,14 @@ abstract class Settings_Framework {
         if ( empty( $tool_action ) ) {
             wp_send_json_error( [ 'message' => 'No tool action specified.' ] );
         }
+
+	    // --- Internal Action Router ---
+	    // Convert snake_case action to camelCase handler method.
+	    $handler_method = 'handle_' . $tool_action;
+	    if ( method_exists( $this->widget_ajax_handler, $handler_method ) ) {
+		    // Call the method on the dedicated handler instance.
+		    $this->widget_ajax_handler->$handler_method( $_POST );
+	    }
 
         do_action( 'asf_execute_tool_' . $this->page_slug, $tool_action, $_POST );
     }

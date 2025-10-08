@@ -666,11 +666,16 @@ class WP_AyeCode_Settings_Framework_Loader {
     }
 
     public function init() {
+
+        require_once __DIR__ . '/Dashboard_Page.php';
+
+
         // Initialize the demo settings page using the new extension model.
         new WP_AyeCode_Framework_Demo_Settings();
 
         // You can initialize other settings pages here as well.
         // new My_Other_Plugin_Settings();
+        new WP_AyeCode_Framework_Demo_Dashboard_Page();
     }
 }
 
