@@ -78,14 +78,7 @@ class Admin_Page {
                 transition: background-color 0.3s ease-in-out;
                 background-color: rgba(255, 0, 8, 0.1) !important;
             }
-            /*.asf-field-error .form-control,*/
-            /*.asf-field-error .form-select,*/
-            /*.asf-field-error .form-check-input {*/
-            /*    border-color: #dc3545 !important;*/
-            /*}*/
-            /*.asf-field-error .form-label {*/
-            /*    color: #dc3545 !important;*/
-            /*}*/
+       
         </style>
 
         <div class="bsui" x-data="ayecodeSettingsApp()" style="margin-left: -20px !important;">
@@ -103,7 +96,7 @@ class Admin_Page {
                                 <template x-if="activePageConfig">
                                     <div>
                                         <?php // Default view for standard settings pages ?>
-                                        <template x-if="!activePageConfig.type || (activePageConfig.type !== 'custom_page' && activePageConfig.type !== 'action_page' && activePageConfig.type !== 'import_page' && activePageConfig.type !== 'form_builder')">
+                                        <template x-if="!activePageConfig.type || (activePageConfig.type !== 'custom_page' && activePageConfig.type !== 'action_page' && activePageConfig.type !== 'import_page' && activePageConfig.type !== 'form_builder' && activePageConfig.type !== 'list_table' && activePageConfig.type !== 'dashboard' && activePageConfig.type !== 'extension_list_page')">
                                             <?php include $templates_dir . 'views/standard-settings.php'; ?>
                                         </template>
 
@@ -135,6 +128,11 @@ class Admin_Page {
                                         <?php // View for the new form builder ?>
                                         <template x-if="activePageConfig.type === 'form_builder'">
                                             <?php include $templates_dir . 'views/form-builder.php'; ?>
+                                        </template>
+
+                                        <?php // View for the Extension List Page ?>
+                                        <template x-if="activePageConfig.type === 'extension_list_page'">
+                                            <?php include $templates_dir . 'views/extension-list-page.php'; ?>
                                         </template>
                                     </div>
                                 </template>

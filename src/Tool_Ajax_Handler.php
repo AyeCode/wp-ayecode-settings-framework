@@ -1,8 +1,8 @@
 <?php
 /**
- * Widget AJAX Handler
+ * Tool AJAX Handler
  *
- * Handles AJAX requests for built-in framework widgets like System Status and RSS Feeds.
+ * Handles AJAX requests for built-in framework components like widgets and extension pages.
  *
  * @package AyeCode\SettingsFramework
  */
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Widget_Ajax_Handler {
+class Tool_Ajax_Handler {
 
 	/**
 	 * A reference to the main framework instance.
@@ -131,10 +131,42 @@ class Widget_Ajax_Handler {
 					'title' => esc_html( $item->get_title() ),
 					'url'   => esc_url( $item->get_permalink() ),
 					'date'  => $item->get_date('F j, Y'),
-					'image' => $image_url, // This will now be the modified URL
+					'image' => $image_url,
 				];
 			}
 		}
 		wp_send_json_success( [ 'items' => $feed_items ] );
+	}
+
+	/**
+	 * Handles the AJAX request for the 'extension_list_page' type.
+	 * @param array $post_data The $_POST data.
+	 */
+	public function handle_get_extension_data( $post_data ) {
+		$data = isset( $post_data['data'] ) ? json_decode( stripslashes( $post_data['data'] ) ) : new \stdClass();
+		$category = isset( $data->category ) ? sanitize_key( $data->category ) : '';
+		$page_config = $this->framework->get_config_raw()['page_config'] ?? [];
+		$api_url = $page_config['api_url'] ?? '';
+
+		if ( empty( $category ) || empty( $api_url ) ) {
+			wp_send_json_error( [ 'message' => 'Missing category or API URL configuration.' ] );
+			return;
+		}
+
+		// The logic to fetch data is now defined in the framework itself,
+		// but it can be overridden by a child class if needed.
+		$products = $this->framework->fetch_remote_products( $category, $api_url );
+
+		if ( is_array( $products ) ) {
+			if( method_exists( $this->framework, 'get_product_status' ) ) {
+				foreach ( $products as &$product ) {
+					$product->status = $this->framework->get_product_status( $product );
+				}
+			}
+		} else {
+			$products = [];
+		}
+
+		wp_send_json_success( [ 'items' => $products ] );
 	}
 }

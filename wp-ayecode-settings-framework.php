@@ -47,6 +47,10 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
         // Include the new manager class for API keys.
         require_once __DIR__ . '/AyeCode_API_Key_Manager_Example.php';
 
+        // Load the new Extensions page example class
+        require_once __DIR__ . '/AyeCode_Extensions_Page_Example.php';
+
+
         // Add hooks for this specific settings page's tools.
         // The hooks are dynamic based on the page_slug.
         add_action( 'asf_execute_tool_' . $this->page_slug, [ $this, 'handle_demo_tool_action' ], 10, 2 );
@@ -672,6 +676,9 @@ class WP_AyeCode_Settings_Framework_Loader {
 
         // Initialize the demo settings page using the new extension model.
         new WP_AyeCode_Framework_Demo_Settings();
+
+        // Initialize the new Extensions page example
+        new AyeCode_Extensions_Page_Example();
 
         // You can initialize other settings pages here as well.
         // new My_Other_Plugin_Settings();
