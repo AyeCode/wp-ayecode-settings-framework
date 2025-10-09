@@ -607,6 +607,19 @@ abstract class Settings_Framework {
 	}
 
 	/**
+	 * Determines the installation/activation status of a given product.
+	 * This method is intended to be overridden by the child class.
+	 *
+	 * @param object $product The raw product object from the API.
+	 * @return string The status ('active', 'installed_not_active', or 'not_purchased').
+	 */
+	public function get_product_status( $product ) {
+		// The base framework doesn't know how to check a plugin's status,
+		// so it returns a default value. The extending class should override this.
+		return 'not_purchased';
+	}
+
+	/**
 	 * Adds a "Settings" link to the plugin's action links on the plugins page.
 	 *
 	 * @param array $links Existing links.

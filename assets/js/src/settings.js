@@ -10,7 +10,7 @@ import listTableComponent from '@/components/listTableComponent';
 // Import the dashboard component
 import dashboardComponent from '@/components/dashboardComponent';
 
-// Import the extension list component
+// ... (imports remain the same)
 import extensionListComponent from '@/components/extensionListComponent';
 
 // ---- Renderer dispatcher (publishes window.asfFieldRenderer and fallback logic) ----
@@ -88,8 +88,9 @@ document.addEventListener("alpine:init", () => {
         // Register the dashboard component
         window.Alpine.data('dashboardComponent', dashboardComponent);
 
-        // Register the extension list component
+        // Register the new extension list component
         window.Alpine.data('extensionListComponent', extensionListComponent);
+
     } else {
         console.log("x-sort directive not found ❌");
     }

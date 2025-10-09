@@ -21,8 +21,6 @@ class AyeCode_Extensions_Page_Example extends \AyeCode\SettingsFramework\Setting
 
 	public function __construct() {
 		parent::__construct();
-		// The core framework now handles the 'get_extension_data' action.
-		// We only add a hook if this specific page needs *additional* custom actions.
 		add_action( 'asf_execute_tool_' . $this->page_slug, [ $this, 'handle_custom_ajax_actions' ], 10, 2 );
 	}
 
@@ -38,12 +36,16 @@ class AyeCode_Extensions_Page_Example extends \AyeCode\SettingsFramework\Setting
 	}
 
 	/**
-	 * This public method is required by the core framework to determine an item's status.
+	 * Overrides the parent method to provide the specific logic for checking
+	 * if a plugin is active or installed for this particular project.
 	 */
 	public function get_product_status( $product ) {
 		$slug = isset( $product->info->slug ) ? $product->info->slug : '';
-		if ( empty( $slug ) ) return 'not_purchased';
+		if ( empty( $slug ) ) {
+			return 'not_purchased';
+		}
 
+		// Construct the main plugin file path (e.g., 'my-plugin/my-plugin.php')
 		$main_file = $slug . '/' . $slug . '.php';
 
 		if ( function_exists('is_plugin_active') && is_plugin_active( $main_file ) ) {
@@ -54,6 +56,7 @@ class AyeCode_Extensions_Page_Example extends \AyeCode\SettingsFramework\Setting
 		}
 		return 'not_purchased';
 	}
+
 
 	public function get_config() {
 		$is_connected = function_exists('ayecode_connect_is_site_connected') && ayecode_connect_is_site_connected();

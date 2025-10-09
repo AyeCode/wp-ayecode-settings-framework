@@ -71,12 +71,6 @@ export default function alpineApp() {
         isValidating: false,
         lastEditFieldCall: 0,
 
-        // Extension list state
-        isFetchingExtensions: false,
-        extensions: [],
-        extensionSearchQuery: '',
-        extensionPriceFilter: 'all',
-
         // LIFECYCLE
         init() {
             themeSvc.initTheme(this);
@@ -140,28 +134,6 @@ export default function alpineApp() {
         get isActionRunning()       { return actionsSvc.isAnyActionRunning(this); },
         get groupedSearchResults()  { return searchSvc.groupedSearchResults(this); },
 
-        get filteredItems() {
-            let items = this.extensions;
-
-            // Filter by price
-            if (this.extensionPriceFilter !== 'all') {
-                items = items.filter(item => {
-                    const isFree = item.info.price === 0 || item.info.price === '0.00';
-                    return this.extensionPriceFilter === 'free' ? isFree : !isFree;
-                });
-            }
-
-            // Filter by search query
-            if (this.extensionSearchQuery.trim() !== '') {
-                const query = this.extensionSearchQuery.toLowerCase().trim();
-                items = items.filter(item => {
-                    return item.info.title.toLowerCase().includes(query) ||
-                        item.info.excerpt.toLowerCase().includes(query);
-                });
-            }
-
-            return items;
-        },
 
         get duplicateKeys() {
             const uniqueKeyProp = this.activePageConfig?.unique_key_property;
@@ -193,8 +165,6 @@ export default function alpineApp() {
                     _uid: f._uid
                 }));
         },
-
-        // METHODS
 
         /**
          * Shows a custom modal with three choices: Save, Discard, Cancel.

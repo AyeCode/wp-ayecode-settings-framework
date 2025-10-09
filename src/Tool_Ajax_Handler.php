@@ -95,8 +95,6 @@ class Tool_Ajax_Handler {
 			wp_send_json_error(['message' => 'Feed URL not configured for this widget.']);
 		}
 
-		// The WordPress fetch_feed() function automatically caches the results
-		// in a transient for 12 hours by default. No extra caching logic is needed.
 		$rss = fetch_feed( $feed_url );
 		$feed_items = [];
 
@@ -105,24 +103,19 @@ class Tool_Ajax_Handler {
 			$rss_items = $rss->get_items( 0, $maxitems );
 			foreach ( $rss_items as $item ) {
 				$image_url = '';
-				// Try to get the featured image first.
 				$thumbnail = $item->get_thumbnail();
 				if ( ! empty( $thumbnail['url'] ) ) {
 					$image_url = $thumbnail['url'];
 				} else {
-					// As a fallback, try to find the first image in the content.
 					$content = $item->get_content();
 					if ( preg_match( '/<img.+src=[\'"]([^\'"]+)[\'"].*>/i', $content, $matches ) ) {
 						$image_url = $matches[1];
 					}
 				}
 
-				// --- NEW: Modify the image URL to add the -150x150 suffix ---
 				if ( ! empty( $image_url ) ) {
 					$path_parts = pathinfo( $image_url );
-					// Check if we have all the parts we need to rebuild the URL
 					if ( isset( $path_parts['dirname'], $path_parts['filename'], $path_parts['extension'] ) ) {
-						// Rebuild the URL with the thumbnail size suffix
 						$image_url = $path_parts['dirname'] . '/' . $path_parts['filename'] . '-150x150.' . $path_parts['extension'];
 					}
 				}
@@ -140,33 +133,58 @@ class Tool_Ajax_Handler {
 
 	/**
 	 * Handles the AJAX request for the 'extension_list_page' type.
+	 * This method now fetches, curates, and adds status to the product data.
+	 *
 	 * @param array $post_data The $_POST data.
 	 */
 	public function handle_get_extension_data( $post_data ) {
-		$data = isset( $post_data['data'] ) ? json_decode( stripslashes( $post_data['data'] ) ) : new \stdClass();
-		$category = isset( $data->category ) ? sanitize_key( $data->category ) : '';
+		$data        = isset( $post_data['data'] ) ? json_decode( stripslashes( $post_data['data'] ) ) : new \stdClass();
+		$category    = isset( $data->category ) ? sanitize_key( $data->category ) : '';
 		$page_config = $this->framework->get_config_raw()['page_config'] ?? [];
-		$api_url = $page_config['api_url'] ?? '';
+		$api_url     = $page_config['api_url'] ?? '';
 
 		if ( empty( $category ) || empty( $api_url ) ) {
 			wp_send_json_error( [ 'message' => 'Missing category or API URL configuration.' ] );
 			return;
 		}
 
-		// The logic to fetch data is now defined in the framework itself,
-		// but it can be overridden by a child class if needed.
-		$products = $this->framework->fetch_remote_products( $category, $api_url );
+		// 1. Fetch the raw data using the core framework method.
+		$raw_products = $this->framework->fetch_remote_products( $category, $api_url );
 
-		if ( is_array( $products ) ) {
-			if( method_exists( $this->framework, 'get_product_status' ) ) {
-				foreach ( $products as &$product ) {
-					$product->status = $this->framework->get_product_status( $product );
-				}
-			}
-		} else {
-			$products = [];
+		if ( ! is_array( $raw_products ) ) {
+			wp_send_json_success( [ 'items' => [] ] );
+			return;
 		}
 
-		wp_send_json_success( [ 'items' => $products ] );
+		// 2. Curate the data into a clean format.
+		$curated_products = [];
+		foreach ( $raw_products as $product ) {
+			$is_new = ( strtotime( $product->info->create_date ) > strtotime( '-30 days' ) );
+
+			$price = 0;
+			if (isset($product->pricing->amount)) {
+				$price = (float)$product->pricing->amount;
+			} elseif(isset($product->pricing->singlesite)) {
+				$price = (float)$product->pricing->singlesite;
+			}
+
+			$is_subscription = isset( $product->licensing->exp_unit ) && $product->licensing->exp_unit === 'years';
+
+			$curated_products[] = [
+				'info'   => [
+					'slug'            => $product->info->slug,
+					'title'           => $product->info->title,
+					'excerpt'         => $product->info->excerpt,
+					'thumbnail'       => $product->info->thumbnail,
+					'price'           => $price,
+					'is_new'          => $is_new,
+					'is_subscription' => $is_subscription,
+				],
+				// 3. Call the framework's get_product_status method, which can be overridden.
+				'status' => $this->framework->get_product_status( $product ),
+			];
+		}
+
+		wp_send_json_success( [ 'items' => $curated_products ] );
 	}
 }
