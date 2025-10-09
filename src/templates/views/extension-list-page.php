@@ -28,11 +28,16 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
         </div>
     </template>
 
-    <h2 class="h3" x-text="$root.activePageConfig.name"></h2>
-    <template x-if="$root.activePageConfig.description">
-        <p class="text-muted" x-html="$root.activePageConfig.description"></p>
+    <template x-if="$root.activePageConfig">
+        <div>
+            <h2 class="h3" x-text="$root.activePageConfig.name"></h2>
+            <template x-if="$root.activePageConfig.description">
+                <p class="text-muted" x-html="$root.activePageConfig.description"></p>
+            </template>
+            <hr class="my-4">
+        </div>
     </template>
-    <hr class="my-4">
+
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div class="btn-group btn-group-sm">
@@ -51,8 +56,8 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
         <p class="mt-2 text-muted">Fetching extensions...</p>
     </div>
 
-    <div x-show="!$root.isFetchingExtensions && filteredItems.length > 0" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4" x-cloak>
-        <template x-for="item in filteredItems" :key="item.info.slug">
+    <div x-show="!$root.isFetchingExtensions && $root.filteredItems && $root.filteredItems.length > 0" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4" x-cloak>
+        <template x-for="item in $root.filteredItems" :key="item.info.slug">
             <div class="col">
                 <div class="card h-100">
                     <img :src="item.info.thumbnail" class="card-img-top border-bottom" alt="">
@@ -76,7 +81,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
         </template>
     </div>
 
-    <div x-show="!$root.isFetchingExtensions && filteredItems.length === 0" class="text-center p-5 border rounded bg-body" x-cloak>
+    <div x-show="!$root.isFetchingExtensions && $root.filteredItems && $root.filteredItems.length === 0" class="text-center p-5 border rounded bg-body" x-cloak>
         <p class="h5 text-muted">No extensions found matching your criteria.</p>
     </div>
 </div>

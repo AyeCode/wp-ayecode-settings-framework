@@ -35,7 +35,7 @@ export function isSettingsPage(ctx) {
     const page = ctx.activePageConfig;
     if (!page) return false;
 
-    const nonSettingsTypes = ['form_builder', 'custom_page', 'action_page', 'import_page', 'tool_page'];
+    const nonSettingsTypes = ['form_builder', 'custom_page', 'action_page', 'import_page', 'tool_page', 'extension_list_page'];
     if (nonSettingsTypes.includes(page.type)) return false;
 
     const fields = page.fields;

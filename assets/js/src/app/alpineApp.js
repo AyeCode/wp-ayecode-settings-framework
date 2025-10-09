@@ -7,6 +7,7 @@ import * as searchSvc from '@/services/search';
 import * as actionsSvc from '@/services/actions';
 import * as uploadsSvc from '@/services/uploads';
 import * as customPageSvc from '@/services/customPage';
+import * as extensionPageSvc from '@/services/extensionPage'; // <-- Import the new service
 import * as notifySvc from '@/services/notifications';
 import * as themeSvc from '@/services/theme';
 import * as pluginsSvc from '@/services/plugins';
@@ -70,6 +71,12 @@ export default function alpineApp() {
         isValidating: false,
         lastEditFieldCall: 0,
 
+        // Extension list state
+        isFetchingExtensions: false,
+        extensions: [],
+        extensionSearchQuery: '',
+        extensionPriceFilter: 'all',
+
         // LIFECYCLE
         init() {
             themeSvc.initTheme(this);
@@ -122,7 +129,6 @@ export default function alpineApp() {
                     this.clearSyncListeners();
                 }
             });
-
         },
 
         // COMPUTEDS
@@ -133,6 +139,29 @@ export default function alpineApp() {
         get isSettingsPage()        { return settingsSvc.isSettingsPage(this); },
         get isActionRunning()       { return actionsSvc.isAnyActionRunning(this); },
         get groupedSearchResults()  { return searchSvc.groupedSearchResults(this); },
+
+        get filteredItems() {
+            let items = this.extensions;
+
+            // Filter by price
+            if (this.extensionPriceFilter !== 'all') {
+                items = items.filter(item => {
+                    const isFree = item.info.price === 0 || item.info.price === '0.00';
+                    return this.extensionPriceFilter === 'free' ? isFree : !isFree;
+                });
+            }
+
+            // Filter by search query
+            if (this.extensionSearchQuery.trim() !== '') {
+                const query = this.extensionSearchQuery.toLowerCase().trim();
+                items = items.filter(item => {
+                    return item.info.title.toLowerCase().includes(query) ||
+                        item.info.excerpt.toLowerCase().includes(query);
+                });
+            }
+
+            return items;
+        },
 
         get duplicateKeys() {
             const uniqueKeyProp = this.activePageConfig?.unique_key_property;
@@ -295,6 +324,7 @@ export default function alpineApp() {
         handleFileUpload(e, pid, h) { uploadsSvc.handleFileUpload(this, e, pid, h); },
         async removeUploadedFile(pid, h) { await uploadsSvc.removeUploadedFile(this, pid, h); },
         async loadCustomPageContent(id) { await customPageSvc.loadCustomPageContent(this, id); },
+        async loadExtensions(section) { await extensionPageSvc.loadExtensions(this, section); }, // <-- Add the new method
 
         // Form Builder Methods
         async saveForm() {

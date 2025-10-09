@@ -1,3 +1,8 @@
+// assets/js/src/services/hashRouter.js
+
+import * as customPageSvc from './customPage';
+import * as extensionPageSvc from './extensionPage';
+
 // Hash routing + current page getters (unchanged)
 export function currentSectionData(ctx) {
     return ctx.sections.find(s => s.id === ctx.currentSection);
@@ -15,7 +20,8 @@ export function setInitialSection(ctx) {
         ctx.currentSection = ctx.sections[0].id;
         const sec = currentSectionData(ctx);
         if (sec?.subsections?.length > 0) ctx.currentSubsection = sec.subsections[0].id;
-        if (sec?.type === 'custom_page' && sec.ajax_content) ctx.loadCustomPageContent(ctx.currentSection);
+        if (sec?.type === 'custom_page' && sec.ajax_content) customPageSvc.loadCustomPageContent(ctx, ctx.currentSection);
+        if (sec?.type === 'extension_list_page') extensionPageSvc.loadExtensions(ctx, sec);
     }
     updateUrlHash(ctx);
 }
@@ -30,7 +36,8 @@ export function handleUrlHash(ctx) {
     const sec = ctx.sections.find(s => s.id === sectionId);
     if (sec) {
         ctx.currentSection = sectionId;
-        if (sec?.type === 'custom_page' && sec.ajax_content) ctx.loadCustomPageContent(sectionId);
+        if (sec?.type === 'custom_page' && sec.ajax_content) customPageSvc.loadCustomPageContent(ctx, sectionId);
+        if (sec?.type === 'extension_list_page') extensionPageSvc.loadExtensions(ctx, sec);
         if (subsectionId && sec.subsections?.some(ss => ss.id === subsectionId)) {
             ctx.currentSubsection = subsectionId;
         } else {
@@ -56,7 +63,8 @@ export function goToSection(ctx, sectionId, subsectionId = '') {
         ctx.currentSubsection = subsectionId || (sec?.subsections?.length ? sec.subsections[0].id : '');
         ctx.searchModal?.hide?.();
         updateUrlHash(ctx);
-        if (sec?.type === 'custom_page' && sec.ajax_content) ctx.loadCustomPageContent(sectionId);
+        if (sec?.type === 'custom_page' && sec.ajax_content) customPageSvc.loadCustomPageContent(ctx, sectionId);
+        if (sec?.type === 'extension_list_page') extensionPageSvc.loadExtensions(ctx, sec);
     });
 }
 export function switchSection(ctx, sectionId) {
@@ -66,7 +74,8 @@ export function switchSection(ctx, sectionId) {
         const sec = ctx.sections.find(s => s.id === sectionId);
         ctx.currentSubsection = sec?.subsections?.length ? sec.subsections[0].id : '';
         updateUrlHash(ctx);
-        if (sec?.type === 'custom_page' && sec.ajax_content) ctx.loadCustomPageContent(sectionId);
+        if (sec?.type === 'custom_page' && sec.ajax_content) customPageSvc.loadCustomPageContent(ctx, sectionId);
+        if (sec?.type === 'extension_list_page') extensionPageSvc.loadExtensions(ctx, sec);
     });
 }
 export function switchSubsection(ctx, subsectionId) {

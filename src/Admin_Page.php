@@ -78,7 +78,7 @@ class Admin_Page {
                 transition: background-color 0.3s ease-in-out;
                 background-color: rgba(255, 0, 8, 0.1) !important;
             }
-       
+
         </style>
 
         <div class="bsui" x-data="ayecodeSettingsApp()" style="margin-left: -20px !important;">
