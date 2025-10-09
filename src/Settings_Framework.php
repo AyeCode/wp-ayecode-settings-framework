@@ -590,7 +590,8 @@ abstract class Settings_Framework {
 			return $products;
 		}
 
-		$api_args = [ 'category' => $category, 'number' => 100, 'orderby' => 'name', 'order' => 'asc' ];
+//		$api_args = [ 'category' => $category, 'number' => 100, 'orderby' => 'name', 'order' => 'asc' ];
+		$api_args = [ 'category' => $category, 'number' => 100 ];
 		$request_url = add_query_arg( $api_args, $api_url );
 
 		$response = wp_safe_remote_get( esc_url_raw( $request_url ), [ 'timeout' => 15 ] );

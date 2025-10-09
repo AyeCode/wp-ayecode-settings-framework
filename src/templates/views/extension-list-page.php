@@ -54,27 +54,60 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
         </div>
     </div>
 
-    <div x-show="isLoading" class="text-center p-5">
-        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
-        <p class="mt-2 text-muted">Fetching extensions...</p>
+    <div x-show="isLoading" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4" x-cloak>
+        <template x-for="i in 6" :key="i">
+            <div class="col">
+                <div class="card h-100 p-0" aria-hidden="true">
+                    <div class="ratio ratio-4x3x bg-light-subtle border-bottom" style="--bs-aspect-ratio: 66%;">
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title placeholder-glow">
+                            <span class="placeholder col-8"></span>
+                        </h5>
+                        <p class="card-text placeholder-glow">
+                            <span class="placeholder col-7"></span>
+                            <span class="placeholder col-4"></span>
+                            <span class="placeholder col-4"></span>
+                            <span class="placeholder col-6"></span>
+                            <span class="placeholder col-8"></span>
+                            <span class="placeholder col-6"></span>
+                            <span class="placeholder col-9"></span>
+                        </p>
+                    </div>
+                    <div class="card-footer bg-light-subtle border-0 py-3 d-flex justify-content-between align-items-center">
+                        <span class="placeholder placeholder-lg col-3"></span>
+                        <a href="#" tabindex="-1" class="btn btn-primary disabled placeholder col-4"></a>
+                    </div>
+                </div>
+            </div>
+        </template>
     </div>
 
     <div x-show="!isLoading && filteredItems && filteredItems.length > 0" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4" x-cloak>
         <template x-for="item in filteredItems" :key="item.info.slug">
             <div class="col">
-                <div class="card h-100 p-0">
-                    <div class="ratio ratio-4x3x" style="--bs-aspect-ratio: 66%;">
-                        <img :src="item.info.thumbnail" class="card-img-top border-bottom embed-item-cover-xy " alt="">
-                        <template x-if="item.info.is_new">
-                            <span class="badge bg-danger position-absolute top-0 end-0 m-2">NEW</span>
-                        </template>
+                <div class="card h-100 p-0 hover-shadow position-relative">
+                    <div class="hover-effect-scale hover-effect-opacity card-img-top position-relative overflow-hidden ">
+                        <span class="hover-effect-target position-absolute top-0 start-0 w-100 h-100 bg-black bg-opacity-25 opacity-0 z-1"></span>
+                        <div class="hover-effect-target d-flex position-absolute top-0 start-0 w-100 h-100 align-items-center justify-content-center z-2 opacity-0">
+                            <div class="d-flex align-items-center gap-3 fs-sm bg-dark bg-opacity-50 text-white rounded-pill py-2 px-3">
+                              <span class="d-flex align-items-center fw-medium">
+                                  <a :href="item.info.link" target="_blank" class="stretched-link link-light">More info</a>
+                              </span>
+
+                            </div>
+                        </div>
+                        <div class="ratio hover-effect-targetx" style="--bs-aspect-ratio: 66%;">
+                            <img :src="item.info.thumbnail" class="card-img-top border-bottom embed-item-cover-xy position-relativex" alt="">
+                        </div>
                     </div>
+
                     <div class="card-body d-flex flex-column">
                         <h5 class="card-title" x-text="item.info.title"></h5>
-                        <p class="card-text text-muted small flex-grow-1" x-html="item.info.excerpt"></p>
+                        <p class="card-text text-muted fs-xs flex-grow-1" x-html="item.info.excerpt"></p>
                     </div>
                     <div class="card-footer bg-light-subtle border-0 py-3 d-flex justify-content-between align-items-center">
-                        <p class="h5 fw-bold text-dark mb-0" x-html="get_price_text(item)"></p>
+                        <p class="h6 text-dark-subtle mb-0" x-html="get_price_text(item)"></p>
                         <button
                                 class="btn btn-sm"
                                 :class="get_button_state(item).class"

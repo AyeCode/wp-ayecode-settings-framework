@@ -159,7 +159,7 @@ class Tool_Ajax_Handler {
 		// 2. Curate the data into a clean format.
 		$curated_products = [];
 		foreach ( $raw_products as $product ) {
-			$is_new = ( strtotime( $product->info->create_date ) > strtotime( '-30 days' ) );
+			$is_new = ( strtotime( $product->info->create_date ) > strtotime( '-180 days' ) );
 
 			$price = 0;
 			if (isset($product->pricing->amount)) {
@@ -172,13 +172,14 @@ class Tool_Ajax_Handler {
 
 			$curated_products[] = [
 				'info'   => [
-					'slug'            => $product->info->slug,
-					'title'           => $product->info->title,
-					'excerpt'         => $product->info->excerpt,
-					'thumbnail'       => $product->info->thumbnail,
-					'price'           => $price,
-					'is_new'          => $is_new,
-					'is_subscription' => $is_subscription,
+					'slug'            => sanitize_key( $product->info->slug ),
+					'link'            => esc_url( $product->info->link ),
+					'title'           => esc_attr( $product->info->title ),
+					'excerpt'         => esc_attr( $product->info->excerpt ),
+					'thumbnail'       => esc_url( $product->info->thumbnail ),
+					'price'           => absint ( $price ),
+					'is_new'          => absint( $is_new ),
+					'is_subscription' => absint( $is_subscription ),
 				],
 				// 3. Call the framework's get_product_status method, which can be overridden.
 				'status' => $this->framework->get_product_status( $product ),
