@@ -6,7 +6,10 @@
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 ?>
-<div x-data="extensionListComponent(activePageConfig)">
+<div
+        x-data="extensionListComponent(activePageConfig)"
+        x-effect="update_config(activePageConfig)"
+>
 
     <template x-if="config && config.page_config && config.page_config.connect_banner && !config.page_config.connect_banner.is_connected">
         <div class="p-3 mb-4 border rounded bg-light-subtle">
@@ -28,11 +31,11 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
         </div>
     </template>
 
-    <template x-if="activePageConfig">
+    <template x-if="config">
         <div>
-            <h2 class="h3" x-text="activePageConfig.name"></h2>
-            <template x-if="activePageConfig.description">
-                <p class="text-muted" x-html="activePageConfig.description"></p>
+            <h2 class="h3" x-text="config.name"></h2>
+            <template x-if="config.description">
+                <p class="text-muted" x-html="config.description"></p>
             </template>
             <hr class="my-4">
         </div>

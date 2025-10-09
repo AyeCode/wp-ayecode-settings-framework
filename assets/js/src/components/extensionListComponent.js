@@ -1,28 +1,37 @@
 /**
  * A reusable Alpine.js component for the Extension List Page.
- * @param {object} config The configuration object for this specific extension list instance.
+ * @param {object} initialConfig The initial configuration object for this component instance.
  */
-export default function extensionListComponent(config) {
+export default function extensionListComponent(initialConfig) {
     return {
-        // Component-specific state
-        config: config,
+        // The component's internal configuration state.
+        config: initialConfig,
         isLoading: true,
         extensions: [],
         searchQuery: '',
         priceFilter: 'all',
 
-        // Alpine's init() function, called when the component is loaded
+        // Alpine's init() function, called when the component is first created.
         init() {
             this.fetchExtensions();
+        },
+
+        /**
+         * This method is called by the x-effect in the template whenever the parent's
+         * activePageConfig changes. It decides if a refresh is needed.
+         */
+        update_config(newConfig) {
+            if (newConfig && newConfig.id !== this.config.id) {
+                this.config = newConfig;
+                this.fetchExtensions();
+            }
         },
 
         // Fetch data for this component
         async fetchExtensions() {
             this.isLoading = true;
-            this.extensions = [];
+            this.extensions = []; // Reset state before fetching
 
-            // Note: We are calling the main app's service method here.
-            // This could be moved into a dedicated service if preferred.
             try {
                 const response = await fetch(window.ayecodeSettingsFramework.ajax_url, {
                     method: 'POST',
@@ -31,18 +40,18 @@ export default function extensionListComponent(config) {
                         action: window.ayecodeSettingsFramework.tool_ajax_action,
                         nonce: window.ayecodeSettingsFramework.tool_nonce,
                         tool_action: 'get_extension_data',
-                        data: JSON.stringify(this.config.api_config)
+                        data: JSON.stringify(this.config.api_config || {})
                     })
                 });
                 const data = await response.json();
+
                 if (data.success) {
-                    this.extensions = data.data.items;
+                    this.extensions = data.data.items || [];
                 } else {
-                    // You might want to access a global notification function here
-                    console.error(data.data.message || 'Failed to fetch extensions.');
+                    console.error(data.data?.message || 'Failed to fetch extensions.');
                 }
             } catch (error) {
-                console.error('An error occurred while fetching extensions.');
+                console.error('An error occurred while fetching extensions.', error);
             } finally {
                 this.isLoading = false;
             }
@@ -66,6 +75,7 @@ export default function extensionListComponent(config) {
                         (item.info.excerpt && item.info.excerpt.toLowerCase().includes(query));
                 });
             }
+
             return items;
         },
 
@@ -94,7 +104,6 @@ export default function extensionListComponent(config) {
 
         handle_action(item, action) {
             if (!action) return;
-            // In a real app, you would likely dispatch a global event or call a service here
             alert(`Performing action: ${action} for ${item.info.title}`);
         }
     };

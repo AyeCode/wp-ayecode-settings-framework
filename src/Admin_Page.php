@@ -92,7 +92,7 @@ class Admin_Page {
 
                     <div class="main-content w-100 d-flex flex-column justify-content-between position-relative bg-secondary-subtle">
                         <main class="asf-content container" :class="{ 'is-changing': isChangingView }">
-                            <div class="bg-light-subtle p-4 p-md-5 my-5 rounded border" :key="currentSection + '-' + currentSubsection" x-cloak>
+                            <div class="bg-light-subtle p-4 p-md-5 my-5 rounded border" :key="currentSection + '-' + currentSubsection" x-cloak >
                                 <template x-if="activePageConfig">
                                     <div>
                                         <?php // Default view for standard settings pages ?>
@@ -131,7 +131,7 @@ class Admin_Page {
                                         </template>
 
                                         <?php // View for the Extension List Page ?>
-                                        <template x-if="activePageConfig.type === 'extension_list_page'">
+                                        <template x-if="activePageConfig.type === 'extension_list_page'"  :key="'ext-page-' + activePageConfig.id">
                                             <?php include $templates_dir . 'views/extension-list-page.php'; ?>
                                         </template>
                                     </div>
