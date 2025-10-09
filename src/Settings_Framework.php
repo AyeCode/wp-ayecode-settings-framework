@@ -663,10 +663,21 @@ abstract class Settings_Framework {
 		$config = $this->get_config_raw();
 		if ( isset( $config['sections'] ) ) {
 			foreach ( $config['sections'] as &$section ) {
+				// Updated logic to remove the need for 'raw_product'
+				if ( isset( $section['type'], $section['source'], $section['static_items'] ) && $section['type'] === 'extension_list_page' && $section['source'] === 'static' ) {
+					foreach ( $section['static_items'] as &$item ) {
+						// Create the necessary object structure on-the-fly
+						$slug_for_status = $item['info']['slug'] ?? '';
+						$product_object  = (object) [ 'info' => (object) [ 'slug' => $slug_for_status ] ];
+
+						$item['status'] = $this->get_product_status( $product_object );
+					}
+				}
+
+				// Existing logic for custom pages
 				if ( isset( $section['type'], $section['html_content'] ) && $section['type'] === 'custom_page' ) {
-					// The content is directly embedded for the frontend.
 					$section['content_html'] = $section['html_content'];
-					unset( $section['html_content'] ); // Avoid sending it twice.
+					unset( $section['html_content'] );
 				}
 			}
 		}

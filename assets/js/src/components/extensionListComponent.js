@@ -32,6 +32,14 @@ export default function extensionListComponent(initialConfig) {
             this.isLoading = true;
             this.extensions = []; // Reset state before fetching
 
+            // Check if the data is provided directly in the config
+            if (this.config.source === 'static') {
+                this.extensions = this.config.static_items || [];
+                this.isLoading = false;
+                return; // Skip the AJAX call
+            }
+
+            // If not static, proceed with the existing AJAX logic
             try {
                 const response = await fetch(window.ayecodeSettingsFramework.ajax_url, {
                     method: 'POST',
