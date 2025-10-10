@@ -609,7 +609,7 @@ abstract class Settings_Framework {
 	 * Determines the installation/activation status of a given product.
 	 * This method is intended to be overridden by the child class if custom logic is needed.
 	 *
-	 * @param object $product The raw product object from the API.
+	 * @param array $product The raw product object from the API.
 	 * @param string $type The item type ('plugin' or 'theme').
 	 * @return string The status ('active', 'installed', or 'not_installed').
 	 */
@@ -667,9 +667,9 @@ abstract class Settings_Framework {
 						// Create the necessary object structure on-the-fly
 						$slug_for_status = $item['info']['slug'] ?? '';
 						$item_type = $section['item_type'] ?? 'plugin';
-						$product_object  = (object) [ 'info' => (object) [ 'slug' => $slug_for_status ] ];
+						$product_array  = [ 'info' => [ 'slug' => $slug_for_status ] ];
 
-						$item['status'] = $this->get_product_status( $product_object, $item_type );
+						$item['status'] = $this->get_product_status( $product_array, $item_type );
 						$item['type'] = $item_type; // Ensure type is part of the item data
 					}
 				}

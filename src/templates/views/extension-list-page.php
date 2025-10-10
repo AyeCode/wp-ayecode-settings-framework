@@ -111,21 +111,24 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                     </div>
                     <div class="card-footer bg-light-subtle border-0 py-3 d-flex justify-content-between align-items-center">
                         <a :href="item.info.link" target="_blank" class="btn btn-sm btn-outline-secondary">More info</a>
-
-                        <div class="form-check form-switch d-flex align-items-center">
-                            <input
-                                    class="form-check-input"
-                                    type="checkbox"
-                                    role="switch"
-                                    :id="'toggle-' + item.info.slug"
-                                    :checked="item.status === 'active'"
-                                    :disabled="!!itemActionInProgress[item.info.slug]"
-                                    @change="handle_toggle(item, $event)"
-                            >
-                            <div x-show="itemActionInProgress[item.info.slug]" class="spinner-border spinner-border-sm text-primary ms-2" role="status" x-cloak>
+                        <span x-text="item.status"></span> <!-- Debuting -->
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div x-show="itemActionInProgress[item.info.slug]" class="spinner-border spinner-border-sm text-primary me-2" role="status" x-cloak>
                                 <span class="visually-hidden">Loading...</span>
                             </div>
+                            <div class="form-check form-switch d-flex align-items-center mb-0 me-n3 pe-1">
+                                <input
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        role="switch"
+                                        :id="'toggle-' + item.info.slug"
+                                        :checked="item.status === 'active'"
+                                        :disabled="!!itemActionInProgress[item.info.slug]"
+                                        @change="handle_toggle(item, $event)"
+                                >
+                            </div>
                         </div>
+
                     </div>
                 </div>
             </div>

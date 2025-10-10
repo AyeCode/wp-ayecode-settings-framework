@@ -2,6 +2,8 @@
  * A reusable Alpine.js component for the Extension List Page.
  * @param {object} initialConfig The initial configuration object for this component instance.
  */
+import { showNotification } from '@/services/notifications';
+
 export default function extensionListComponent(initialConfig) {
     return {
         // The component's internal configuration state.
@@ -120,6 +122,7 @@ export default function extensionListComponent(initialConfig) {
                     this.do_ajax('install_and_activate_item', item).then(result => {
                         if (result.success) {
                             item.status = 'active';
+                            showNotification(this, result.data?.message || `${item.info.title} installed & activated!`, 'success');
                         } else {
                             event.target.checked = false; // Revert toggle on failure
                             if (result.data?.guidance_needed) {
@@ -133,6 +136,7 @@ export default function extensionListComponent(initialConfig) {
                     this.do_ajax('activate_item', item).then(result => {
                         if (result.success) {
                             item.status = 'active';
+                            showNotification(this, result.data?.message || `${item.info.title} activated!`, 'success');
                         } else {
                             event.target.checked = false; // Revert toggle on failure
                         }
@@ -144,6 +148,7 @@ export default function extensionListComponent(initialConfig) {
                 this.do_ajax('deactivate_item', item).then(result => {
                     if (result.success) {
                         item.status = 'installed'; // Update status to 'installed'
+                        showNotification(this, result.data?.message || `${item.info.title} deactivated.`, 'success');
                     } else {
                         event.target.checked = true; // Revert toggle on failure
                     }
@@ -206,11 +211,11 @@ export default function extensionListComponent(initialConfig) {
                 const data = await response.json();
 
                 if (!data.success && !data.data?.guidance_needed) {
-                    alert(data.data?.message || 'An unexpected error occurred. Please try again.');
+                    showNotification(this, data.data?.message || 'An unexpected error occurred. Please try again.', 'error');
                 }
                 return data;
             } catch (error) {
-                alert('A network error occurred. Please check your connection and try again.');
+                showNotification(this, 'A network error occurred. Please check your connection and try again.', 'error');
                 return { success: false, data: { message: 'Network error.' } };
             }
         }

@@ -28,18 +28,26 @@ class Extensions_Manager {
 	/**
 	 * Determines the installation/activation status of a given item (plugin or theme).
 	 *
-	 * @param object $product The product object from the API.
+	 * @param array $product The product object from the API.
 	 * @param string $type    The type of item ('plugin' or 'theme').
 	 *
 	 * @return string The status: 'active', 'installed', or 'not_installed'.
 	 */
 	public function get_status( $product, $type = 'plugin' ) {
-		$slug = $product->info->slug ?? '';
+
+		$slug = !empty($product['info']['edd_slug'])
+			? $product['info']['edd_slug']
+			: (!empty($product['info']['slug']) ? $product['info']['slug'] : '');
+
+
 		if ( empty( $slug ) ) {
 			return 'not_installed';
 		}
 
 		if ( $type === 'theme' ) {
+			// maybe remove trailing -theme
+			$slug = preg_replace('/-theme$/', '', $slug);
+
 			$theme = wp_get_theme( $slug );
 			if ( get_stylesheet() === $slug ) {
 				return 'active';
@@ -163,6 +171,8 @@ class Extensions_Manager {
 
 		include_once( ABSPATH . 'wp-admin/includes/class-wp-upgrader.php' );
 		include_once( ABSPATH . 'wp-admin/includes/file.php' );
+		include_once( ABSPATH . 'wp-admin/includes/plugin-install.php' );
+		include_once( ABSPATH . 'wp-admin/includes/theme-install.php' );
 		wp_enqueue_style( 'updates' );
 
 		$skin     = new \WP_Ajax_Upgrader_Skin();

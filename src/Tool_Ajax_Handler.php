@@ -140,6 +140,7 @@ class Tool_Ajax_Handler {
 	public function handle_get_extension_data( $post_data ) {
 		$data        = isset( $post_data['data'] ) ? json_decode( stripslashes( $post_data['data'] ) ) : new \stdClass();
 		$category    = isset( $data->category ) ? sanitize_key( $data->category ) : '';
+		$item_type   = isset( $data->item_type ) ? sanitize_key( $data->item_type ) : 'plugin';
 		$page_config = $this->framework->get_config_raw()['page_config'] ?? [];
 		$api_url     = $page_config['api_url'] ?? '';
 
@@ -170,9 +171,12 @@ class Tool_Ajax_Handler {
 
 			$is_subscription = isset( $product->licensing->exp_unit ) && $product->licensing->exp_unit === 'years';
 
-			$curated_products[] = [
+
+			$curated_product = [
 				'info'   => [
 					'slug'            => sanitize_key( $product->info->slug ),
+					'edd_slug'        => !empty($product->licensing->edd_slug) ? sanitize_key( $product->licensing->edd_slug ) : '',
+					'source'          => parse_url( $api_url, PHP_URL_HOST ),
 					'link'            => esc_url( $product->info->link ),
 					'title'           => esc_attr( $product->info->title ),
 					'excerpt'         => esc_attr( $product->info->excerpt ),
@@ -180,10 +184,12 @@ class Tool_Ajax_Handler {
 					'price'           => absint ( $price ),
 					'is_new'          => absint( $is_new ),
 					'is_subscription' => absint( $is_subscription ),
-				],
-				// 3. Call the framework's get_product_status method, which can be overridden.
-				'status' => $this->framework->get_product_status( $product ),
+				]
 			];
+
+			$curated_product['status'] =  $this->framework->get_product_status( $curated_product, $item_type );
+
+			$curated_products[] = $curated_product;
 		}
 
 		wp_send_json_success( [ 'items' => $curated_products ] );
