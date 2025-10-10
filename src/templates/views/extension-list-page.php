@@ -87,7 +87,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
         <template x-for="item in filteredItems" :key="item.info.slug">
             <div class="col">
                 <div class="card h-100 p-0 hover-shadow position-relative">
-                    <div class="hover-effect-scale hover-effect-opacity card-img-top position-relative overflow-hidden ">
+                    <div class="hover-effect-scale hover-effect-opacity card-img-top position-relative overflow-hidden h6 ">
                         <span class="hover-effect-target position-absolute top-0 start-0 w-100 h-100 bg-black bg-opacity-25 opacity-0 z-1"></span>
                         <div class="hover-effect-target d-flex position-absolute top-0 start-0 w-100 h-100 align-items-center justify-content-center z-2 opacity-0">
                             <div class="d-flex align-items-center gap-3 fs-sm bg-dark bg-opacity-50 text-white rounded-pill py-2 px-3">
@@ -100,6 +100,9 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                         <div class="ratio hover-effect-targetx" style="--bs-aspect-ratio: 66%;">
                             <img :src="item.info.thumbnail" class="card-img-top border-bottom embed-item-cover-xy position-relativex" alt="">
                         </div>
+                        <template x-if="item.info.is_new">
+                            <span class="badge text-dangerx bg-danger xbg-danger-subtle position-absolute top-0 end-0 m-2">NEW</span>
+                        </template>
                     </div>
 
                     <div class="card-body d-flex flex-column">
@@ -107,15 +110,22 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                         <p class="card-text text-muted fs-xs flex-grow-1" x-html="item.info.excerpt"></p>
                     </div>
                     <div class="card-footer bg-light-subtle border-0 py-3 d-flex justify-content-between align-items-center">
-                        <p class="h6 text-dark-subtle mb-0" x-html="get_price_text(item)"></p>
-                        <button
-                                class="btn btn-sm"
-                                :class="get_button_state(item).class"
-                                @click="handle_action(item, get_button_state(item).action)"
-                                :disabled="get_button_state(item).action === null"
-                        >
-                            <span x-text="get_button_state(item).text"></span>
-                        </button>
+                        <a :href="item.info.link" target="_blank" class="btn btn-sm btn-outline-secondary">More info</a>
+
+                        <div class="form-check form-switch d-flex align-items-center">
+                            <input
+                                    class="form-check-input"
+                                    type="checkbox"
+                                    role="switch"
+                                    :id="'toggle-' + item.info.slug"
+                                    :checked="item.status === 'active'"
+                                    :disabled="!!itemActionInProgress[item.info.slug]"
+                                    @change="handle_toggle(item, $event)"
+                            >
+                            <div x-show="itemActionInProgress[item.info.slug]" class="spinner-border spinner-border-sm text-primary ms-2" role="status" x-cloak>
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

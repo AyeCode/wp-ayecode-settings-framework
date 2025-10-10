@@ -167,6 +167,12 @@ abstract class Settings_Framework {
 	 */
 	public $field_manager;
 
+	/**
+	 * Instance of the Extensions_Manager.
+	 * @var Extensions_Manager
+	 */
+	protected $extensions_manager;
+
 	// endregion
 
 	/**
@@ -207,12 +213,12 @@ abstract class Settings_Framework {
 		$this->admin_page    = new Admin_Page( $this );
 		$this->ajax_handler  = new Ajax_Handler( $this );
 		$this->tool_ajax_handler = new Tool_Ajax_Handler( $this );
+		$this->extensions_manager = new Extensions_Manager( $this );
 
 		// Register core hooks.
 		add_action( 'admin_menu', [ $this, 'add_admin_menu' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 
-//		print_r($this);//exit;
 		// Register AJAX actions.
 		add_action( 'wp_ajax_save_' . $this->option_name, [ $this->ajax_handler, 'handle_save' ] );
 		add_action( 'wp_ajax_reset_' . $this->option_name, [ $this->ajax_handler, 'handle_reset' ] );
@@ -278,6 +284,7 @@ abstract class Settings_Framework {
 		require_once $base_path . '/Tool_Ajax_Handler.php';
 		require_once $base_path . '/Field_Renderer.php'; // Kept for static helpers.
 		require_once $base_path . '/Field_Manager.php';   // The new decoupled field manager.
+		require_once $base_path . '/Extensions_Manager.php';
 	}
 
 	/**
@@ -371,10 +378,6 @@ abstract class Settings_Framework {
 			]
 		);
 
-
-		// --- THE FIX ---
-		// Add an inline script that dispatches a custom event AFTER the data object is created.
-		// This is the signal our main script will wait for.
 		wp_add_inline_script(
 			'ayecode-settings-framework-admin',
 			"document.addEventListener('DOMContentLoaded', function() { document.dispatchEvent(new CustomEvent('ayecode:settings-data-ready')); });",
@@ -405,7 +408,6 @@ abstract class Settings_Framework {
 	 * @return array Current settings.
 	 */
 	public function get_settings() {
-		//print_r( get_option( $this->option_name, [] ) );exit;
 		return get_option( $this->option_name, [] );
 	}
 
@@ -456,11 +458,16 @@ abstract class Settings_Framework {
 			wp_send_json_error( [ 'message' => 'No tool action specified.' ] );
 		}
 
+		// --- Extension Action Router ---
+		$extension_actions = ['install_and_activate_item', 'install_wp_org_item', 'activate_item', 'deactivate_item'];
+		if ( in_array( $tool_action, $extension_actions, true ) ) {
+			$this->extensions_manager->handle_ajax_action( $tool_action );
+			return; // Stop further execution.
+		}
+
 		// --- Internal Action Router ---
-		// Convert snake_case action to camelCase handler method.
 		$handler_method = 'handle_' . $tool_action;
 		if ( method_exists( $this->tool_ajax_handler, $handler_method ) ) {
-			// Call the method on the dedicated handler instance.
 			$this->tool_ajax_handler->$handler_method( $_POST );
 		}
 
@@ -579,45 +586,36 @@ abstract class Settings_Framework {
 	 */
 	public function fetch_remote_products( $category, $api_url ) {
 		$transient_key = 'ayecode_extensions_' . $this->page_slug . '_' . $category;
+		$products = get_transient( $transient_key );
 
-		// For development, you can bypass the transient
-		// if ( false === ( $products = get_transient( $transient_key ) ) ) {
+		if ( false === $products ) {
+			$api_args = [ 'category' => $category, 'number' => 100 ];
+			$request_url = add_query_arg( $api_args, $api_url );
 
-		// Special case for recommended plugins if they are not from the API
-		if ($category === 'recommended_plugins') {
-			$products = []; // You can return a hardcoded array here if needed
-			set_transient( $transient_key, $products, DAY_IN_SECONDS );
-			return $products;
+			$response = wp_safe_remote_get( esc_url_raw( $request_url ), [ 'timeout' => 15 ] );
+
+			if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
+				$data = json_decode( wp_remote_retrieve_body( $response ) );
+				$products = isset( $data->products ) ? $data->products : [];
+				set_transient( $transient_key, $products, DAY_IN_SECONDS );
+			} else {
+				$products = [];
+			}
 		}
-
-//		$api_args = [ 'category' => $category, 'number' => 100, 'orderby' => 'name', 'order' => 'asc' ];
-		$api_args = [ 'category' => $category, 'number' => 100 ];
-		$request_url = add_query_arg( $api_args, $api_url );
-
-		$response = wp_safe_remote_get( esc_url_raw( $request_url ), [ 'timeout' => 15 ] );
-
-		if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
-			$data = json_decode( wp_remote_retrieve_body( $response ) );
-			$products = isset( $data->products ) ? $data->products : [];
-			set_transient( $transient_key, $products, DAY_IN_SECONDS );
-		} else {
-			$products = []; // Return empty on error to prevent caching failures.
-		}
-		// }
 		return $products;
 	}
 
 	/**
 	 * Determines the installation/activation status of a given product.
-	 * This method is intended to be overridden by the child class.
+	 * This method is intended to be overridden by the child class if custom logic is needed.
 	 *
 	 * @param object $product The raw product object from the API.
-	 * @return string The status ('active', 'installed_not_active', or 'not_purchased').
+	 * @param string $type The item type ('plugin' or 'theme').
+	 * @return string The status ('active', 'installed', or 'not_installed').
 	 */
-	public function get_product_status( $product ) {
-		// The base framework doesn't know how to check a plugin's status,
-		// so it returns a default value. The extending class should override this.
-		return 'not_purchased';
+	public function get_product_status( $product, $type = 'plugin' ) {
+		// Delegate to the new manager.
+		return $this->extensions_manager->get_status( $product, $type );
 	}
 
 	/**
@@ -668,9 +666,11 @@ abstract class Settings_Framework {
 					foreach ( $section['static_items'] as &$item ) {
 						// Create the necessary object structure on-the-fly
 						$slug_for_status = $item['info']['slug'] ?? '';
+						$item_type = $section['item_type'] ?? 'plugin';
 						$product_object  = (object) [ 'info' => (object) [ 'slug' => $slug_for_status ] ];
 
-						$item['status'] = $this->get_product_status( $product_object );
+						$item['status'] = $this->get_product_status( $product_object, $item_type );
+						$item['type'] = $item_type; // Ensure type is part of the item data
 					}
 				}
 

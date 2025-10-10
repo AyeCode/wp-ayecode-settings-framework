@@ -35,27 +35,6 @@ class AyeCode_Extensions_Page_Example extends \AyeCode\SettingsFramework\Setting
 		return false;
 	}
 
-	/**
-	 * Overrides the parent method to provide the specific logic for checking
-	 * if a plugin is active or installed for this particular project.
-	 */
-	public function get_product_status( $product ) {
-		$slug = isset( $product->info->slug ) ? $product->info->slug : '';
-		if ( empty( $slug ) ) {
-			return 'not_purchased';
-		}
-
-		// Construct the main plugin file path (e.g., 'my-plugin/my-plugin.php')
-		$main_file = $slug . '/' . $slug . '.php';
-
-		if ( function_exists('is_plugin_active') && is_plugin_active( $main_file ) ) {
-			return 'active';
-		}
-		if ( file_exists( WP_PLUGIN_DIR . '/' . $main_file ) ) {
-			return 'installed_not_active';
-		}
-		return 'not_purchased';
-	}
 
 
 	public function get_config() {
@@ -86,6 +65,7 @@ class AyeCode_Extensions_Page_Example extends \AyeCode\SettingsFramework\Setting
 						[
 							'info'   => [
 								'slug'            => 'ayecode-connect',
+								'source'          => 'wp.org',
 								'link'            => 'https://wordpress.org/plugins/ayecode-connect/',
 								'title'           => 'AyeCode Connect',
 								'excerpt'         => 'AyeCode Connect is a service plugin, allowing us to provide extra services to your site such as live documentation search and submission of support tickets.',
@@ -98,6 +78,7 @@ class AyeCode_Extensions_Page_Example extends \AyeCode\SettingsFramework\Setting
 						[
 							'info'   => [
 								'slug'            => 'userswp',
+								'source'          => 'wp.org',
 								'link'            => 'https://wordpress.org/plugins/userswp/',
 								'title'           => 'UsersWP',
 								'excerpt'         => 'Front-end login form, User Registration, User Profile & Members Directory plugin for WP.',
@@ -110,6 +91,7 @@ class AyeCode_Extensions_Page_Example extends \AyeCode\SettingsFramework\Setting
 						[
 							'info'   => [
 								'slug'            => 'invoicing',
+								'source'          => 'wp.org',
 								'link'            => 'https://wordpress.org/plugins/invoicing/',
 								'title'           => 'GetPaid',
 								'excerpt'         => 'Payment forms, Buy now buttons, and Invoicing System | GetPaid',
