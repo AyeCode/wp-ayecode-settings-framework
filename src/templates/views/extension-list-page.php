@@ -92,7 +92,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                         <div class="hover-effect-target d-flex position-absolute top-0 start-0 w-100 h-100 align-items-center justify-content-center z-2 opacity-0">
                             <div class="d-flex align-items-center gap-3 fs-sm bg-dark bg-opacity-50 text-white rounded-pill py-2 px-3">
                               <span class="d-flex align-items-center fw-medium">
-                                  <a :href="item.info.link" target="_blank" class="stretched-link link-light">More info</a>
+                                  <a href="#" @click.prevent="show_more_info(item)" class="stretched-link link-light">More info</a>
                               </span>
 
                             </div>
@@ -103,6 +103,9 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                         <template x-if="item.info.is_new">
                             <span class="badge text-dangerx bg-danger xbg-danger-subtle position-absolute top-0 end-0 m-2">NEW</span>
                         </template>
+                        <span class="badge position-absolute top-0 start-0 m-2"
+                              :class="(item.info.price === 0 || item.info.price === '0.00') ? 'bg-success-subtle text-success' : 'bg-primary-subtle text-primary'"
+                              x-html="get_price_text(item)"></span>
                     </div>
 
                     <div class="card-body d-flex flex-column">
@@ -110,8 +113,9 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                         <p class="card-text text-muted fs-xs flex-grow-1" x-html="item.info.excerpt"></p>
                     </div>
                     <div class="card-footer bg-light-subtle border-0 py-3 d-flex justify-content-between align-items-center">
-                        <a :href="item.info.link" target="_blank" class="btn btn-sm btn-outline-secondary">More info</a>
-                        <span x-text="item.status"></span> <!-- Debuting -->
+                        <button @click="show_more_info(item)" class="btn btn-sm btn-outline-secondary">More info</button>
+                        <!--     @todo for debugging               -->
+                        <span x-text="item.status"></span>
                         <div class="d-flex align-items-center justify-content-between">
                             <div x-show="itemActionInProgress[item.info.slug]" class="spinner-border spinner-border-sm text-primary me-2" role="status" x-cloak>
                                 <span class="visually-hidden">Loading...</span>

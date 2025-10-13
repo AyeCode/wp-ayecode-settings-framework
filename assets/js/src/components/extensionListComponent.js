@@ -102,6 +102,26 @@ export default function extensionListComponent(initialConfig) {
         },
 
         /**
+         * Shows the appropriate info modal or opens a link based on the item source.
+         * @param {object} item The extension item.
+         */
+        show_more_info(item) {
+            if (item.info.source === 'wp.org') {
+                const url = `/wp-admin/plugin-install.php?tab=plugin-information&plugin=${item.info.slug}&TB_iframe=true&width=772&height=551`;
+                // Assuming aui_modal_iframe is globally available
+                if (typeof aui_modal_iframe === 'function') {
+                    aui_modal_iframe(item.info.title, url, '', true, 'aui-install-modal', 'modal-xl');
+                } else {
+                    console.error('aui_modal_iframe function not found.');
+                    // Fallback to opening in a new tab if the modal function doesn't exist
+                    window.open(url, '_blank');
+                }
+            } else {
+                aui_modal_iframe(item.info.title, item.info.link, '', true, 'aui-install-modal', 'modal-xl');
+            }
+        },
+
+        /**
          * Main handler for the toggle switch. Reads the event to see if toggling on or off.
          * @param {object} item The extension item being toggled.
          * @param {Event} event The browser change event.

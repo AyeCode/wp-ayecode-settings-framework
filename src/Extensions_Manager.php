@@ -26,6 +26,22 @@ class Extensions_Manager {
 	}
 
 	/**
+	 * @param $product
+	 *
+	 * @return string
+	 */
+	public function get_slug( $product ): string {
+
+		// if it's an object then convert to an array
+		if(is_object( $product )){
+			$product = json_decode(json_encode($product), true);
+		}
+		return !empty($product['info']['edd_slug'])
+			? sanitize_key( $product['info']['edd_slug'] )
+			: (!empty($product['info']['slug']) ? sanitize_key( $product['info']['slug']) : '');
+	}
+
+	/**
 	 * Determines the installation/activation status of a given item (plugin or theme).
 	 *
 	 * @param array $product The product object from the API.
@@ -35,9 +51,7 @@ class Extensions_Manager {
 	 */
 	public function get_status( $product, $type = 'plugin' ) {
 
-		$slug = !empty($product['info']['edd_slug'])
-			? $product['info']['edd_slug']
-			: (!empty($product['info']['slug']) ? $product['info']['slug'] : '');
+		$slug = $this->get_slug( $product );
 
 
 		if ( empty( $slug ) ) {
@@ -160,7 +174,7 @@ class Extensions_Manager {
 		}
 
 		$item_data = isset( $_POST['item_data'] ) ? json_decode( stripslashes( $_POST['item_data'] ) ) : null;
-		$slug = $item_data->info->slug ?? '';
+		$slug = $this->get_slug( $item_data );
 		$type = $item_data->type ?? 'plugin';
 
 		if ( empty( $slug ) ) {
@@ -206,7 +220,7 @@ class Extensions_Manager {
 	 */
 	public function handle_activate_item( $return_result = false ) {
 		$item_data = isset( $_POST['item_data'] ) ? json_decode( stripslashes( $_POST['item_data'] ) ) : null;
-		$slug = $item_data->info->slug ?? '';
+		$slug = $this->get_slug( $item_data );
 		$type = $item_data->type ?? 'plugin';
 
 		if ( empty( $slug ) ) {
@@ -248,7 +262,7 @@ class Extensions_Manager {
 	 */
 	public function handle_deactivate_item() {
 		$item_data = isset( $_POST['item_data'] ) ? json_decode( stripslashes( $_POST['item_data'] ) ) : null;
-		$slug = $item_data->info->slug ?? '';
+		$slug = $this->get_slug( $item_data );
 		$type = $item_data->type ?? 'plugin';
 
 		if ( empty( $slug ) ) {
