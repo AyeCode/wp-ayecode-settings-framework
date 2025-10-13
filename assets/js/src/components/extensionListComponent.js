@@ -181,31 +181,86 @@ export default function extensionListComponent(initialConfig) {
             const bannerConfig = this.config.page_config?.connect_banner || {};
             const isLocal = bannerConfig.is_localhost;
 
-            let connectButtonHtml = isLocal
-                ? `<button class='btn btn-primary w-100' onclick='window.asfConfirmResolve("connect")'>Enter Membership Key</button>`
-                : `<button class='btn btn-primary w-100' onclick='window.asfConfirmResolve("connect")'>Connect Site to Install</button>`;
+            const connectButtonHtml = `
+                <button type="button" class="btn btn-primary btn-lg text-start ps-3" onclick="window.asfHandleModalAction('connect')">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-rocket fa-lg me-3"></i>
+                        <div>
+                            Connect & Install
+                            <span class="d-block small opacity-75 fw-normal">One-click install &amp; automatic updates</span>
+                        </div>
+                    </div>
+                </button>`;
+
+            const enterKeyHtml = `<div class="text-center mt-3">
+                    <a href="#" class="small" onclick="event.preventDefault(); window.asfHandleModalAction('enter_key')">Working on a local site? Enter your key instead.</a>
+                </div>`;
 
             const body = `
-                <h3 class='h4 py-3 text-center text-dark'>${item.info.title} is a premium extension.</h3>
-                <p class='text-center text-muted'>Please connect your site or purchase a license to continue.</p>
-                <div class='d-grid gap-2 mt-4'>
-                    <p class="text-muted small text-center mb-1">Already a member?</p>
-                    ${connectButtonHtml}
-                    <hr class="my-3">
-                    <p class="text-muted small text-center mb-1">Or, purchase a new license:</p>
-                    <a href='${item.info.link}' target='_blank' class='btn btn-outline-secondary w-100'>Purchase Extension</a>
-                    <a href='${this.config.page_config?.membership_url || '#'}' target='_blank' class='btn btn-outline-secondary w-100'>View Memberships</a>
-                </div>
+        <button type="button" class="btn-close position-absolute p-3 end-0 z-index-1" data-bs-dismiss="modal" aria-label="Close" style="
+"></button>
+                    <div class="row g-0  align-items-startx">
+                        <!-- Left Pane - Existing Member -->
+                        <div class="col-lg-6 bg-light border-endx">
+                            <div class="card bg-body-tertiary rounded-0 m-0 border-0 p-4 p-md-5 d-flex flex-column justify-content-top h-100">
+                                <h4 class="fw-bold">Already a Member?</h4>
+                                <p class="text-muted mb-4">If you're an existing member, connect your account to get started.</p>
+                                <ul class="list-unstyled mb-4">
+                                    <li class="d-flex align-items-center mb-2"><i class="fa-solid fa-circle-check fa-fw me-2 text-success"></i> No more license keys</li>
+                                    <li class="d-flex align-items-center mb-2"><i class="fa-solid fa-circle-check fa-fw me-2 text-success"></i> One-click installs</li>
+                                    <li class="d-flex align-items-center mb-2"><i class="fa-solid fa-circle-check fa-fw me-2 text-success"></i> Full demo site imports</li>
+                                    <li class="d-flex align-items-center"><i class="fa-solid fa-circle-check fa-fw me-2 text-success"></i> Documentation & support widget</li>
+                                </ul>
+                                <div class="d-grid">
+                                    ${isLocal ? '' : connectButtonHtml}
+                                </div>
+                                ${isLocal ? enterKeyHtml : ''}
+                            </div>
+                        </div>
+
+                        <!-- Divider for mobile -->
+                        <div class="col-12 d-lg-none"><hr class="my-0"></div>
+
+                        <!-- Right Pane - New Customer -->
+                        <div class="col-lg-6">
+                            <div class="card rounded-0 m-0 border-0 p-4 p-md-5 d-flex flex-column justify-content-top h-100">
+                                <h4 class="fw-bold">New Customer?</h4>
+                                <p class="text-muted mb-4">Get the <strong>${item.info.title}</strong> extension and much more with a membership.</p>
+                                <ul class="list-unstyled mb-4">
+                                    <li class="d-flex align-items-center mb-2"><i class="fa-solid fa-circle-check fa-fw me-2 text-success"></i> Membership includes all addons</li>
+                                    <li class="d-flex align-items-center mb-2"><i class="fa-solid fa-circle-check fa-fw me-2 text-success"></i> Includes all themes</li>
+                                    <li class="d-flex align-items-center mb-2"><i class="fa-solid fa-circle-check fa-fw me-2 text-success"></i> Premium support</li>
+                                    <li class="d-flex align-items-center"><i class="fa-solid fa-circle-check fa-fw me-2 text-success"></i> 30-day money-back guarantee</li>
+                                </ul>
+                                <div class="d-grid">
+                                    <a href="${this.config.page_config?.membership_url || '#'}" target="_blank" class="btn btn-success btn-lg text-start ps-3">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-star fa-lg me-3"></i>
+                                            <div>
+                                                View Membership Plans
+                                                <span class="d-block small opacity-75 fw-normal"><strong>Best value</strong> - Unlock everything</span>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="text-center mt-3">
+                                    <a href="${item.info.link}" target="_blank" class="small">Just want to purchase this one extension?</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
             `;
 
-            aui_modal('', body, '', false, '', '', 'sm');
+            // Use the aui_modal function, but with the new xl size and no footer
+            aui_modal('', body, '', true, 'aui-premium-modal', 'modal-lg', 'p-0 rounded overflow-hidden');
 
-            window.asfConfirmResolve = (choice) => {
-                const modalEl = document.querySelector('.aui-modal.show');
+            // This function will be called by the onclick attributes in the modal HTML
+            window.asfHandleModalAction = (choice) => {
+                const modalEl = document.querySelector('.aui-premium-modal.show');
                 if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide();
 
-                if (choice === 'connect') {
-                    // Dispatch a custom event that bubbles up to the main Alpine app
+                if (choice === 'connect' || choice === 'enter_key') {
+                    // Both actions navigate to the membership tab
                     this.$dispatch('navigate-to-section', { sectionId: 'membership' });
                 }
             };
@@ -241,3 +296,4 @@ export default function extensionListComponent(initialConfig) {
         }
     };
 }
+

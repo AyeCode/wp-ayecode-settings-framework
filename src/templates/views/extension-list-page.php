@@ -7,7 +7,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 ?>
 <div
-        x-data="extensionListComponent(activePageConfig)"
+        x-data="extensionListComponent({ ...activePageConfig, page_config: config.page_config })"
         x-effect="update_config(activePageConfig)"
 >
 

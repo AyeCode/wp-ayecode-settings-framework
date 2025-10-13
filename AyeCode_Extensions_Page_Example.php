@@ -136,9 +136,10 @@ class AyeCode_Extensions_Page_Example extends \AyeCode\SettingsFramework\Setting
 			],
 			'page_config' => [
 				'api_url' => 'https://wpgeodirectory.com/edd-api/v2/products/',
+				'membership_url' => 'https://wpgeodirectory.com/downloads/membership/',
 				'connect_banner' => [
 					'is_connected'   => $is_connected,
-					'is_localhost'   => $this->is_localhost(),
+					'is_localhost'   => false, //$this->is_localhost(), @todo undo before launch
 					'connect_url'    => '#',
 					'learn_more_url' => 'https://wpgeodirectory.com/docs-v2/addons/ayecode-connect/',
 				],
