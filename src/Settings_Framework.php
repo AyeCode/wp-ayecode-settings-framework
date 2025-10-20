@@ -653,24 +653,30 @@ abstract class Settings_Framework {
 
 	/**
 	 * Pre-processes the config to include content for 'custom_page' sections
-	 * that use 'html_content', so it's available on page load.
+	 * that use 'html_content', and adds connection status for extension pages.
 	 *
 	 * @return array The processed configuration.
 	 */
 	private function get_config_with_preloads() {
 		$config = $this->get_config_raw();
-		if ( isset( $config['sections'] ) ) {
-			foreach ( $config['sections'] as &$section ) {
-				// Updated logic to remove the need for 'raw_product'
-				if ( isset( $section['type'], $section['source'], $section['static_items'] ) && $section['type'] === 'extension_list_page' && $section['source'] === 'static' ) {
-					foreach ( $section['static_items'] as &$item ) {
-						// Create the necessary object structure on-the-fly
-						$slug_for_status = $item['info']['slug'] ?? '';
-						$item_type = $section['item_type'] ?? 'plugin';
-						$product_array  = [ 'info' => [ 'slug' => $slug_for_status ] ];
+		$has_extension_page = false;
 
-						$item['status'] = $this->get_product_status( $product_array, $item_type );
-						$item['type'] = $item_type; // Ensure type is part of the item data
+		if ( isset( $config['sections'] ) && is_array( $config['sections'] ) ) {
+			foreach ( $config['sections'] as &$section ) {
+				// Check if this framework instance uses an extension list page
+				if ( isset( $section['type'] ) && $section['type'] === 'extension_list_page' ) {
+					$has_extension_page = true; // Mark that we found one
+
+					// Process static items if present (existing logic)
+					if ( isset( $section['source'], $section['static_items'] ) && $section['source'] === 'static' ) {
+						foreach ( $section['static_items'] as &$item ) {
+							$slug_for_status = $item['info']['slug'] ?? '';
+							$item_type = $section['api_config']['item_type'] ?? 'plugin'; // Get type from api_config
+							$product_array = [ 'info' => [ 'slug' => $slug_for_status ] ];
+							$item['status'] = $this->get_product_status( $product_array, $item_type );
+							$item['type'] = $item_type;
+						}
+						unset($item); // Unset reference
 					}
 				}
 
@@ -679,6 +685,34 @@ abstract class Settings_Framework {
 					$section['content_html'] = $section['html_content'];
 					unset( $section['html_content'] );
 				}
+			}
+			unset($section); // Unset reference
+		}
+
+		// --- Auto-inject connect_banner info if an extension page exists ---
+		if ( $has_extension_page ) {
+			$is_localhost = $this->is_localhost();
+			$is_connected = $this->is_connected();
+
+			// Ensure page_config and connect_banner exist
+			if ( ! isset( $config['page_config'] ) ) {
+				$config['page_config'] = [];
+			}
+			if ( ! isset( $config['page_config']['connect_banner'] ) || ! is_array( $config['page_config']['connect_banner'] ) ) {
+				$config['page_config']['connect_banner'] = [];
+			}
+
+			// Add/Override the flags. Child class settings (like URLs) will be preserved.
+			$config['page_config']['connect_banner']['is_localhost'] = $is_localhost;
+			$config['page_config']['connect_banner']['is_connected'] = $is_connected;
+
+			// Add a default connect_url if not set by the child class
+			if ( ! isset( $config['page_config']['connect_banner']['connect_url'] ) ) {
+				$config['page_config']['connect_banner']['connect_url'] = '#'; // Default placeholder handled by JS
+			}
+			// Add a default learn_more_url if not set by the child class
+			if ( ! isset( $config['page_config']['connect_banner']['learn_more_url'] ) ) {
+				$config['page_config']['connect_banner']['learn_more_url'] = 'https://wpgeodirectory.com/documentation/article/first-steps/install-ayecode-connect-help-widget/'; // Or a generic AyeCode link
 			}
 		}
 
@@ -771,5 +805,45 @@ abstract class Settings_Framework {
 		return $mimes;
 	}
 
-	// endregion
+	/**
+	 * Checks if the current environment is considered localhost.
+	 * @return bool True if localhost, false otherwise.
+	 */
+	protected function is_localhost() {
+		$host = ! empty( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : 'localhost';
+		$local_domains = [ '.localhost', '.test', 'localhost','.local' ]; // Common local domains
+		foreach ( $local_domains as $domain ) {
+			if ( substr( $host, -strlen( $domain ) ) === $domain ) {
+				return true;
+			}
+		}
+		// Also check common local IPs
+		$local_ips = ['127.0.0.1', '::1'];
+		$remote_addr = !empty($_SERVER['REMOTE_ADDR']) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+		if( in_array( $remote_addr, $local_ips ) ){
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Checks if the site is connected via AyeCode Connect.
+	 * @return bool True if connected, false otherwise.
+	 */
+	protected function is_connected() {
+		if ( class_exists( 'AyeCode_Connect_Settings' ) ) {
+			try {
+				$settings = \AyeCode_Connect_Settings::instance();
+				if ( method_exists( $settings->client, 'is_registered' ) && $settings->client->is_registered() ) {
+					return true;
+				}
+			} catch (\Exception $e) {
+				// Handle potential errors if instance() fails
+				error_log('Error checking AyeCode Connect status: ' . $e->getMessage());
+				return false;
+			}
+		}
+		return false;
+	}
 }

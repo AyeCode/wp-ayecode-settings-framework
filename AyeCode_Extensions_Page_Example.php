@@ -24,21 +24,8 @@ class AyeCode_Extensions_Page_Example extends \AyeCode\SettingsFramework\Setting
 		add_action( 'asf_execute_tool_' . $this->page_slug, [ $this, 'handle_custom_ajax_actions' ], 10, 2 );
 	}
 
-	private function is_localhost() {
-		$host = ! empty( $_SERVER['HTTP_HOST'] ) ? $_SERVER['HTTP_HOST'] : 'localhost';
-		$local_domains = [ '.localhost', '.test', 'localhost' ];
-		foreach ( $local_domains as $domain ) {
-			if ( substr( $host, -strlen( $domain ) ) === $domain ) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-
-
 	public function get_config() {
-		$is_connected = false;//defined( 'AYECODE_CONNECT_VERSION' );
+
 		return [
 			'sections' => [
 				[
@@ -61,6 +48,7 @@ class AyeCode_Extensions_Page_Example extends \AyeCode\SettingsFramework\Setting
 					'icon'  => 'fa-solid fa-thumbs-up',
 					'type'  => 'extension_list_page',
 					'source' => 'static', // Flag this section as having a static list
+					'api_config' => [ 'item_type' => 'plugin' ], // Specify default type for static items
 					'static_items' => [
 						[
 							'info'   => [
@@ -137,12 +125,9 @@ class AyeCode_Extensions_Page_Example extends \AyeCode\SettingsFramework\Setting
 			'page_config' => [
 				'api_url' => 'https://wpgeodirectory.com/edd-api/v2/products/',
 				'membership_url' => 'https://wpgeodirectory.com/downloads/membership/',
-				'connect_banner' => [
-					'is_connected'   => $is_connected,
-					'is_localhost'   => $this->is_localhost(),
-					'connect_url'    => '#',
-					'learn_more_url' => 'https://wpgeodirectory.com/documentation/article/first-steps/install-ayecode-connect-help-widget/',
-				],
+//				'connect_banner' => [
+//					'learn_more_url' => 'https://wpgeodirectory.com/documentation/article/first-steps/install-ayecode-connect-help-widget/',
+//				],
 			]
 		];
 	}
