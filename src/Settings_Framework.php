@@ -459,7 +459,7 @@ abstract class Settings_Framework {
 		}
 
 		// --- Extension Action Router ---
-		$extension_actions = ['install_and_activate_item', 'install_wp_org_item', 'activate_item', 'deactivate_item'];
+		$extension_actions = ['install_and_activate_item', 'install_wp_org_item', 'activate_item', 'deactivate_item', 'connect_site','get_connect_url'];
 		if ( in_array( $tool_action, $extension_actions, true ) ) {
 			$this->extensions_manager->handle_ajax_action( $tool_action );
 			return; // Stop further execution.

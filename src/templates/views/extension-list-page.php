@@ -13,20 +13,32 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 
     <template x-if="config && config.page_config && config.page_config.connect_banner && !config.page_config.connect_banner.is_connected">
         <div class="p-3 mb-4 border rounded bg-light-subtle">
-            <div x-show="!config.page_config.connect_banner.is_localhost" class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="fw-bold">Connect Your Site for Seamless Updates</h6>
-                    <p class="mb-0 text-muted small">Unlock one-click installations and automatic updates. <a :href="config.page_config.connect_banner.learn_more_url" target="_blank" rel="noopener">Learn more</a>.</p>
+
+            <div x-show="!config.page_config.connect_banner.is_localhost">
+                <div  class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="fw-bold">Connect Your Site for Seamless Updates</h6>
+                        <p class="mb-0 text-muted small">Unlock one-click installations and automatic updates. <a :href="config.page_config.connect_banner.learn_more_url" target="_blank" rel="noopener">Learn more</a>.</p>
+                    </div>
+                    <button @click="connect_site" class="btn btn-primary" :disabled="isConnecting">
+                        <span x-show="isConnecting" class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        <span x-text="isConnecting ? 'Connecting...' : 'Connect Site'"></span>
+                    </button>
                 </div>
-                <a :href="config.page_config.connect_banner.connect_url" class="btn btn-primary">Connect Site</a>
             </div>
 
-            <div x-show="config.page_config.connect_banner.is_localhost" x-cloak class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="fw-bold">Connect Site is Unavailable on Localhost</h6>
-                    <p class="mb-0 text-muted small">To activate products on a local site, please use your membership key.</p>
+            <div x-show="config.page_config.connect_banner.is_localhost" x-cloak >
+                <div class="d-flex justify-content-between align-items-center">
+
+                    <div>
+                        <h6 class="fw-bold">Connect Site is Unavailable on Localhost</h6>
+                        <p class="mb-0 text-muted small">To activate products on a local site, please use your
+                            membership key or enter individual keys on the plugin page.</p>
+                    </div>
+                    <button class="btn btn-secondary" @click="navigateTo(() => switchSection('membership'))">Enter
+                        Membership Key
+                    </button>
                 </div>
-                <button class="btn btn-secondary" @click="navigateTo(() => switchSection('membership'))">Enter Membership Key</button>
             </div>
         </div>
     </template>
@@ -114,7 +126,6 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                     </div>
                     <div class="card-footer bg-light-subtle border-0 py-3 d-flex justify-content-between align-items-center">
                         <button @click="show_more_info(item)" class="btn btn-sm btn-outline-secondary">More info</button>
-                        <!--     @todo for debugging               -->
                         <span x-text="item.status"></span>
                         <div class="d-flex align-items-center justify-content-between">
                             <div x-show="itemActionInProgress[item.info.slug]" class="spinner-border spinner-border-sm text-primary me-2" role="status" x-cloak>
@@ -141,5 +152,79 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 
     <div x-show="!isLoading && filteredItems && filteredItems.length === 0" class="text-center p-5 border rounded bg-body" x-cloak>
         <p class="h5 text-muted">No extensions found matching your criteria.</p>
+    </div>
+
+    <div class="modal fade" x-ref="connectModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <div class="spinner-border text-primary mb-3" role="status"></div>
+                    <h5 class="mb-0">Preparing to Connect...</h5>
+                    <p class="text-muted small mt-2 mb-0">Please wait while we install and activate the necessary components.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" x-ref="purchaseModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content p-0 rounded overflow-hidden">
+                <div class="modal-body p-0">
+                    <button type="button" class="btn-close position-absolute p-3 end-0 z-index-1" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="row g-0 align-items-start">
+                        <div class="col-lg-6 bg-light">
+                            <div class="card bg-body-tertiary rounded-0 m-0 border-0 p-4 p-md-5 d-flex flex-column justify-content-top h-100">
+                                <h4 class="fw-bold">Already a Member?</h4>
+                                <p class="text-muted mb-4">If you're an existing member, connect your account to get started.</p>
+                                <ul class="list-unstyled mb-4">
+                                    <li class="d-flex align-items-center mb-2"><i class="fa-solid fa-circle-check fa-fw me-2 text-success"></i> No more license keys</li>
+                                    <li class="d-flex align-items-center mb-2"><i class="fa-solid fa-circle-check fa-fw me-2 text-success"></i> One-click installs</li>
+                                    <li class="d-flex align-items-center mb-2"><i class="fa-solid fa-circle-check fa-fw me-2 text-success"></i> Full demo site imports</li>
+                                    <li class="d-flex align-items-center"><i class="fa-solid fa-circle-check fa-fw me-2 text-success"></i> Documentation & support widget</li>
+                                </ul>
+                                <div class="d-grid">
+                                    <button type="button" class="btn btn-primary btn-lg text-start ps-3" @click="connect_site()">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-rocket fa-lg me-3"></i>
+                                            <div>
+                                                Connect & Install
+                                                <span class="d-block small opacity-75 fw-normal">One-click install &amp; automatic updates</span>
+                                            </div>
+                                        </div>
+                                    </button>
+                                </div>
+                                <div class="text-center mt-3">
+                                    <a href="#" class="small" @click.prevent="purchaseModal.hide(); $dispatch('navigate-to-section', { sectionId: 'membership' })">Working on a local site? Enter your key instead.</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6">
+                            <div class="card rounded-0 m-0 border-0 p-4 p-md-5 d-flex flex-column justify-content-top h-100">
+                                <h4 class="fw-bold">New Customer?</h4>
+                                <p class="text-muted mb-4">Get the extension and much more with a membership.</p>
+                                <ul class="list-unstyled mb-4">
+                                    <li class="d-flex align-items-center mb-2"><i class="fa-solid fa-circle-check fa-fw me-2 text-success"></i> Membership includes all addons</li>
+                                    <li class="d-flex align-items-center mb-2"><i class="fa-solid fa-circle-check fa-fw me-2 text-success"></i> Includes all themes</li>
+                                    <li class="d-flex align-items-center mb-2"><i class="fa-solid fa-circle-check fa-fw me-2 text-success"></i> Premium support</li>
+                                    <li class="d-flex align-items-center"><i class="fa-solid fa-circle-check fa-fw me-2 text-success"></i> 30-day money-back guarantee</li>
+                                </ul>
+                                <div class="d-grid">
+                                    <a :href="config.page_config?.membership_url || '#'" target="_blank" class="btn btn-success btn-lg text-start ps-3">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-star fa-lg me-3"></i>
+                                            <div>
+                                                View Membership Plans
+                                                <span class="d-block small opacity-75 fw-normal"><strong>Best value</strong> - Unlock everything</span>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>

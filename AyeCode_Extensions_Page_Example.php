@@ -38,7 +38,7 @@ class AyeCode_Extensions_Page_Example extends \AyeCode\SettingsFramework\Setting
 
 
 	public function get_config() {
-		$is_connected = function_exists('ayecode_connect_is_site_connected') && ayecode_connect_is_site_connected();
+		$is_connected = false;//defined( 'AYECODE_CONNECT_VERSION' );
 		return [
 			'sections' => [
 				[
@@ -139,9 +139,9 @@ class AyeCode_Extensions_Page_Example extends \AyeCode\SettingsFramework\Setting
 				'membership_url' => 'https://wpgeodirectory.com/downloads/membership/',
 				'connect_banner' => [
 					'is_connected'   => $is_connected,
-					'is_localhost'   => false, //$this->is_localhost(), @todo undo before launch
+					'is_localhost'   => $this->is_localhost(),
 					'connect_url'    => '#',
-					'learn_more_url' => 'https://wpgeodirectory.com/docs-v2/addons/ayecode-connect/',
+					'learn_more_url' => 'https://wpgeodirectory.com/documentation/article/first-steps/install-ayecode-connect-help-widget/',
 				],
 			]
 		];

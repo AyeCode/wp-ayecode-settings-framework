@@ -94,7 +94,9 @@ class Extensions_Manager {
 			'activate_item',
 			'deactivate_item',
 			'install_and_activate_item',
-			'install_and_activate_wp_org_item'
+			'install_and_activate_wp_org_item',
+			'connect_site',
+			'get_connect_url',
 		];
 
 		if ( in_array( $action, $allowed_actions, true ) ) {
@@ -106,6 +108,99 @@ class Extensions_Manager {
 			wp_send_json_error( [ 'message' => 'Unknown extension action.' ] );
 		}
 	}
+
+	/**
+	 * Handles the 'Connect Site' button action.
+	 * Ensures 'ayecode-connect' is installed and activated.
+	 * The front-end will make a subsequent call to get_connect_url.
+	 */
+	public function handle_connect_site() {
+		if ( ! current_user_can( 'install_plugins' ) || ! current_user_can( 'activate_plugins' ) ) {
+			wp_send_json_error( [ 'message' => 'You do not have permission to install and activate plugins.' ] );
+		}
+
+		// Define plugin slug and main file
+		$plugin_slug = 'ayecode-connect';
+		$plugin_main_file = 'ayecode-connect/ayecode-connect.php';
+
+		// Check if the site is already connected
+		if ( class_exists( 'AyeCode_Connect_Settings' ) ) {
+			$settings = \AyeCode_Connect_Settings::instance();
+			if ( method_exists( $settings->client, 'is_registered' ) && $settings->client->is_registered() ) {
+				wp_send_json_success( [
+					'message' => __( 'Site is already connected.', 'ayecode-settings-framework' ),
+					'already_connected' => true, // Add a flag for the frontend
+				] );
+				return;
+			}
+		}
+
+		// Check if plugin is already active
+		if ( is_plugin_active( $plugin_main_file ) ) {
+			// It's active but not registered, so we just send success to proceed to the next step.
+			wp_send_json_success( [ 'message' => __( 'AyeCode Connect is active. Proceeding to connect...', 'ayecode-settings-framework' ) ] );
+			return;
+		}
+
+		// Include upgrader class
+		include_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+		include_once ABSPATH . 'wp-admin/includes/plugin-install.php';
+
+		// Check if plugin is installed but not active
+		$all_plugins = get_plugins();
+		if ( isset( $all_plugins[ $plugin_main_file ] ) ) {
+			$result = activate_plugin( $plugin_main_file );
+			if ( is_wp_error( $result ) ) {
+				wp_send_json_error( [ 'message' => $result->get_error_message() ] );
+			}
+			wp_send_json_success( [ 'message' => __( 'AyeCode Connect activated successfully. Redirecting...', 'ayecode-settings-framework' ) ] );
+			return;
+		}
+
+		// If we're here, the plugin is not installed. Let's install it.
+		$api = plugins_api( 'plugin_information', [ 'slug' => $plugin_slug, 'fields' => [ 'short_description' => false, 'sections' => false ] ] );
+		if ( is_wp_error( $api ) ) {
+			wp_send_json_error( [ 'message' => $api->get_error_message() ] );
+		}
+
+		$skin     = new \WP_Ajax_Upgrader_Skin();
+		$upgrader = new \Plugin_Upgrader( $skin );
+		$result   = $upgrader->install( $api->download_link );
+
+		if ( is_wp_error( $result ) || is_wp_error( $skin->result ) ) {
+			$error_message = is_wp_error( $result ) ? $result->get_error_message() : $skin->result->get_error_message();
+			wp_send_json_error( [ 'message' => $error_message ] );
+		}
+
+		// Now activate the newly installed plugin
+		$result = activate_plugin( $plugin_main_file );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( [ 'message' => $result->get_error_message() ] );
+		}
+
+		wp_send_json_success( [
+			'message' => __( 'AyeCode Connect installed and activated successfully. Redirecting...', 'ayecode-settings-framework' )
+		] );
+	}
+
+
+	/**
+	 * Gets the connection URL from the now-active AyeCode Connect plugin.
+	 */
+	public function handle_get_connect_url() {
+		if ( ! class_exists( 'AyeCode_Connect_Settings' ) ) {
+			wp_send_json_error( [ 'message' => 'Could not find AyeCode_Connect_Settings class. Please ensure AyeCode Connect is active.' ] );
+		}
+
+		$AyeCode_Connect_Settings = \AyeCode_Connect_Settings::instance();
+		$redirect_back_to_url = admin_url( 'admin.php?page=' . $this->framework->get_page_slug() );
+		$connect_url = esc_url_raw( $AyeCode_Connect_Settings->client->build_connect_url( $redirect_back_to_url ) );
+
+		wp_send_json_success( [
+			'redirect_url' => $connect_url
+		] );
+	}
+
 
 	/**
 	 * Main handler for installing and activating any item.
