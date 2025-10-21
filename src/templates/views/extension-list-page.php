@@ -127,18 +127,25 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                     <div class="card-footer bg-light-subtle border-0 py-3 d-flex justify-content-between align-items-center">
                         <button @click="show_more_info(item)" class="btn btn-sm btn-outline-secondary">More info</button>
                         <span x-text="item.status"></span>
-                        <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center justify-content-between"
+                             data-bs-toggle="tooltip"
+                             :title="item.status === 'active' && item.type === 'theme' ? 'This theme is active. Activate another theme to switch.' : ''"
+                        >
                             <div x-show="itemActionInProgress[item.info.slug]" class="spinner-border spinner-border-sm text-primary me-2" role="status" x-cloak>
                                 <span class="visually-hidden">Loading...</span>
                             </div>
-                            <div class="form-check form-switch d-flex align-items-center mb-0 me-n3 pe-1">
+                            <div
+                                    class="form-check form-switch d-flex align-items-center mb-0 me-n3 pe-1"
+                                    :class="{ 'pe-none': item.status === 'active' && item.type === 'theme' }"
+
+                            >
                                 <input
                                         class="form-check-input"
                                         type="checkbox"
                                         role="switch"
                                         :id="'toggle-' + item.info.slug"
                                         :checked="item.status === 'active'"
-                                        :disabled="!!itemActionInProgress[item.info.slug]"
+                                        :disabled="!!itemActionInProgress[item.info.slug] || (item.status === 'active' && item.type === 'theme')"
                                         @change="handle_toggle(item, $event)"
                                 >
                             </div>

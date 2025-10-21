@@ -189,6 +189,7 @@ class Tool_Ajax_Handler {
 			];
 
 			$curated_product['status'] =  $this->framework->get_product_status( $curated_product, $item_type );
+			$curated_product['type'] = esc_attr( $item_type );
 
 			$curated_products[] = $curated_product;
 		}

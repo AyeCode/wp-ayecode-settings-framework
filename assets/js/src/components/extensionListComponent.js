@@ -83,7 +83,11 @@ export default function extensionListComponent(initialConfig) {
             this.extensions = []; // Reset state before fetching
 
             if (this.config.source === 'static') {
-                this.extensions = this.config.static_items || [];
+                // Ensure static items also have a type property
+                this.extensions = (this.config.static_items || []).map(item => ({
+                    ...item,
+                    type: item.type || this.config.api_config?.item_type || 'plugin' // Add type if missing
+                }));
                 this.isLoading = false;
                 return;
             }
@@ -102,7 +106,11 @@ export default function extensionListComponent(initialConfig) {
                 const data = await response.json();
 
                 if (data.success) {
-                    this.extensions = data.data.items || [];
+                    // Ensure fetched items also have a type property
+                    this.extensions = (data.data.items || []).map(item => ({
+                        ...item,
+                        type: item.type || this.config.api_config?.item_type || 'plugin' // Add type if missing
+                    }));
                 } else {
                     console.error(data.data?.message || 'Failed to fetch extensions.');
                 }
@@ -163,7 +171,13 @@ export default function extensionListComponent(initialConfig) {
                     window.open(url, '_blank');
                 }
             } else {
-                aui_modal_iframe(item.info.title, item.info.link, '', true, 'aui-install-modal', 'modal-xl');
+                // Use item.info.link directly if it's not from wp.org
+                if (typeof aui_modal_iframe === 'function') {
+                    aui_modal_iframe(item.info.title, item.info.link, '', true, 'aui-install-modal', 'modal-xl');
+                } else {
+                    console.error('aui_modal_iframe function not found.');
+                    window.open(item.info.link, '_blank');
+                }
             }
         },
 
@@ -174,6 +188,16 @@ export default function extensionListComponent(initialConfig) {
          */
         handle_toggle(item, event) {
             const isTogglingOn = event.target.checked;
+
+            // --- MODIFICATION START: Add check for active themes ---
+            // If it's a theme that is already active, and the user is trying to toggle it off
+            if (item.type === 'theme' && item.status === 'active' && !isTogglingOn) {
+                event.target.checked = true; // Force it back on visually
+                showNotification(this, 'To switch themes, please activate another one.', 'info');
+                return; // Stop processing
+            }
+            // --- MODIFICATION END ---
+
 
             if (this.itemActionInProgress[item.info.slug]) {
                 return; // Action already in progress, prevent multiple clicks
@@ -187,8 +211,22 @@ export default function extensionListComponent(initialConfig) {
                     // This handles both wp.org and premium extensions. The backend will decide what to do.
                     this.do_ajax('install_and_activate_item', item).then(result => {
                         if (result.success) {
-                            item.status = 'active';
                             showNotification(this, result.data?.message || `${item.info.title} installed & activated!`, 'success');
+                            // --- MODIFICATION START: Update state locally ---
+                            if (item.type === 'theme') {
+                                // Set clicked theme to active, others to installed if they were active
+                                this.extensions = this.extensions.map(ext => {
+                                    if (ext.info.slug === item.info.slug) {
+                                        return { ...ext, status: 'active' };
+                                    } else if (ext.type === 'theme' && ext.status === 'active') {
+                                        return { ...ext, status: 'installed' };
+                                    }
+                                    return ext;
+                                });
+                            } else { // It's a plugin
+                                item.status = 'active'; // Directly mutate the item passed by reference
+                            }
+                            // --- MODIFICATION END ---
                         } else {
                             event.target.checked = false; // Revert toggle on failure
                             if (result.data?.guidance_needed) {
@@ -201,25 +239,47 @@ export default function extensionListComponent(initialConfig) {
                     // If it's already installed, we just need to activate it.
                     this.do_ajax('activate_item', item).then(result => {
                         if (result.success) {
-                            item.status = 'active';
                             showNotification(this, result.data?.message || `${item.info.title} activated!`, 'success');
+                            // --- MODIFICATION START: Update state locally ---
+                            if (item.type === 'theme') {
+                                this.extensions = this.extensions.map(ext => {
+                                    if (ext.info.slug === item.info.slug) {
+                                        return { ...ext, status: 'active' };
+                                    } else if (ext.type === 'theme' && ext.status === 'active') {
+                                        return { ...ext, status: 'installed' };
+                                    }
+                                    return ext;
+                                });
+                            } else { // It's a plugin
+                                item.status = 'active';
+                                showNotification(this, result.data?.message || `${item.info.title} activated!`, 'success');
+                            }
+                            // --- MODIFICATION END ---
                         } else {
                             event.target.checked = false; // Revert toggle on failure
                         }
                         this.itemActionInProgress = { ...this.itemActionInProgress, [item.info.slug]: false };
                     });
+                } else {
+                    // If already active (e.g., clicking an already active plugin toggle again)
+                    this.itemActionInProgress = { ...this.itemActionInProgress, [item.info.slug]: false };
                 }
             } else {
-                // --- LOGIC FOR DEACTIVATING ---
-                this.do_ajax('deactivate_item', item).then(result => {
-                    if (result.success) {
-                        item.status = 'installed'; // Update status to 'installed'
-                        showNotification(this, result.data?.message || `${item.info.title} deactivated.`, 'success');
-                    } else {
-                        event.target.checked = true; // Revert toggle on failure
-                    }
+                // --- LOGIC FOR DEACTIVATING (Only for Plugins) ---
+                if (item.type === 'plugin') {
+                    this.do_ajax('deactivate_item', item).then(result => {
+                        if (result.success) {
+                            item.status = 'installed'; // Update status to 'installed'
+                            showNotification(this, result.data?.message || `${item.info.title} deactivated.`, 'success');
+                        } else {
+                            event.target.checked = true; // Revert toggle on failure
+                        }
+                        this.itemActionInProgress = { ...this.itemActionInProgress, [item.info.slug]: false };
+                    });
+                } else {
+                    // This block should theoretically not be reached for themes
                     this.itemActionInProgress = { ...this.itemActionInProgress, [item.info.slug]: false };
-                });
+                }
             }
         },
 
