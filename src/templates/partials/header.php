@@ -45,7 +45,7 @@ $page_title  = $this->framework->get_page_title();
                 </div>
                 <button class="btn btn-primary" @click="saveSettings()" :disabled="isLoading || !hasUnsavedChanges">
                     <span x-show="isLoading" class="spinner-border spinner-border-sm me-1" role="status"></span>
-                    <span class="d-none d-lg-block" x-text="isLoading ? strings.saving : '<?php esc_html_e( 'Save Changes', 'ayecode-settings-framework' ); ?>'"></span>
+                    <span class="d-none d-lg-block" x-text="isLoading ? strings.saving : '<?php esc_html_e( 'Save Changes', 'ayecode-connect' ); ?>'"></span>
                     <span class="d-block d-lg-none" x-html="isLoading ? strings.saving : '<i class=\'fa-solid fa-floppy-disk\'></i>'"></span>
                 </button>
             </div>

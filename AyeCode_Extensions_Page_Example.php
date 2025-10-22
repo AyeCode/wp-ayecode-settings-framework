@@ -116,8 +116,8 @@ class AyeCode_Extensions_Page_Example extends \AyeCode\SettingsFramework\Setting
 						[
 							'id'      => 'membership_key',
 							'type'    => 'text',
-							'label'   => __( 'Membership Key', 'ayecode-settings-framework' ),
-							'description'    => __( 'Enter your membership key to enable one-click installations on local sites.', 'ayecode-settings-framework' ),
+							'label'   => __( 'Membership Key', 'ayecode-connect' ),
+							'description'    => __( 'Enter your membership key to enable one-click installations on local sites.', 'ayecode-connect' ),
 						]
 					]
 				]

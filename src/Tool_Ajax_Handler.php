@@ -92,7 +92,7 @@ class Tool_Ajax_Handler {
 		}
 
 		if ( empty($feed_url) ) {
-			wp_send_json_error(['message' => 'Feed URL not configured for this widget.']);
+			wp_send_json_error(['message' => __( 'Feed URL not configured for this widget.', 'ayecode-connect' )]);
 		}
 
 		$rss = fetch_feed( $feed_url );
@@ -145,7 +145,7 @@ class Tool_Ajax_Handler {
 		$api_url     = $page_config['api_url'] ?? '';
 
 		if ( empty( $category ) || empty( $api_url ) ) {
-			wp_send_json_error( [ 'message' => 'Missing category or API URL configuration.' ] );
+			wp_send_json_error( [ 'message' => __( 'Missing category or API URL configuration.', 'ayecode-connect' ) ] );
 			return;
 		}
 

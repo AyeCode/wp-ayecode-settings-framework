@@ -26,104 +26,104 @@ class Field_Renderer {
 
         return array(
             'text' => array(
-                'label' => __('Text Input', 'ayecode-settings-framework'),
-                'description' => __('Single line text input', 'ayecode-settings-framework')
+                'label' => __('Text Input', 'ayecode-connect'),
+                'description' => __('Single line text input', 'ayecode-connect')
             ),
             'password' => array(
-                'label' => __('Password', 'ayecode-settings-framework'),
-                'description' => __('Password input (hidden text)', 'ayecode-settings-framework')
+                'label' => __('Password', 'ayecode-connect'),
+                'description' => __('Password input (hidden text)', 'ayecode-connect')
             ),
             'textarea' => array(
-                'label' => __('Textarea', 'ayecode-settings-framework'),
-                'description' => __('Multi-line text input', 'ayecode-settings-framework')
+                'label' => __('Textarea', 'ayecode-connect'),
+                'description' => __('Multi-line text input', 'ayecode-connect')
             ),
             'number' => array(
-                'label' => __('Number', 'ayecode-settings-framework'),
-                'description' => __('Numeric input with validation', 'ayecode-settings-framework')
+                'label' => __('Number', 'ayecode-connect'),
+                'description' => __('Numeric input with validation', 'ayecode-connect')
             ),
             'email' => array(
-                'label' => __('Email', 'ayecode-settings-framework'),
-                'description' => __('Email input with validation', 'ayecode-settings-framework')
+                'label' => __('Email', 'ayecode-connect'),
+                'description' => __('Email input with validation', 'ayecode-connect')
             ),
             'url' => array(
-                'label' => __('URL', 'ayecode-settings-framework'),
-                'description' => __('URL input with validation', 'ayecode-settings-framework')
+                'label' => __('URL', 'ayecode-connect'),
+                'description' => __('URL input with validation', 'ayecode-connect')
             ),
             'checkbox' => array(
-                'label' => __('Checkbox', 'ayecode-settings-framework'),
-                'description' => __('Single checkbox (true/false)', 'ayecode-settings-framework')
+                'label' => __('Checkbox', 'ayecode-connect'),
+                'description' => __('Single checkbox (true/false)', 'ayecode-connect')
             ),
             'toggle' => array(
-                'label' => __('Toggle Switch', 'ayecode-settings-framework'),
-                'description' => __('Modern toggle switch (true/false)', 'ayecode-settings-framework')
+                'label' => __('Toggle Switch', 'ayecode-connect'),
+                'description' => __('Modern toggle switch (true/false)', 'ayecode-connect')
             ),
             'radio' => array(
-                'label' => __('Radio Buttons', 'ayecode-settings-framework'),
-                'description' => __('Single selection from multiple options', 'ayecode-settings-framework')
+                'label' => __('Radio Buttons', 'ayecode-connect'),
+                'description' => __('Single selection from multiple options', 'ayecode-connect')
             ),
             'select' => array(
-                'label' => __('Select Dropdown', 'ayecode-settings-framework'),
-                'description' => __('Dropdown selection', 'ayecode-settings-framework')
+                'label' => __('Select Dropdown', 'ayecode-connect'),
+                'description' => __('Dropdown selection', 'ayecode-connect')
             ),
             'multiselect' => array(
-                'label' => __('Multi-Select', 'ayecode-settings-framework'),
-                'description' => __('Multiple selection dropdown', 'ayecode-settings-framework')
+                'label' => __('Multi-Select', 'ayecode-connect'),
+                'description' => __('Multiple selection dropdown', 'ayecode-connect')
             ),
             'checkbox_group' => array(
-                'label' => __('Checkbox Group', 'ayecode-settings-framework'),
-                'description' => __('Multiple checkboxes for multiple selections', 'ayecode-settings-framework')
+                'label' => __('Checkbox Group', 'ayecode-connect'),
+                'description' => __('Multiple checkboxes for multiple selections', 'ayecode-connect')
             ),
             'color' => array(
-                'label' => __('Color Picker', 'ayecode-settings-framework'),
-                'description' => __('Color selection with picker', 'ayecode-settings-framework')
+                'label' => __('Color Picker', 'ayecode-connect'),
+                'description' => __('Color selection with picker', 'ayecode-connect')
             ),
             'file' => array(
-                'label' => __('File Upload', 'ayecode-settings-framework'),
-                'description' => __('File upload with media library', 'ayecode-settings-framework')
+                'label' => __('File Upload', 'ayecode-connect'),
+                'description' => __('File upload with media library', 'ayecode-connect')
             ),
             'image' => array(
-                'label' => __('Image Upload', 'ayecode-settings-framework'),
-                'description' => __('Image upload with preview', 'ayecode-settings-framework')
+                'label' => __('Image Upload', 'ayecode-connect'),
+                'description' => __('Image upload with preview', 'ayecode-connect')
             ),
             'range' => array(
-                'label' => __('Range Slider', 'ayecode-settings-framework'),
-                'description' => __('Numeric range with slider', 'ayecode-settings-framework')
+                'label' => __('Range Slider', 'ayecode-connect'),
+                'description' => __('Numeric range with slider', 'ayecode-connect')
             ),
             'date' => array(
-                'label' => __('Date Picker', 'ayecode-settings-framework'),
-                'description' => __('Date selection', 'ayecode-settings-framework')
+                'label' => __('Date Picker', 'ayecode-connect'),
+                'description' => __('Date selection', 'ayecode-connect')
             ),
             'time' => array(
-                'label' => __('Time Picker', 'ayecode-settings-framework'),
-                'description' => __('Time selection', 'ayecode-settings-framework')
+                'label' => __('Time Picker', 'ayecode-connect'),
+                'description' => __('Time selection', 'ayecode-connect')
             ),
             'datetime' => array(
-                'label' => __('DateTime Picker', 'ayecode-settings-framework'),
-                'description' => __('Date and time selection', 'ayecode-settings-framework')
+                'label' => __('DateTime Picker', 'ayecode-connect'),
+                'description' => __('Date and time selection', 'ayecode-connect')
             ),
             'accordion' => array(
-	            'label' => __('Accordion', 'ayecode-settings-framework'),
-	            'description' => __('A collapsible container for field groups.', 'ayecode-settings-framework')
+	            'label' => __('Accordion', 'ayecode-connect'),
+	            'description' => __('A collapsible container for field groups.', 'ayecode-connect')
             ),
             'group' => array(
-                'label' => __('Field Group', 'ayecode-settings-framework'),
-                'description' => __('Group of fields with collapsible header', 'ayecode-settings-framework')
+                'label' => __('Field Group', 'ayecode-connect'),
+                'description' => __('Group of fields with collapsible header', 'ayecode-connect')
             ),
             'repeater' => array(
-                'label' => __('Repeater', 'ayecode-settings-framework'),
-                'description' => __('Repeatable group of fields', 'ayecode-settings-framework')
+                'label' => __('Repeater', 'ayecode-connect'),
+                'description' => __('Repeatable group of fields', 'ayecode-connect')
             ),
             'html' => array(
-                'label' => __('Custom HTML', 'ayecode-settings-framework'),
-                'description' => __('Custom HTML content', 'ayecode-settings-framework')
+                'label' => __('Custom HTML', 'ayecode-connect'),
+                'description' => __('Custom HTML content', 'ayecode-connect')
             ),
             'separator' => array(
-                'label' => __('Separator', 'ayecode-settings-framework'),
-                'description' => __('Visual separator line', 'ayecode-settings-framework')
+                'label' => __('Separator', 'ayecode-connect'),
+                'description' => __('Visual separator line', 'ayecode-connect')
             ),
             'heading' => array(
-                'label' => __('Heading', 'ayecode-settings-framework'),
-                'description' => __('Section heading', 'ayecode-settings-framework')
+                'label' => __('Heading', 'ayecode-connect'),
+                'description' => __('Section heading', 'ayecode-connect')
             )
         );
     }
@@ -143,7 +143,7 @@ class Field_Renderer {
             if (!isset($field[$prop]) || empty($field[$prop])) {
                 return new \WP_Error(
                     'missing_property',
-                    sprintf(__('Field is missing required property: %s', 'ayecode-settings-framework'), $prop)
+                    sprintf(__('Field is missing required property: %s', 'ayecode-connect'), $prop)
                 );
             }
         }
@@ -154,7 +154,7 @@ class Field_Renderer {
         if (!in_array($field['type'], $supported_types, true)) {
             return new \WP_Error(
                 'invalid_field_type',
-                sprintf(__('Unsupported field type: %s', 'ayecode-settings-framework'), $field['type'])
+                sprintf(__('Unsupported field type: %s', 'ayecode-connect'), $field['type'])
             );
         }
 
@@ -162,7 +162,7 @@ class Field_Renderer {
         if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $field['id'])) {
             return new \WP_Error(
                 'invalid_field_id',
-                __('Field ID must contain only letters, numbers, and underscores, and cannot start with a number.', 'ayecode-settings-framework')
+                __('Field ID must contain only letters, numbers, and underscores, and cannot start with a number.', 'ayecode-connect')
             );
         }
 
@@ -176,7 +176,7 @@ class Field_Renderer {
                 if (!isset($field['options']) || !is_array($field['options']) || empty($field['options'])) {
                     return new \WP_Error(
                         'missing_options',
-                        sprintf(__('Field type "%s" requires an "options" array.', 'ayecode-settings-framework'), $field['type'])
+                        sprintf(__('Field type "%s" requires an "options" array.', 'ayecode-connect'), $field['type'])
                     );
                 }
                 break;
@@ -186,7 +186,7 @@ class Field_Renderer {
                 if (isset($field['min']) && isset($field['max']) && $field['min'] > $field['max']) {
                     return new \WP_Error(
                         'invalid_range',
-                        __('Minimum value cannot be greater than maximum value.', 'ayecode-settings-framework')
+                        __('Minimum value cannot be greater than maximum value.', 'ayecode-connect')
                     );
                 }
                 break;
@@ -196,7 +196,7 @@ class Field_Renderer {
                 if (!isset($field['fields']) || !is_array($field['fields']) || empty($field['fields'])) {
                     return new \WP_Error(
                         'missing_fields',
-                        sprintf(__('Field type "%s" requires a "fields" array.', 'ayecode-settings-framework'), $field['type'])
+                        sprintf(__('Field type "%s" requires a "fields" array.', 'ayecode-connect'), $field['type'])
                     );
                 }
                 break;
@@ -373,7 +373,7 @@ class Field_Renderer {
      */
     public static function get_wp_pages_options() {
 
-        $pages = array('' => __('Select a page...', 'ayecode-settings-framework'));
+        $pages = array('' => __('Select a page...', 'ayecode-connect'));
 
         $wp_pages = get_pages(array(
             'sort_column' => 'post_title',
@@ -395,7 +395,7 @@ class Field_Renderer {
      */
     public static function get_wp_terms_options($taxonomy = 'category') {
 
-        $terms = array('' => __('Select a category...', 'ayecode-settings-framework'));
+        $terms = array('' => __('Select a category...', 'ayecode-connect'));
 
         $wp_terms = get_terms(array(
             'taxonomy' => $taxonomy,

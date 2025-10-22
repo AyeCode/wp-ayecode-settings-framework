@@ -192,7 +192,7 @@ abstract class Settings_Framework {
 	public function __construct() {
 		// Ensure required properties are set by the child class.
 		if ( empty( $this->option_name ) || empty( $this->page_slug ) ) {
-			wp_die( 'Settings Framework: The extending class must define the protected properties "$option_name" and "$page_slug".' );
+			wp_die( __( 'Settings Framework: The extending class must define the protected properties "$option_name" and "$page_slug".', 'ayecode-connect' ) );
 		}
 		$this->init();
 	}
@@ -367,14 +367,14 @@ abstract class Settings_Framework {
 				'file_upload_ajax_action' => 'asf_temp_file_upload_' . $this->page_slug,
 				'file_delete_ajax_action' => 'asf_temp_file_delete_' . $this->page_slug,
 				'strings'        => [
-					'saving'            => __( 'Saving...', 'ayecode-settings-framework' ),
-					'saved'             => __( 'Settings saved successfully!', 'ayecode-settings-framework' ),
-					'error'             => __( 'Error saving settings. Please try again.', 'ayecode-settings-framework' ),
-					'unsaved_changes'   => __( 'You have unsaved changes', 'ayecode-settings-framework' ),
-					'confirm_discard'   => __( 'Are you sure you want to discard your changes?', 'ayecode-settings-framework' ),
-					'search_placeholder' => __( 'Quick search...', 'ayecode-settings-framework' ),
-					'no_results'        => __( 'No settings found', 'ayecode-settings-framework' ),
-					'clear_search'      => __( 'Clear search', 'ayecode-settings-framework' ),
+					'saving'            => __( 'Saving...', 'ayecode-connect' ),
+					'saved'             => __( 'Settings saved successfully!', 'ayecode-connect' ),
+					'error'             => __( 'Error saving settings. Please try again.', 'ayecode-connect' ),
+					'unsaved_changes'   => __( 'You have unsaved changes', 'ayecode-connect' ),
+					'confirm_discard'   => __( 'Are you sure you want to discard your changes?', 'ayecode-connect' ),
+					'search_placeholder' => __( 'Quick search...', 'ayecode-connect' ),
+					'no_results'        => __( 'No settings found', 'ayecode-connect' ),
+					'clear_search'      => __( 'Clear search', 'ayecode-connect' ),
 				],
 			]
 		);
@@ -454,13 +454,13 @@ abstract class Settings_Framework {
 	public function handle_tool_action() {
 		check_ajax_referer( 'asf_tool_action', 'nonce' );
 		if ( ! current_user_can( $this->capability ) ) {
-			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+			wp_send_json_error( [ 'message' => __( 'Permission denied.', 'ayecode-connect' ) ] );
 			wp_die(); // Ensure execution stops
 		}
 
 		$tool_action = isset( $_POST['tool_action'] ) ? sanitize_key( $_POST['tool_action'] ) : '';
 		if ( empty( $tool_action ) ) {
-			wp_send_json_error( [ 'message' => 'No tool action specified.' ] );
+			wp_send_json_error( [ 'message' => __( 'No tool action specified.', 'ayecode-connect' ) ] );
 			wp_die(); // Ensure execution stops
 		}
 
@@ -501,7 +501,7 @@ abstract class Settings_Framework {
 		// --- Fallback Error ---
 		// If we reach this point, no handler sent a response.
 		if ( ! headers_sent() ) {
-			wp_send_json_error( [ 'message' => 'Unknown tool action specified or no handler responded.' ] );
+			wp_send_json_error( [ 'message' => __( 'Unknown tool action specified or no handler responded.', 'ayecode-connect' ) ] );
 		}
 		wp_die(); // Final fallback to ensure script termination
 	}
@@ -513,11 +513,11 @@ abstract class Settings_Framework {
 	public function handle_temp_file_upload() {
 		check_ajax_referer( 'asf_tool_action', 'nonce' );
 		if ( ! current_user_can( $this->capability ) ) {
-			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+			wp_send_json_error( [ 'message' => __( 'Permission denied.', 'ayecode-connect' ) ] );
 		}
 
 		if ( empty( $_FILES['import_file'] ) ) {
-			wp_send_json_error( [ 'message' => 'No file was uploaded.' ] );
+			wp_send_json_error( [ 'message' => __( 'No file was uploaded.', 'ayecode-connect' ) ] );
 		}
 
 		$file = $_FILES['import_file'];
@@ -535,7 +535,7 @@ abstract class Settings_Framework {
 
 		// wp_check_filetype_and_ext returns false for both ext and type if the file type is not allowed.
 		if ( false === $file_info['ext'] || false === $file_info['type'] ) {
-			wp_send_json_error( [ 'message' => 'Invalid file type. Only .csv and .json files are allowed.' ] );
+			wp_send_json_error( [ 'message' => __( 'Invalid file type. Only .csv and .json files are allowed.', 'ayecode-connect' ) ] );
 		}
 
 		// Prepare the temporary directory.
@@ -557,10 +557,10 @@ abstract class Settings_Framework {
 		if ( move_uploaded_file( $file['tmp_name'], $target_path ) ) {
 			wp_send_json_success( [
 				'filename'  => $new_filename,
-				'message'   => 'File uploaded successfully. Ready to import.',
+				'message'   => __( 'File uploaded successfully. Ready to import.', 'ayecode-connect' ),
 			] );
 		} else {
-			wp_send_json_error( [ 'message' => 'Could not move uploaded file.' ] );
+			wp_send_json_error( [ 'message' => __( 'Could not move uploaded file.', 'ayecode-connect' ) ] );
 		}
 	}
 
@@ -571,12 +571,12 @@ abstract class Settings_Framework {
 	public function handle_temp_file_delete() {
 		check_ajax_referer( 'asf_tool_action', 'nonce' );
 		if ( ! current_user_can( $this->capability ) ) {
-			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+			wp_send_json_error( [ 'message' => __( 'Permission denied.', 'ayecode-connect' ) ] );
 		}
 
 		$filename = isset($_POST['filename']) ? sanitize_file_name($_POST['filename']) : '';
 		if (empty($filename)) {
-			wp_send_json_error(  [ 'message' => 'No filename provided.' ] );
+			wp_send_json_error(  [ 'message' => __( 'No filename provided.', 'ayecode-connect' ) ] );
 		}
 
 		$file_path = AYECODE_SF_IMPORT_TEMP_DIR . $this->page_slug . '/' . $filename;
@@ -586,10 +586,10 @@ abstract class Settings_Framework {
 			if (wp_delete_file($file_path)) {
 				wp_send_json_success();
 			} else {
-				wp_send_json_error( [ 'message' => 'Could not delete the file.' ] );
+				wp_send_json_error( [ 'message' => __( 'Could not delete the file.', 'ayecode-connect' ) ] );
 			}
 		} else {
-			wp_send_json_error(  [ 'message' => 'Invalid file or file not found.' ]  );
+			wp_send_json_error(  [ 'message' => __( 'Invalid file or file not found.', 'ayecode-connect' ) ]  );
 		}
 	}
 
@@ -600,13 +600,13 @@ abstract class Settings_Framework {
 	public function handle_load_content_pane() {
 		check_ajax_referer( 'asf_tool_action', 'nonce' ); // Use the same nonce for simplicity
 		if ( ! current_user_can( $this->capability ) ) {
-			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+			wp_send_json_error( [ 'message' => __( 'Permission denied.', 'ayecode-connect' ) ] );
 			wp_die();
 		}
 
 		$content_action = isset( $_POST['content_action'] ) ? sanitize_key( $_POST['content_action'] ) : '';
 		if ( empty( $content_action ) ) {
-			wp_send_json_error( [ 'message' => 'No content action specified.' ] );
+			wp_send_json_error( [ 'message' => __( 'No content action specified.', 'ayecode-connect' ) ] );
 			wp_die();
 		}
 
@@ -618,7 +618,7 @@ abstract class Settings_Framework {
 				$html = $status_handler->generate_html();
 				wp_send_json_success( [ 'html' => $html ] );
 			} else {
-				wp_send_json_error( [ 'message' => 'System Status Handler class not found.' ] );
+				wp_send_json_error( [ 'message' => __( 'System Status Handler class not found.', 'ayecode-connect' ) ] );
 			}
 			wp_die(); // Execution stops here for this action
 		}
@@ -630,7 +630,7 @@ abstract class Settings_Framework {
 
 		// --- Fallback Error if Hook Didn't Respond ---
 		if ( ! headers_sent() ) {
-			wp_send_json_error( [ 'message' => 'Unknown content action specified or no handler responded.' ] );
+			wp_send_json_error( [ 'message' => __( 'Unknown content action specified or no handler responded.', 'ayecode-connect' ) ] );
 		}
 		wp_die();
 	}
@@ -686,7 +686,7 @@ abstract class Settings_Framework {
 		$settings_link = sprintf(
 			'<a href="%s">%s</a>',
 			admin_url( 'admin.php?page=' . $this->page_slug ),
-			__( 'Settings', 'ayecode-settings-framework' )
+			__( 'Settings', 'ayecode-connect' )
 		);
 		array_unshift( $links, $settings_link );
 

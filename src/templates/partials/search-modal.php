@@ -22,8 +22,8 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div x-show="!searchQuery" class="text-center text-muted p-5"><p><?php esc_html_e( 'Start typing to search for settings.', 'ayecode-settings-framework' ); ?></p></div>
-                <div x-show="searchQuery && groupedSearchResults.length === 0" class="text-center text-muted p-5" x-cloak><p><?php esc_html_e( 'No results found for', 'ayecode-settings-framework' ); ?> <strong x-text="searchQuery"></strong></p></div>
+                <div x-show="!searchQuery" class="text-center text-muted p-5"><p><?php esc_html_e( 'Start typing to search for settings.', 'ayecode-connect' ); ?></p></div>
+                <div x-show="searchQuery && groupedSearchResults.length === 0" class="text-center text-muted p-5" x-cloak><p><?php esc_html_e( 'No results found for', 'ayecode-connect' ); ?> <strong x-text="searchQuery"></strong></p></div>
                 <div x-show="groupedSearchResults.length > 0" x-cloak>
                     <template x-for="group in groupedSearchResults" :key="group.groupTitle">
                         <div class="mb-3">

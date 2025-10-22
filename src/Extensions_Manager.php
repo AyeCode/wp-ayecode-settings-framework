@@ -105,7 +105,7 @@ class Extensions_Manager {
 				$this->$handler_method();
 			}
 		} else {
-			wp_send_json_error( [ 'message' => 'Unknown extension action.' ] );
+			wp_send_json_error( [ 'message' => __( 'Unknown extension action.', 'ayecode-connect' ) ] );
 		}
 	}
 
@@ -116,7 +116,7 @@ class Extensions_Manager {
 	 */
 	public function handle_connect_site() {
 		if ( ! current_user_can( 'install_plugins' ) || ! current_user_can( 'activate_plugins' ) ) {
-			wp_send_json_error( [ 'message' => 'You do not have permission to install and activate plugins.' ] );
+			wp_send_json_error( [ 'message' => __( 'You do not have permission to install and activate plugins.', 'ayecode-connect' ) ] );
 		}
 
 		// Define plugin slug and main file
@@ -128,7 +128,7 @@ class Extensions_Manager {
 			$settings = \AyeCode_Connect_Settings::instance();
 			if ( method_exists( $settings->client, 'is_registered' ) && $settings->client->is_registered() ) {
 				wp_send_json_success( [
-					'message' => __( 'Site is already connected.', 'ayecode-settings-framework' ),
+					'message' => __( 'Site is already connected.', 'ayecode-connect' ),
 					'already_connected' => true, // Add a flag for the frontend
 				] );
 				return;
@@ -138,7 +138,7 @@ class Extensions_Manager {
 		// Check if plugin is already active
 		if ( is_plugin_active( $plugin_main_file ) ) {
 			// It's active but not registered, so we just send success to proceed to the next step.
-			wp_send_json_success( [ 'message' => __( 'AyeCode Connect is active. Proceeding to connect...', 'ayecode-settings-framework' ) ] );
+			wp_send_json_success( [ 'message' => __( 'AyeCode Connect is active. Proceeding to connect...', 'ayecode-connect' ) ] );
 			return;
 		}
 
@@ -153,7 +153,7 @@ class Extensions_Manager {
 			if ( is_wp_error( $result ) ) {
 				wp_send_json_error( [ 'message' => $result->get_error_message() ] );
 			}
-			wp_send_json_success( [ 'message' => __( 'AyeCode Connect activated successfully. Redirecting...', 'ayecode-settings-framework' ) ] );
+			wp_send_json_success( [ 'message' => __( 'AyeCode Connect activated successfully. Redirecting...', 'ayecode-connect' ) ] );
 			return;
 		}
 
@@ -179,7 +179,7 @@ class Extensions_Manager {
 		}
 
 		wp_send_json_success( [
-			'message' => __( 'AyeCode Connect installed and activated successfully. Redirecting...', 'ayecode-settings-framework' )
+			'message' => __( 'AyeCode Connect installed and activated successfully. Redirecting...', 'ayecode-connect' )
 		] );
 	}
 
@@ -189,7 +189,7 @@ class Extensions_Manager {
 	 */
 	public function handle_get_connect_url() {
 		if ( ! class_exists( 'AyeCode_Connect_Settings' ) ) {
-			wp_send_json_error( [ 'message' => 'Could not find AyeCode_Connect_Settings class. Please ensure AyeCode Connect is active.' ] );
+			wp_send_json_error( [ 'message' => __( 'Could not find AyeCode_Connect_Settings class. Please ensure AyeCode Connect is active.', 'ayecode-connect' ) ] );
 		}
 
 		$AyeCode_Connect_Settings = \AyeCode_Connect_Settings::instance();
@@ -210,7 +210,7 @@ class Extensions_Manager {
 		$item_data = isset( $_POST['item_data'] ) ? json_decode( stripslashes( $_POST['item_data'] ) ) : null;
 
 		if ( ! $item_data || ! isset( $item_data->info->source ) ) {
-			wp_send_json_error( [ 'message' => 'Invalid item data provided.' ] );
+			wp_send_json_error( [ 'message' => __( 'Invalid item data provided.', 'ayecode-connect' ) ] );
 		}
 
 		// This hook allows other plugins (like a licensing client) to intercept the installation.
@@ -224,7 +224,7 @@ class Extensions_Manager {
 
 		if ( $pre_install_result === true ) {
 			// Another plugin handled the installation and activation. We're done.
-			wp_send_json_success( [ 'message' => 'Extension activated.' ] );
+			wp_send_json_success( [ 'message' => __( 'Extension activated.', 'ayecode-connect' ) ] );
 			return;
 		}
 
@@ -232,7 +232,7 @@ class Extensions_Manager {
 			$this->handle_install_and_activate_wp_org_item();
 		} else {
 			// If no hook intercepted it, and it's not from wp.org, then we need user guidance.
-			wp_send_json_error( [ 'guidance_needed' => true, 'message' => 'This is a premium extension.' ] );
+			wp_send_json_error( [ 'guidance_needed' => true, 'message' => __( 'This is a premium extension.', 'ayecode-connect' ) ] );
 		}
 	}
 
@@ -243,17 +243,17 @@ class Extensions_Manager {
 		$install_result = $this->handle_install_wp_org_item( true );
 
 		if ( ! $install_result['success'] ) {
-			wp_send_json_error( [ 'message' => 'Installation failed: ' . $install_result['message'] ] );
+			wp_send_json_error( [ 'message' => sprintf( __( 'Installation failed: %s', 'ayecode-connect' ), $install_result['message'] ) ] );
 		}
 
 		$activate_result = $this->handle_activate_item( true );
 
 		if ( ! $activate_result['success'] ) {
 			// Even if activation fails, installation succeeded, which is a partial success.
-			wp_send_json_error( [ 'message' => 'Activation failed: ' . $activate_result['message'] ] );
+			wp_send_json_error( [ 'message' => sprintf( __( 'Activation failed: %s', 'ayecode-connect' ), $activate_result['message'] ) ] );
 		}
 
-		wp_send_json_success( [ 'message' => 'Item installed and activated successfully.' ] );
+		wp_send_json_success( [ 'message' => __( 'Item installed and activated successfully.', 'ayecode-connect' ) ] );
 	}
 
 	/**
@@ -263,7 +263,7 @@ class Extensions_Manager {
 	 */
 	private function handle_install_wp_org_item( $return_result = false ) {
 		if ( ! current_user_can( 'install_plugins' ) && ! current_user_can( 'install_themes' ) ) {
-			$message = 'You do not have permission to install items.';
+			$message = __( 'You do not have permission to install items.', 'ayecode-connect' );
 			if ( $return_result ) return [ 'success' => false, 'message' => $message ];
 			wp_send_json_error( [ 'message' => $message ] );
 		}
@@ -273,7 +273,7 @@ class Extensions_Manager {
 		$type = $item_data->type ?? 'plugin';
 
 		if ( empty( $slug ) ) {
-			$message = 'Item slug not provided.';
+			$message = __( 'Item slug not provided.', 'ayecode-connect' );
 			if ( $return_result ) return [ 'success' => false, 'message' => $message ];
 			wp_send_json_error( [ 'message' => $message ] );
 		}
@@ -305,7 +305,7 @@ class Extensions_Manager {
 		}
 
 		if ( $return_result ) return [ 'success' => true ];
-		wp_send_json_success( [ 'message' => ucfirst($type) . ' installed successfully.' ] );
+		wp_send_json_success( [ 'message' => sprintf( __( '%s installed successfully.', 'ayecode-connect' ), ucfirst($type) ) ] );
 	}
 
 	/**
@@ -319,7 +319,7 @@ class Extensions_Manager {
 		$type = $item_data->type ?? 'plugin';
 
 		if ( empty( $slug ) ) {
-			$message = 'Item slug not provided.';
+			$message = __( 'Item slug not provided.', 'ayecode-connect' );
 			if ( $return_result ) return [ 'success' => false, 'message' => $message ];
 			wp_send_json_error( [ 'message' => $message ] );
 		}
@@ -327,14 +327,14 @@ class Extensions_Manager {
 		$result = null;
 		if ( $type === 'theme' ) {
 			if ( ! current_user_can( 'switch_themes' ) ) {
-				$message = 'You do not have permission to activate themes.';
+				$message = __( 'You do not have permission to activate themes.', 'ayecode-connect' );
 				if ( $return_result ) return [ 'success' => false, 'message' => $message ];
 				wp_send_json_error( [ 'message' => $message ] );
 			}
 			switch_theme( $slug );
 		} else {
 			if ( ! current_user_can( 'activate_plugins' ) ) {
-				$message = 'You do not have permission to activate plugins.';
+				$message = __( 'You do not have permission to activate plugins.', 'ayecode-connect' );
 				if ( $return_result ) return [ 'success' => false, 'message' => $message ];
 				wp_send_json_error( [ 'message' => $message ] );
 			}
@@ -349,7 +349,7 @@ class Extensions_Manager {
 		}
 
 		if ( $return_result ) return [ 'success' => true ];
-		wp_send_json_success( [ 'message' => ucfirst($type) . ' activated.' ] );
+		wp_send_json_success( [ 'message' => sprintf( __( '%s activated.', 'ayecode-connect' ), ucfirst($type) ) ] );
 	}
 
 	/**
@@ -361,19 +361,19 @@ class Extensions_Manager {
 		$type = $item_data->type ?? 'plugin';
 
 		if ( empty( $slug ) ) {
-			wp_send_json_error( [ 'message' => 'Item slug not provided.' ] );
+			wp_send_json_error( [ 'message' => __( 'Item slug not provided.', 'ayecode-connect' ) ] );
 		}
 
 		if ( $type === 'theme' ) {
-			wp_send_json_error( [ 'message' => 'Theme deactivation is not supported from this screen.' ] );
+			wp_send_json_error( [ 'message' => __( 'Theme deactivation is not supported from this screen.', 'ayecode-connect' ) ] );
 		} else {
 			if ( ! current_user_can( 'activate_plugins' ) ) {
-				wp_send_json_error( [ 'message' => 'You do not have permission to deactivate plugins.' ] );
+				wp_send_json_error( [ 'message' => __( 'You do not have permission to deactivate plugins.', 'ayecode-connect' ) ] );
 			}
 			$main_file = $slug . '/' . $slug . '.php';
 			deactivate_plugins( $main_file );
 
-			wp_send_json_success( [ 'message' => 'Plugin deactivated.' ] );
+			wp_send_json_success( [ 'message' => __( 'Plugin deactivated.', 'ayecode-connect' ) ] );
 		}
 	}
 }
