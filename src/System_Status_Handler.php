@@ -234,10 +234,10 @@ class System_Status_Handler {
                     // Apply formatting based on key - Apply ALL relevant formatting here
                     switch ($key) {
                         case 'WP Memory Limit': echo wp_kses_post($this->format_memory_limit($value)); break;
-                        case 'WP Debug Mode': echo $value ? '<span class="badge bg-warning-subtle text-warning-emphasis">Active</span>' : '<span class="badge bg-success-subtle text-success-emphasis">Inactive</span>'; break;
-                        case 'WP Cron': echo $value ? '<span class="badge bg-success-subtle text-success-emphasis">Enabled</span>' : '<span class="badge bg-warning-subtle text-warning-emphasis">Disabled</span>'; break;
+                        case 'WP Debug Mode': echo $value ? '<span class="badge bg-warning-subtle text-warning-emphasis">' . esc_html__('Active', 'ayecode-connect') . '</span>' : '<span class="badge bg-success-subtle text-success-emphasis">' . esc_html__('Inactive', 'ayecode-connect') . '</span>'; break;
+                        case 'WP Cron': echo $value ? '<span class="badge bg-success-subtle text-success-emphasis">' . esc_html__('Enabled', 'ayecode-connect') . '</span>' : '<span class="badge bg-warning-subtle text-warning-emphasis">' . esc_html__('Disabled', 'ayecode-connect') . '</span>'; break;
                         case 'WP Multisite':
-                        case 'SUHOSIN Installed': echo $value ? '<span class="badge bg-success-subtle text-success-emphasis">Yes</span>' : '<span class="badge bg-secondary-subtle text-secondary-emphasis">No</span>'; break;
+                        case 'SUHOSIN Installed': echo $value ? '<span class="badge bg-success-subtle text-success-emphasis">' . esc_html__('Yes', 'ayecode-connect') . '</span>' : '<span class="badge bg-secondary-subtle text-secondary-emphasis">' . esc_html__('No', 'ayecode-connect') . '</span>'; break;
                         case 'PHP Version': echo wp_kses_post($this->format_php_version($value)); break;
                         case 'MySQL Version': echo wp_kses_post($this->format_mysql_version($value)); break;
                         case 'Default Timezone': echo wp_kses_post($this->format_default_timezone($value)); break;
@@ -248,7 +248,7 @@ class System_Status_Handler {
                         case 'SoapClient':
                         case 'DOMDocument':
                         case 'GZip':
-                        case 'Multibyte String': echo $value ? '<span class="badge bg-success-subtle text-success-emphasis">Enabled</span>' : '<span class="badge bg-danger-subtle text-danger-emphasis">Disabled</span>'; break;
+                        case 'Multibyte String': echo $value ? '<span class="badge bg-success-subtle text-success-emphasis">' . esc_html__('Enabled', 'ayecode-connect') . '</span>' : '<span class="badge bg-danger-subtle text-danger-emphasis">' . esc_html__('Disabled', 'ayecode-connect') . '</span>'; break;
                         case 'Remote Post Status':
                         case 'Remote Get Status':
                             $response_key = str_replace(' Status', ' Response', $key); // Use space version for lookup
@@ -262,10 +262,10 @@ class System_Status_Handler {
                 break;
 
             case 'database':
-                echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">Database Prefix</dt>';
+                echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">' . esc_html__('Database Prefix', 'ayecode-connect') . '</dt>';
                 echo '<dd class="col-sm-7 border-bottom pb-2 mb-2">' . esc_html($data_to_render['database_prefix'] ?? 'N/A') . '</dd>';
                 $total_size = $data_to_render['database_size'] ?? ['data' => 0, 'index' => 0];
-                echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">Total Database Size</dt>';
+                echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">' . esc_html__('Total Database Size', 'ayecode-connect') . '</dt>';
                 echo '<dd class="col-sm-7 border-bottom pb-2 mb-2">' . sprintf('%.2fMB', ($total_size['data'] ?? 0) + ($total_size['index'] ?? 0)) . '</dd>';
                 $tables_data = $data_to_render['database_tables'] ?? [];
                 $this->render_db_tables_html('Framework Tables', $tables_data['framework'] ?? []);
@@ -274,7 +274,7 @@ class System_Status_Handler {
 
             case 'post_types':
                 if (empty($data_to_render) || !is_array($data_to_render)) {
-                    echo '<dt class="col-12">No post type data available.</dt>';
+                    echo '<dt class="col-12">' . esc_html__('No post type data available.', 'ayecode-connect') . '</dt>';
                 } else {
                     // Sort alphabetically by type before display
                     usort($data_to_render, function ($a, $b) {
@@ -290,7 +290,7 @@ class System_Status_Handler {
 
             case 'active_plugins':
                 if (empty($data_to_render) || !is_array($data_to_render)) {
-                    echo '<dt class="col-12">No active plugins found.</dt>';
+                    echo '<dt class="col-12">' . esc_html__('No active plugins found.', 'ayecode-connect') . '</dt>';
                 } else {
                     foreach ($data_to_render as $plugin) {
                         if (!is_array($plugin)) continue;
@@ -312,17 +312,17 @@ class System_Status_Handler {
 
             case 'theme':
                 $theme = $data_to_render; // Already an array
-                echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">Name</dt>';
+                echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">' . esc_html__('Name', 'ayecode-connect') . '</dt>';
                 echo '<dd class="col-sm-7 border-bottom pb-2 mb-2">' . esc_html($theme['name'] ?? 'N/A') . '</dd>';
                 $version_string = esc_html($theme['version'] ?? 'N/A');
                 if (!empty($theme['version_latest']) && version_compare($theme['version_latest'], $theme['version'], '>')) { $version_string .= ' - <span class="badge bg-warning-subtle text-warning-emphasis">' . sprintf(__('Update: %s', 'ayecode-connect'), esc_html($theme['version_latest'])) . '</span>'; }
-                echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">Version</dt>';
+                echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">' . esc_html__('Version', 'ayecode-connect') . '</dt>';
                 echo '<dd class="col-sm-7 border-bottom pb-2 mb-2">' . wp_kses_post($version_string) . '</dd>';
-                echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">Author</dt>';
-                $author_html = esc_html($theme['author_name'] ?? 'Unknown');
+                echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">' . esc_html__('Author', 'ayecode-connect') . '</dt>';
+                $author_html = esc_html($theme['author_name'] ?? __('Unknown', 'ayecode-connect'));
                 if (!empty($theme['author_url'])) { $author_html = '<a href="' . esc_url($theme['author_url']) . '" target="_blank" rel="noopener">' . $author_html . '</a>'; }
                 echo '<dd class="col-sm-7 border-bottom pb-2 mb-2">' . wp_kses_post($author_html) . '</dd>';
-                echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">Child Theme</dt>';
+                echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">' . esc_html__('Child Theme', 'ayecode-connect') . '</dt>';
                 echo '<dd class="col-sm-7 border-bottom pb-2 mb-2">' . (($theme['is_child_theme'] ?? false) ? '<span class="badge bg-success-subtle text-success-emphasis">Yes</span>' : '<span class="badge bg-secondary-subtle text-secondary-emphasis">No</span>') . '</dd>';
                 if ($theme['is_child_theme'] ?? false) {
                     echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">Parent Theme Name</dt>';
@@ -346,10 +346,10 @@ class System_Status_Handler {
                 break;
 
             case 'security':
-                echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">Secure Connection (HTTPS)</dt>';
-                echo '<dd class="col-sm-7 border-bottom pb-2 mb-2">' . (($data_to_render['secure_connection'] ?? false) ? '<span class="badge bg-success-subtle text-success-emphasis">Active</span>' : '<span class="badge bg-danger-subtle text-danger-emphasis">Inactive</span>') . '</dd>';
-                echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">Hide Errors From Visitors</dt>';
-                echo '<dd class="col-sm-7 border-bottom pb-2 mb-2">' . (($data_to_render['hide_errors'] ?? false) ? '<span class="badge bg-success-subtle text-success-emphasis">Yes</span>' : '<span class="badge bg-warning-subtle text-warning-emphasis">No (Recommended: Yes)</span>') . '</dd>';
+                echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">' . esc_html__('Secure Connection (HTTPS)', 'ayecode-connect') . '</dt>';
+                echo '<dd class="col-sm-7 border-bottom pb-2 mb-2">' . (($data_to_render['secure_connection'] ?? false) ? '<span class="badge bg-success-subtle text-success-emphasis">' . esc_html__('Active', 'ayecode-connect') . '</span>' : '<span class="badge bg-danger-subtle text-danger-emphasis">' . esc_html__('Inactive', 'ayecode-connect') . '</span>') . '</dd>';
+                echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">' . esc_html__('Hide Errors From Visitors', 'ayecode-connect') . '</dt>';
+                echo '<dd class="col-sm-7 border-bottom pb-2 mb-2">' . (($data_to_render['hide_errors'] ?? false) ? '<span class="badge bg-success-subtle text-success-emphasis">' . esc_html__('Yes', 'ayecode-connect') . '</span>' : '<span class="badge bg-warning-subtle text-warning-emphasis">' . esc_html__('No (Recommended: Yes)', 'ayecode-connect') . '</span>') . '</dd>';
                 break;
 
             case 'settings':
