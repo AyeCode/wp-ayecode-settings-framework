@@ -388,7 +388,7 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                 'type'         => 'action_button',
                                                 'label'        => __( 'Clear Cache (Success Example)', 'ayecode-connect' ),
                                                 'description'  => __( 'This button will simulate a successful background task.', 'ayecode-connect' ),
-                                                'button_text'  => __( 'Clear Cache' ),
+                                                'button_text'  => __( 'Clear Cache', 'ayecode-connect' ),
                                                 'button_class' => 'btn-primary',
                                                 'ajax_action'  => 'demo_clear_cache_success', // The unique ID for this action.
                                         ],
@@ -397,7 +397,7 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                 'type'         => 'action_button',
                                                 'label'        => __( 'Regenerate Thumbnails (Progress Example)', 'ayecode-connect' ),
                                                 'description'  => __( 'This button will simulate a task that reports progress.', 'ayecode-connect' ),
-                                                'button_text'  => __( 'Regenerate' ),
+                                                'button_text'  => __( 'Regenerate', 'ayecode-connect' ),
                                                 'button_class' => 'btn-secondary',
                                                 'ajax_action'  => 'demo_regen_thumbs_progress', // The unique ID for this action.
                                         ],
