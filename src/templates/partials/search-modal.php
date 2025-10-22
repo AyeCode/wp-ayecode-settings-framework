@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                     <span class="input-group-text bg-transparent border-0 border-bottom rounded-0"><i class="fa-solid fa-magnifying-glass"></i></span>
                     <input type="search" class="form-control bg-transparent border-0 border-bottom rounded-0" id="asf-search-input" :placeholder="strings.search_placeholder" x-model.debounce.300ms="searchQuery">
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php esc_attr_e( 'Close', 'ayecode-connect' ); ?>"></button>
             </div>
             <div class="modal-body">
                 <div x-show="!searchQuery" class="text-center text-muted p-5"><p><?php esc_html_e( 'Start typing to search for settings.', 'ayecode-connect' ); ?></p></div>

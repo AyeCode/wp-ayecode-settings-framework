@@ -29,8 +29,8 @@ $page_title  = $this->framework->get_page_title();
         <div class="mx-2 animate-scale d-inline-flex">
             <button @click="toggleTheme()"
                     class="bs-dark-mode-toggle btn btn-icon fs-6 btn-icon rounded-circle" role="button"
-                    data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Toggle dark mode"
-                    aria-label="Toggle dark mode">
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="<?php esc_attr_e( 'Toggle dark mode', 'ayecode-connect' ); ?>"
+                    aria-label="<?php esc_attr_e( 'Toggle dark mode', 'ayecode-connect' ); ?>">
                 <i x-show="theme === 'light'" class="fa-solid fa-sun animate-target"></i>
                 <i x-show="theme === 'dark'" x-cloak class="fa-solid fa-moon animate-target"></i>
             </button>

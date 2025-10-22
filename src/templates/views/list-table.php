@@ -123,10 +123,10 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                             <td x-html="item[columnKey]"></td>
                         </template>
                         <td class="text-end">
-                            <button class="btn btn-sm btn-icon text-muted" @click.prevent="open_modal(item)" data-bs-toggle="tooltip" title="Edit">
+                            <button class="btn btn-sm btn-icon text-muted" @click.prevent="open_modal(item)" data-bs-toggle="tooltip" title="<?php esc_attr_e( 'Edit', 'ayecode-connect' ); ?>">
                                 <i class="fa-solid fa-pencil"></i>
                             </button>
-                            <button class="btn btn-sm btn-icon text-muted" @click="delete_item(item.id)" data-bs-toggle="tooltip" title="Delete">
+                            <button class="btn btn-sm btn-icon text-muted" @click="delete_item(item.id)" data-bs-toggle="tooltip" title="<?php esc_attr_e( 'Delete', 'ayecode-connect' ); ?>">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </td>
@@ -164,7 +164,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" x-text="isEditing ? config.modal_config.title_edit : config.modal_config.title_add"></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php esc_attr_e( 'Close', 'ayecode-connect' ); ?>"></button>
                 </div>
                 <div class="modal-body">
                     <template x-for="field in config.modal_config.fields" :key="field.id">

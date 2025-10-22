@@ -29,15 +29,15 @@ if ( ! defined( 'ABSPATH' ) ) {
                @drop.prevent="$el.classList.remove('is-dragover'); handleFileUpload($event, activePageConfig.id, hiddenFieldName)">
             <input :id="'file-upload-' + activePageConfig.id" type="file" @change="handleFileUpload($event, activePageConfig.id, hiddenFieldName)" :accept="activePageConfig.accept_file_type === 'csv' ? '.csv,text/csv' : (activePageConfig.accept_file_type === 'json' ? '.json,application/json' : '*/*')">
             <i class="fa-solid fa-upload fa-2x mb-3 text-muted"></i>
-            <p class="mb-0 fw-bold">Drag & drop a .<span x-text="activePageConfig.accept_file_type"></span> file here, or <span class="text-primary">click to browse</span>.</p>
-            <small class=" d-block mt-1">Maximum upload size: <?php echo esc_html( size_format( wp_max_upload_size() ) ); ?></small>
+            <p class="mb-0 fw-bold"><?php esc_html_e( 'Drag & drop a', 'ayecode-connect' ); ?> .<span x-text="activePageConfig.accept_file_type"></span> <?php esc_html_e( 'file here, or', 'ayecode-connect' ); ?> <span class="text-primary"><?php esc_html_e( 'click to browse', 'ayecode-connect' ); ?></span>.</p>
+            <small class=" d-block mt-1"><?php esc_html_e( 'Maximum upload size:', 'ayecode-connect' ); ?> <?php echo esc_html( size_format( wp_max_upload_size() ) ); ?></small>
             <p><span x-text="'.'+activePageConfig.accept_file_type" class="badge text-primary bg-primary-subtle fs-6 mt-3 border"></span></p>
         </label>
 
         <div class="card w-100 mw-100" x-show="state.status === 'uploading'" x-cloak>
             <div class="card-body text-center">
                 <div class="spinner-border text-primary mb-3" role="status"></div>
-                <p class="mb-1 fw-bold">Uploading...</p>
+                <p class="mb-1 fw-bold"><?php esc_html_e( 'Uploading...', 'ayecode-connect' ); ?></p>
                 <div class="progress" style="height: 5px;">
                     <div class="progress-bar" role="progressbar" :style="`width: ${state.uploadProgress}%`"></div>
                 </div>
@@ -56,9 +56,9 @@ if ( ! defined( 'ABSPATH' ) ) {
         </div>
 
         <div class="alert alert-danger" x-show="state.status === 'error'" x-cloak>
-            <h5 class="alert-heading">Upload Failed</h5>
+            <h5 class="alert-heading"><?php esc_html_e( 'Upload Failed', 'ayecode-connect' ); ?></h5>
             <p x-text="state.message"></p>
-            <button type="button" class="btn btn-sm btn-danger" @click="state.status = 'idle'; state.message = '';">Try Again</button>
+            <button type="button" class="btn btn-sm btn-danger" @click="state.status = 'idle'; state.message = '';"><?php esc_html_e( 'Try Again', 'ayecode-connect' ); ?></button>
         </div>
 
         <div class="card w-100 mw-100" x-show="state.status === 'complete'" x-cloak>
@@ -66,13 +66,13 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <template x-if="state.success">
                     <div class="text-center mb-3">
                         <i class="fa-solid fa-circle-check fa-3x text-success"></i>
-                        <h4 class="card-title mt-2">Import Complete</h4>
+                        <h4 class="card-title mt-2"><?php esc_html_e( 'Import Complete', 'ayecode-connect' ); ?></h4>
                     </div>
                 </template>
                 <template x-if="!state.success">
                     <div class="text-center mb-3">
                         <i class="fa-solid fa-circle-xmark fa-3x text-danger"></i>
-                        <h4 class="card-title mt-2">Import Failed</h4>
+                        <h4 class="card-title mt-2"><?php esc_html_e( 'Import Failed', 'ayecode-connect' ); ?></h4>
                     </div>
                 </template>
 
@@ -80,28 +80,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 
                 <template x-if="state.summary && Object.keys(state.summary).length > 0">
                     <div class="text-start border rounded p-3 my-4 bg-light-subtle">
-                        <h6 class="fw-bold mb-3 text-center">Import Summary</h6>
+                        <h6 class="fw-bold mb-3 text-center"><?php esc_html_e( 'Import Summary', 'ayecode-connect' ); ?></h6>
                         <ul class="list-group list-group-flush">
                             <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0">
-                                <span><i class="fa-solid fa-plus me-2 text-success"></i>Records Created</span>
+                                <span><i class="fa-solid fa-plus me-2 text-success"></i><?php esc_html_e( 'Records Created', 'ayecode-connect' ); ?></span>
                                 <span class="badge bg-success-subtle text-success-emphasis rounded-pill" x-text="state.summary.created || 0"></span>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0">
-                                <span><i class="fa-solid fa-pen-to-square me-2 text-primary"></i>Records Updated</span>
+                                <span><i class="fa-solid fa-pen-to-square me-2 text-primary"></i><?php esc_html_e( 'Records Updated', 'ayecode-connect' ); ?></span>
                                 <span class="badge bg-primary-subtle text-primary-emphasis rounded-pill" x-text="state.summary.updated || 0"></span>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0">
-                                <span><i class="fa-solid fa-forward me-2 text-secondary"></i>Records Skipped</span>
+                                <span><i class="fa-solid fa-forward me-2 text-secondary"></i><?php esc_html_e( 'Records Skipped', 'ayecode-connect' ); ?></span>
                                 <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill" x-text="state.summary.skipped || 0"></span>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0" x-show="state.summary.invalid > 0">
-                                <span><i class="fa-solid fa-triangle-exclamation me-2 text-warning"></i>Invalid Records</span>
+                                <span><i class="fa-solid fa-triangle-exclamation me-2 text-warning"></i><?php esc_html_e( 'Invalid Records', 'ayecode-connect' ); ?></span>
                                 <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill" x-text="state.summary.invalid"></span>
                             </li>
                         </ul>
                         <template x-if="state.summary.errors && state.summary.errors.length > 0">
                             <div class="mt-3">
-                                <h6 class="fw-bold text-danger">Errors</h6>
+                                <h6 class="fw-bold text-danger"><?php esc_html_e( 'Errors', 'ayecode-connect' ); ?></h6>
                                 <ul class="list-unstyled small text-danger-emphasis bg-danger-subtle p-2 rounded">
                                     <template x-for="(error, i) in state.summary.errors" :key="i">
                                         <li x-text="error"></li>
@@ -115,7 +115,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <div class="text-center mt-4">
                     <button type="button" class="btn btn-primary" @click="resetImportPageState(activePageConfig)">
                         <i class="fa-solid fa-rotate-right me-2"></i>
-                        Import Another File
+                        <?php esc_html_e( 'Import Another File', 'ayecode-connect' ); ?>
                     </button>
                 </div>
             </div>
@@ -136,7 +136,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                         @click="executePageAction()"
                         :disabled="state.status !== 'selected' || state.isLoading">
                     <span x-show="state.isLoading" class="spinner-border spinner-border-sm me-2" x-cloak></span>
-                    <span x-text="state.isLoading ? 'Processing...' : activePageConfig.button_text || 'Run Action'"></span>
+                    <span x-text="state.isLoading ? '<?php echo esc_js( __( 'Processing...', 'ayecode-connect' ) ); ?>' : activePageConfig.button_text || '<?php echo esc_js( __( 'Run Action', 'ayecode-connect' ) ); ?>'"></span>
                 </button>
             </div>
         </div>

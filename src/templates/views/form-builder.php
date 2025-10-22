@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                  :key="'fs-' + (editingField && editingField._uid ? editingField._uid : 'none')"
                  x-cloak x-transition>
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4 class="mb-0">Field Settings</h4>
+                    <h4 class="mb-0"><?php esc_html_e( 'Field Settings', 'ayecode-connect' ); ?></h4>
                     <button type="button" class="btn-close"
                             @click="closeEditingField()"
                     ></button>
@@ -35,7 +35,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                                 </div>
                             </template>
                             <button class="btn btn-primary w-100"
-                                    @click="closeEditingField()">Done</button>
+                                    @click="closeEditingField()"><?php esc_html_e( 'Done', 'ayecode-connect' ); ?></button>
                         </div>
                     </template>
                 </div>
@@ -43,7 +43,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         </template>
 
         <div x-show="leftColumnView === 'field_list'" x-cloak x-transition>
-            <h4 class="mb-3">Available Fields</h4>
+            <h4 class="mb-3"><?php esc_html_e( 'Available Fields', 'ayecode-connect' ); ?></h4>
             <template x-for="(group, groupIndex) in activePageConfig.templates" :key="groupIndex">
                 <div class="mb-4">
                     <h6 class="text-muted" x-text="group.group_title"></h6>
@@ -105,28 +105,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 
                                 <div class="d-flex align-items-center justify-content-end" style="width: 100px;">
                                     <template x-if="field.hasOwnProperty('is_active') && !field.is_active">
-                                        <i class="fas fa-exclamation-triangle text-warning me-2" title="Inactive" data-bs-toggle="tooltip"></i>
+                                        <i class="fas fa-exclamation-triangle text-warning me-2" title="<?php esc_attr_e( 'Inactive', 'ayecode-connect' ); ?>" data-bs-toggle="tooltip"></i>
                                     </template>
                                     <template x-if="field.conditions && field.conditions.length > 0">
-                                        <i class="fas fa-eye text-warning me-2" title="Has conditional logic" data-bs-toggle="tooltip"></i>
+                                        <i class="fas fa-eye text-warning me-2" title="<?php esc_attr_e( 'Has conditional logic', 'ayecode-connect' ); ?>" data-bs-toggle="tooltip"></i>
                                     </template>
                                     <template x-if="activePageConfig.default_top && parentFields[0]._uid === field._uid">
-                                        <i class="fas fa-check-circle me-2 text-primary" title="Default option" data-bs-toggle="tooltip"></i>
+                                        <i class="fas fa-check-circle me-2 text-primary" title="<?php esc_attr_e( 'Default option', 'ayecode-connect' ); ?>" data-bs-toggle="tooltip"></i>
                                     </template>
-                                    <button class="btn btn-sm btn-icon text-muted" @click.prevent="editField(field)" data-bs-toggle="tooltip" title="Edit Field">
+                                    <button class="btn btn-sm btn-icon text-muted" @click.prevent="editField(field)" data-bs-toggle="tooltip" title="<?php esc_attr_e( 'Edit Field', 'ayecode-connect' ); ?>">
                                         <i class="fa-solid fa-pencil"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-icon text-muted hover-text-danger" @click="deleteField(field)" x-show="!field._is_default" data-bs-toggle="tooltip" title="Delete Field">
+                                    <button class="btn btn-sm btn-icon text-muted hover-text-danger" @click="deleteField(field)" x-show="!field._is_default" data-bs-toggle="tooltip" title="<?php esc_attr_e( 'Delete Field', 'ayecode-connect' ); ?>">
                                         <i class="fa-solid fa-trash-can"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-icon text-muted opacity-25" x-show="field._is_default" data-bs-toggle="tooltip" title="Default field, can't be deleted">
+                                    <button class="btn btn-sm btn-icon text-muted opacity-25" x-show="field._is_default" data-bs-toggle="tooltip" title="<?php esc_attr_e( 'Default field, can\'t be deleted', 'ayecode-connect' ); ?>">
                                         <i class="fa-solid fa-trash-can"></i>
                                     </button>
                                 </div>
                             </div>
                         </div>
                         <div x-show="duplicateKeys.includes(field[activePageConfig.unique_key_property])" class="text-danger small mt-1 ps-2" x-cloak>
-                            Warning: This field key is a duplicate.
+                            <?php esc_html_e( 'Warning: This field key is a duplicate.', 'ayecode-connect' ); ?>
                         </div>
                     </div>
 
@@ -157,18 +157,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 
                                             <div class="d-flex align-items-center justify-content-end" style="width: 80px;">
                                                 <template x-if="childField.hasOwnProperty('is_active') && !childField.is_active">
-                                                    <i class="fas fa-exclamation-triangle text-warning me-2" title="Inactive" data-bs-toggle="tooltip"></i>
+                                                    <i class="fas fa-exclamation-triangle text-warning me-2" title="<?php esc_attr_e( 'Inactive', 'ayecode-connect' ); ?>" data-bs-toggle="tooltip"></i>
                                                 </template>
                                                 <template x-if="childField.conditions && childField.conditions.length > 0">
-                                                    <i class="fas fa-eye text-warning me-2" title="Has conditional logic" data-bs-toggle="tooltip"></i>
+                                                    <i class="fas fa-eye text-warning me-2" title="<?php esc_attr_e( 'Has conditional logic', 'ayecode-connect' ); ?>" data-bs-toggle="tooltip"></i>
                                                 </template>
-                                                <button class="btn btn-sm btn-icon text-muted" @click.prevent="editField(childField)" data-bs-toggle="tooltip" title="Edit Field">
+                                                <button class="btn btn-sm btn-icon text-muted" @click.prevent="editField(childField)" data-bs-toggle="tooltip" title="<?php esc_attr_e( 'Edit Field', 'ayecode-connect' ); ?>">
                                                     <i class="fa-solid fa-pencil"></i>
                                                 </button>
-                                                <button class="btn btn-sm btn-icon text-muted hover-text-danger" @click="deleteField(childField)" x-show="!childField._is_default" data-bs-toggle="tooltip" title="Delete Field">
+                                                <button class="btn btn-sm btn-icon text-muted hover-text-danger" @click="deleteField(childField)" x-show="!childField._is_default" data-bs-toggle="tooltip" title="<?php esc_attr_e( 'Delete Field', 'ayecode-connect' ); ?>">
                                                     <i class="fa-solid fa-trash-can"></i>
                                                 </button>
-                                                <button class="btn btn-sm btn-icon text-muted opacity-25" x-show="childField._is_default"  data-bs-toggle="tooltip" title="Default field, can't be deleted">
+                                                <button class="btn btn-sm btn-icon text-muted opacity-25" x-show="childField._is_default"  data-bs-toggle="tooltip" title="<?php esc_attr_e( 'Default field, can\'t be deleted', 'ayecode-connect' ); ?>">
                                                     <i class="fa-solid fa-trash-can"></i>
                                                 </button>
                                             </div>
@@ -184,7 +184,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                 </div>
             </template>
             <div x-show="!settings[activePageConfig.id] || settings[activePageConfig.id].length === 0" class="text-center text-muted p-5">
-                <p>Click on a field from the left to add it to your form.</p>
+                <p><?php esc_html_e( 'Click on a field from the left to add it to your form.', 'ayecode-connect' ); ?></p>
             </div>
         </div>
 
@@ -192,7 +192,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             <div x-show="hasUnsavedChanges" class="text-muted me-3" x-cloak>
              <span class="d-inline-flex align-items-center">
                 <i class="fa-solid fa-circle text-warning me-2"></i>
-                <span>Unsaved changes</span>
+                <span><?php esc_html_e( 'Unsaved changes', 'ayecode-connect' ); ?></span>
              </span>
             </div>
             <button class="btn btn-primary" @click="saveForm()" :disabled="isLoading || !hasUnsavedChanges">

@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         <template x-if="activePageConfig.ajax_content">
             <div>
                 <template x-if="isContentLoading">
-                    <div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>
+                    <div class="text-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden"><?php esc_html_e( 'Loading...', 'ayecode-connect' ); ?></span></div></div>
                 </template>
                 <div x-show="!isContentLoading" x-html="loadedContentCache[activePageConfig.id]"></div>
             </div>
