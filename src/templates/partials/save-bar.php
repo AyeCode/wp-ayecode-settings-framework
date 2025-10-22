@@ -19,10 +19,10 @@ if ( ! defined( 'ABSPATH' ) ) {
             <span x-text="strings.unsaved_changes"></span>
         </div>
         <div>
-            <button class="btn btn-secondary me-2" @click="discardChanges()"><?php esc_html_e( 'Discard', 'ayecode-settings-framework' ); ?></button>
+            <button class="btn btn-secondary me-2" @click="discardChanges()"><?php esc_html_e( 'Discard', 'ayecode-connect' ); ?></button>
             <button class="btn btn-primary" @click="saveSettings()" :disabled="isLoading">
                 <span x-show="isLoading" class="spinner-border spinner-border-sm me-1" role="status"></span>
-                <span x-text="isLoading ? strings.saving : '<?php esc_html_e( 'Save Changes', 'ayecode-settings-framework' ); ?>'"></span>
+                <span x-text="isLoading ? strings.saving : '<?php esc_html_e( 'Save Changes', 'ayecode-connect' ); ?>'"></span>
             </button>
         </div>
     </div>

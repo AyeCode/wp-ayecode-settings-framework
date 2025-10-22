@@ -367,14 +367,14 @@ abstract class Settings_Framework {
 				'file_upload_ajax_action' => 'asf_temp_file_upload_' . $this->page_slug,
 				'file_delete_ajax_action' => 'asf_temp_file_delete_' . $this->page_slug,
 				'strings'        => [
-					'saving'            => __( 'Saving...', 'ayecode-settings-framework' ),
-					'saved'             => __( 'Settings saved successfully!', 'ayecode-settings-framework' ),
-					'error'             => __( 'Error saving settings. Please try again.', 'ayecode-settings-framework' ),
-					'unsaved_changes'   => __( 'You have unsaved changes', 'ayecode-settings-framework' ),
-					'confirm_discard'   => __( 'Are you sure you want to discard your changes?', 'ayecode-settings-framework' ),
-					'search_placeholder' => __( 'Quick search...', 'ayecode-settings-framework' ),
-					'no_results'        => __( 'No settings found', 'ayecode-settings-framework' ),
-					'clear_search'      => __( 'Clear search', 'ayecode-settings-framework' ),
+					'saving'            => __( 'Saving...', 'ayecode-connect' ),
+					'saved'             => __( 'Settings saved successfully!', 'ayecode-connect' ),
+					'error'             => __( 'Error saving settings. Please try again.', 'ayecode-connect' ),
+					'unsaved_changes'   => __( 'You have unsaved changes', 'ayecode-connect' ),
+					'confirm_discard'   => __( 'Are you sure you want to discard your changes?', 'ayecode-connect' ),
+					'search_placeholder' => __( 'Quick search...', 'ayecode-connect' ),
+					'no_results'        => __( 'No settings found', 'ayecode-connect' ),
+					'clear_search'      => __( 'Clear search', 'ayecode-connect' ),
 				],
 			]
 		);
@@ -686,7 +686,7 @@ abstract class Settings_Framework {
 		$settings_link = sprintf(
 			'<a href="%s">%s</a>',
 			admin_url( 'admin.php?page=' . $this->page_slug ),
-			__( 'Settings', 'ayecode-settings-framework' )
+			__( 'Settings', 'ayecode-connect' )
 		);
 		array_unshift( $links, $settings_link );
 
@@ -811,7 +811,7 @@ abstract class Settings_Framework {
 	private function get_calling_file() {
 		$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS );
 		foreach ( $backtrace as $trace ) {
-			if ( isset( $trace['file'] ) && strpos( $trace['file'], 'wp-ayecode-settings-framework' ) === false ) {
+			if ( isset( $trace['file'] ) && strpos( $trace['file'], 'ayecode-connect' ) === false ) {
 				return $trace['file'];
 			}
 		}

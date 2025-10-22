@@ -54,12 +54,12 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                 <div class="" x-show="config.table_config.bulk_actions" x-cloak >
                     <div class="d-flex align-items-center">
                         <select class="form-select form-select-sm me-2" x-model="bulkAction" style="width: auto;">
-                            <option value="">Bulk actions</option>
+                            <option value=""><?php esc_html_e( 'Bulk actions', 'ayecode-connect' ); ?></option>
                             <template x-for="(label, action) in config.table_config.bulk_actions" :key="action">
                                 <option :value="action" x-text="label"></option>
                             </template>
                         </select>
-                        <button class="btn btn-sm btn-secondary" @click="apply_bulk_action()" :disabled="selectedItems.length === 0">Apply</button>
+                        <button class="btn btn-sm btn-secondary" @click="apply_bulk_action()" :disabled="selectedItems.length === 0"><?php esc_html_e( 'Apply', 'ayecode-connect' ); ?></button>
                     </div>
                 </div>
 
@@ -76,7 +76,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                 </template>
 
                 <div class="input-group input-group-sm" style="max-width: 250px;">
-                    <input type="search" class="form-control" x-model.debounce.300ms="searchQuery" placeholder="Search...">
+                    <input type="search" class="form-control" x-model.debounce.300ms="searchQuery" placeholder="<?php esc_attr_e( 'Search...', 'ayecode-connect' ); ?>">
                     <span class="input-group-text bg-transparent"><i class="fa-solid fa-magnifying-glass"></i></span>
                 </div>
             </div>
@@ -110,7 +110,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                             <i class="fa-solid fa-sort-down ms-1" x-show="sortColumn === columnKey && sortDirection === 'desc'"></i>
                         </th>
                     </template>
-                    <th scope="col" class="text-end">Actions</th>
+                    <th scope="col" class="text-end"><?php esc_html_e( 'Actions', 'ayecode-connect' ); ?></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -134,7 +134,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                 </template>
                 <tr x-show="filteredItems.length === 0">
                     <td :colspan="Object.keys(config.table_config.columns).length + (config.table_config.bulk_actions ? 1 : 0) + 1" class="text-center text-muted py-4">
-                        No items match your search.
+                        <?php esc_html_e( 'No items match your search.', 'ayecode-connect' ); ?>
                     </td>
                 </tr>
                 </tbody>
@@ -154,7 +154,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                 </template>
             </div>
             <div class="mt-4">
-                <button class="btn btn-primary" @click="change_view('list')">Done</button>
+                <button class="btn btn-primary" @click="change_view('list')"><?php esc_html_e( 'Done', 'ayecode-connect' ); ?></button>
             </div>
         </div>
     </template>
@@ -172,10 +172,10 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                     </template>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?php esc_html_e( 'Close', 'ayecode-connect' ); ?></button>
                     <button type="button" class="btn btn-primary" @click="save_item()" :disabled="isSaving">
                         <span x-show="isSaving" class="spinner-border spinner-border-sm me-1"></span>
-                        <span x-text="isSaving ? 'Saving...' : 'Save Changes'"></span>
+                        <span x-text="isSaving ? '<?php echo esc_js( __( 'Saving...', 'ayecode-connect' ) ); ?>' : '<?php echo esc_js( __( 'Save Changes', 'ayecode-connect' ) ); ?>'"></span>
                     </button>
                 </div>
             </div>

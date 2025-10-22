@@ -33,11 +33,11 @@ if ( ! defined( 'ABSPATH' ) ) {
                     @click="executePageAction()"
                     :disabled="actionStates[activePageConfig.id]?.isLoading">
                 <span x-show="actionStates[activePageConfig.id]?.isLoading" class="spinner-border spinner-border-sm me-2" x-cloak></span>
-                <span x-text="actionStates[activePageConfig.id]?.isLoading ? 'Processing...' : activePageConfig.button_text || 'Run Action'"></span>
+                <span x-text="actionStates[activePageConfig.id]?.isLoading ? '<?php echo esc_js( __( 'Processing...', 'ayecode-connect' ) ); ?>' : activePageConfig.button_text || '<?php echo esc_js( __( 'Run Action', 'ayecode-connect' ) ); ?>'"></span>
             </button>
         </div>
         <div class="border rounded p-3 mt-3 bg-light" x-show="actionStates[activePageConfig.id]?.exportedFiles.length > 0" x-cloak>
-            <h6 class="fw-bold">Generated Files</h6>
+            <h6 class="fw-bold"><?php esc_html_e( 'Generated Files', 'ayecode-connect' ); ?></h6>
             <ul class="list-group">
                 <template x-for="(file, index) in actionStates[activePageConfig.id].exportedFiles" :key="index">
                     <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -46,7 +46,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                             <span x-text="file.name"></span>
                             <small class="text-muted ms-2" x-text="file.size"></small>
                         </div>
-                        <a :href="file.url" class="btn btn-sm btn-outline-primary" download>Download</a>
+                        <a :href="file.url" class="btn btn-sm btn-outline-primary" download><?php esc_html_e( 'Download', 'ayecode-connect' ); ?></a>
                     </li>
                 </template>
             </ul>

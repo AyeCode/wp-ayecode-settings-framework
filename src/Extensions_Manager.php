@@ -128,7 +128,7 @@ class Extensions_Manager {
 			$settings = \AyeCode_Connect_Settings::instance();
 			if ( method_exists( $settings->client, 'is_registered' ) && $settings->client->is_registered() ) {
 				wp_send_json_success( [
-					'message' => __( 'Site is already connected.', 'ayecode-settings-framework' ),
+					'message' => __( 'Site is already connected.', 'ayecode-connect' ),
 					'already_connected' => true, // Add a flag for the frontend
 				] );
 				return;
@@ -138,7 +138,7 @@ class Extensions_Manager {
 		// Check if plugin is already active
 		if ( is_plugin_active( $plugin_main_file ) ) {
 			// It's active but not registered, so we just send success to proceed to the next step.
-			wp_send_json_success( [ 'message' => __( 'AyeCode Connect is active. Proceeding to connect...', 'ayecode-settings-framework' ) ] );
+			wp_send_json_success( [ 'message' => __( 'AyeCode Connect is active. Proceeding to connect...', 'ayecode-connect' ) ] );
 			return;
 		}
 
@@ -153,7 +153,7 @@ class Extensions_Manager {
 			if ( is_wp_error( $result ) ) {
 				wp_send_json_error( [ 'message' => $result->get_error_message() ] );
 			}
-			wp_send_json_success( [ 'message' => __( 'AyeCode Connect activated successfully. Redirecting...', 'ayecode-settings-framework' ) ] );
+			wp_send_json_success( [ 'message' => __( 'AyeCode Connect activated successfully. Redirecting...', 'ayecode-connect' ) ] );
 			return;
 		}
 
@@ -179,7 +179,7 @@ class Extensions_Manager {
 		}
 
 		wp_send_json_success( [
-			'message' => __( 'AyeCode Connect installed and activated successfully. Redirecting...', 'ayecode-settings-framework' )
+			'message' => __( 'AyeCode Connect installed and activated successfully. Redirecting...', 'ayecode-connect' )
 		] );
 	}
 

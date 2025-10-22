@@ -5,6 +5,8 @@
  * Version: 1.2.0
  * Author: AyeCode Ltd
  * License: GPL v3 or later
+ * Text Domain: ayecode-connect
+ * Domain Path: /languages
  */
 
 // Exit if accessed directly.
@@ -83,25 +85,25 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                 'sections' => [
                         [
                                 'id'    => 'general',
-                                'name'  => __( 'General Settings', 'wp-ayecode-settings-framework' ),
+                                'name'  => __( 'General Settings', 'ayecode-connect' ),
                                 'icon'  => 'fa-solid fa-gear',
                                 'fields' => [
                                         [
                                                 'id'      => 'site_title',
                                                 'type'    => 'text',
-                                                'label'   => __( 'Site Title', 'wp-ayecode-settings-framework' ),
-                                                'desc'    => __( 'Standard text field for a setting.', 'wp-ayecode-settings-framework' ),
+                                                'label'   => __( 'Site Title', 'ayecode-connect' ),
+                                                'desc'    => __( 'Standard text field for a setting.', 'ayecode-connect' ),
                                                 'default' => get_bloginfo( 'name' ),
                                         ],
                                         array(
                                                 'id'      => 'shortcodes_allowed_roles',
                                                 'type'    => 'multiselect',
-                                                'label'   => __( 'Allow shortcodes in description', 'geodirectory' ),
-                                                'description' => __( 'Select user roles that are allowed to use shortcodes or blocks in the listing description field.', 'geodirectory' ),
+                                                'label'   => __( 'Allow shortcodes in description', 'ayecode-connect' ),
+                                                'description' => __( 'Select user roles that are allowed to use shortcodes or blocks in the listing description field.', 'ayecode-connect' ),
                                                 'options' => function_exists('geodir_user_roles') ? geodir_user_roles() : array(),
                                                 'default' => array('administrator'),
                                                 'class'   => 'aui-select2',
-                                                'placeholder' => __('Select roles...', 'geodirectory'),
+                                                'placeholder' => __('Select roles...', 'ayecode-connect'),
                                                 'searchable' => array('shortcode', 'blocks', 'description', 'content', 'permissions'),
                                         )
                                 ],
@@ -109,7 +111,7 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                     // New Form Builder Section Added Here
                         [
                                 'id'    => 'listing_form_builder', // This will be the key where the form structure is saved
-                                'name'  => __( 'Listing Form Builder', 'wp-ayecode-settings-framework' ),
+                                'name'  => __( 'Listing Form Builder', 'ayecode-connect' ),
                                 'icon'  => 'fa-solid fa-edit',
                                 'type'  => 'form_builder',
                                 'unique_key_property' => 'key', // <-- THIS IS THE NEW CONFIGURATION KEY
@@ -239,7 +241,7 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                     // NEW: API Keys List Table Section
                         [
                                 'id'    => 'api_keys',
-                                'name'  => __( 'API Keys', 'wp-ayecode-settings-framework' ),
+                                'name'  => __( 'API Keys', 'ayecode-connect' ),
                                 'icon'  => 'fa-solid fa-key',
                                 'type'  => 'list_table',
 
@@ -292,19 +294,19 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                 [
                                                         'id'      => 'description',
                                                         'type'    => 'text',
-                                                        'label'   => __( 'Description', 'wp-ayecode-settings-framework' ),
+                                                        'label'   => __( 'Description', 'ayecode-connect' ),
                                                         'extra_attributes' => ['required' => true]
                                                 ],
                                                 [
                                                         'id'      => 'user_id',
                                                         'type'    => 'select',
-                                                        'label'   => __( 'User', 'wp-ayecode-settings-framework' ),
+                                                        'label'   => __( 'User', 'ayecode-connect' ),
                                                         'options' => $this->get_user_options()
                                                 ],
                                                 [
                                                         'id'      => 'permissions',
                                                         'type'    => 'select',
-                                                        'label'   => __( 'Permissions', 'wp-ayecode-settings-framework' ),
+                                                        'label'   => __( 'Permissions', 'ayecode-connect' ),
                                                         'options' => ['read' => 'Read', 'write' => 'Write', 'read_write' => 'Read/Write'],
                                                         'default' => 'read_write'
                                                 ]
@@ -321,7 +323,7 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                         ],
                         [
                                 'id' => 'accordion_demo',
-                                'name' => __('Accordion Demo', 'wp-ayecode-settings-framework'),
+                                'name' => __('Accordion Demo', 'ayecode-connect'),
                                 'icon' => 'fa-solid fa-layer-group',
                                 'fields' => [
                                         [
@@ -363,12 +365,12 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                                         array(
                                                                                 'id'      => 'shortcodes_allowed_roles',
                                                                                 'type'    => 'multiselect',
-                                                                                'label'   => __( 'Allow shortcodes in description', 'geodirectory' ),
-                                                                                'description' => __( 'Select user roles that are allowed to use shortcodes or blocks in the listing description field.', 'geodirectory' ),
+                                                                                'label'   => __( 'Allow shortcodes in description', 'ayecode-connect' ),
+                                                                                'description' => __( 'Select user roles that are allowed to use shortcodes or blocks in the listing description field.', 'ayecode-connect' ),
                                                                                 'options' => function_exists('geodir_user_roles') ? geodir_user_roles() : array(),
                                                                                 'default' => array('administrator'),
                                                                                 'class'   => 'aui-select2',
-                                                                                'placeholder' => __('Select roles...', 'geodirectory'),
+                                                                                'placeholder' => __('Select roles...', 'ayecode-connect'),
                                                                                 'searchable' => array('shortcode', 'blocks', 'description', 'content', 'permissions'),
                                                                         )
                                                                     //['id' => 'accordion_field_four', 'type' => 'multiselect', 'label' => 'Text Field Inside Accordion', 'default' => ['opt1'],'options'=>['opt1'=>'Option 1','opt2'=>'Option 2','opt3'=>'Option 3']],
@@ -380,23 +382,23 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                         ],
                         [
                                 'id'    => 'tools',
-                                'name'  => __( 'Simple Tools', 'wp-ayecode-settings-framework' ),
+                                'name'  => __( 'Simple Tools', 'ayecode-connect' ),
                                 'icon'  => 'fa-solid fa-screwdriver-wrench',
                                 'fields' => [
                                         [
                                                 'id'           => 'tool_clear_cache_success',
                                                 'type'         => 'action_button',
-                                                'label'        => __( 'Clear Cache (Success Example)', 'wp-ayecode-settings-framework' ),
-                                                'description'  => __( 'This button will simulate a successful background task.', 'wp-ayecode-settings-framework' ),
-                                                'button_text'  => __( 'Clear Cache' ),
+                                                'label'        => __( 'Clear Cache (Success Example)', 'ayecode-connect' ),
+                                                'description'  => __( 'This button will simulate a successful background task.', 'ayecode-connect' ),
+                                                'button_text'  => __( 'Clear Cache', 'ayecode-connect' ),
                                                 'button_class' => 'btn-primary',
                                                 'ajax_action'  => 'demo_clear_cache_success', // The unique ID for this action.
                                         ],
                                         [
                                                 'id'           => 'tool_regenerate_thumbnails_progress',
                                                 'type'         => 'action_button',
-                                                'label'        => __( 'Regenerate Thumbnails (Progress Example)', 'wp-ayecode-settings-framework' ),
-                                                'description'  => __( 'This button will simulate a task that reports progress.', 'wp-ayecode-settings-framework' ),
+                                                'label'        => __( 'Regenerate Thumbnails (Progress Example)', 'ayecode-connect' ),
+                                                'description'  => __( 'This button will simulate a task that reports progress.', 'ayecode-connect' ),
                                                 'button_text'  => __( 'Regenerate' ),
                                                 'button_class' => 'btn-secondary',
                                                 'ajax_action'  => 'demo_regen_thumbs_progress', // The unique ID for this action.
@@ -405,43 +407,43 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                         ],
                         [
                                 'id'             => 'importer_tool',
-                                'name'           => __( 'Action Page Demo', 'wp-ayecode-settings-framework' ),
-                                'description'    => __( 'This entire page is an action page. The main save bar is hidden, and all inputs are sent with the single action button below.', 'wp-ayecode-settings-framework'),
+                                'name'           => __( 'Action Page Demo', 'ayecode-connect' ),
+                                'description'    => __( 'This entire page is an action page. The main save bar is hidden, and all inputs are sent with the single action button below.', 'ayecode-connect'),
                                 'icon'           => 'fa-solid fa-bolt',
                                 'type'           => 'action_page', // The new page type
-                                'button_text'    => __( 'Run Importer', 'wp-ayecode-settings-framework' ),
+                                'button_text'    => __( 'Run Importer', 'ayecode-connect' ),
                                 'button_class'   => 'btn-success',
                                 'ajax_action'    => 'run_importer_action', // The unique ID for this page's action
                                 'fields' => [
                                         [
                                                 'id'      => 'import_source_url',
                                                 'type'    => 'url',
-                                                'label'   => __( 'Source URL', 'wp-ayecode-settings-framework' ),
-                                                'desc'    => __( 'Enter the URL of the data file to import.', 'wp-ayecode-settings-framework' ),
+                                                'label'   => __( 'Source URL', 'ayecode-connect' ),
+                                                'desc'    => __( 'Enter the URL of the data file to import.', 'ayecode-connect' ),
                                         ],
                                         [
                                                 'id'      => 'overwrite_existing',
                                                 'type'    => 'toggle',
-                                                'label'   => __( 'Overwrite Existing Data', 'wp-ayecode-settings-framework' ),
-                                                'desc'    => __( 'Enable to replace existing entries with imported ones.', 'wp-ayecode-settings-framework' ),
+                                                'label'   => __( 'Overwrite Existing Data', 'ayecode-connect' ),
+                                                'desc'    => __( 'Enable to replace existing entries with imported ones.', 'ayecode-connect' ),
                                                 'default' => 0,
                                         ],
                                 ],
                         ],
                         [
                                 'id'           => 'preloaded_tool',
-                                'name'         => __( 'System Status', 'wp-ayecode-settings-framework' ),
+                                'name'         => __( 'System Status', 'ayecode-connect' ),
                                 'icon'         => 'fa-solid fa-server',
                                 'type'         => 'custom_page',
                                 'html_content' => $this->get_system_status_html(),
                         ],
                         [
                                 'id'           => 'ajax_importer',
-                                'name'         => __( 'Data Importer (AJAX)', 'wp-ayecode-settings-framework' ),
+                                'name'         => __( 'Data Importer (AJAX)', 'ayecode-connect' ),
                                 'icon'         => 'fa-solid fa-upload',
                                 'type'         => 'import_page', // Use the new import_page type
-                                'description'  => __( 'Upload a file and process it. The file is uploaded automatically when selected.', 'wp-ayecode-settings-framework' ),
-                                'button_text'  => __( 'Run Import', 'wp-ayecode-settings-framework' ),
+                                'description'  => __( 'Upload a file and process it. The file is uploaded automatically when selected.', 'ayecode-connect' ),
+                                'button_text'  => __( 'Run Import', 'ayecode-connect' ),
                                 'button_class' => 'btn-primary',
                                 'ajax_action'  => 'run_ajax_importer', // The action for the final import step
                                 'fields'       => [
@@ -452,8 +454,8 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                         [
                                                 'id'      => 'import_delete_records',
                                                 'type'    => 'toggle',
-                                                'label'   => __( 'Delete Existing Records', 'wp-ayecode-settings-framework' ),
-                                                'desc'    => __( 'Enable to delete all existing records before importing.', 'wp-ayecode-settings-framework' ),
+                                                'label'   => __( 'Delete Existing Records', 'ayecode-connect' ),
+                                                'desc'    => __( 'Enable to delete all existing records before importing.', 'ayecode-connect' ),
                                                 'default' => 0,
                                         ],
                                 ],
@@ -556,7 +558,7 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
     private function handle_clear_cache() {
         sleep( 1 );
         wp_send_json_success( [
-                'message'  => __( 'Cache cleared successfully!', 'wp-ayecode-settings-framework' ),
+                'message'  => __( 'Cache cleared successfully!', 'ayecode-connect' ),
                 'progress' => 100,
         ] );
     }
@@ -568,13 +570,13 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
 
         if ( $new_progress >= 100 ) {
             wp_send_json_success( [
-                    'message'   => __( 'Thumbnails regenerated successfully!', 'wp-ayecode-settings-framework' ),
+                    'message'   => __( 'Thumbnails regenerated successfully!', 'ayecode-connect' ),
                     'progress'  => 100,
                     'next_step' => null, // Signal completion.
             ] );
         } else {
             wp_send_json_success( [
-                    'message'   => sprintf( __( '%d%% complete...', 'wp-ayecode-settings-framework' ), $new_progress ),
+                    'message'   => sprintf( __( '%d%% complete...', 'ayecode-connect' ), $new_progress ),
                     'progress'  => $new_progress,
                     'next_step' => $new_progress, // Signal to continue.
             ] );

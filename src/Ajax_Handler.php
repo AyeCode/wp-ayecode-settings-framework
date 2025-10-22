@@ -40,7 +40,7 @@ class Ajax_Handler {
 	public function handle_save() {
 		if ( ! $this->verify_request() ) {
 			wp_send_json_error( [
-				'message' => __( 'Security check failed. Please refresh the page and try again.', 'ayecode-settings-framework' ),
+				'message' => __( 'Security check failed. Please refresh the page and try again.', 'ayecode-connect' ),
 			] );
 		}
 
@@ -48,7 +48,7 @@ class Ajax_Handler {
 		$is_partial_save = isset( $_POST['is_partial_save'] ) && $_POST['is_partial_save'] === 'true';
 
 		if ( ! is_array( $posted_settings ) ) {
-			wp_send_json_error( [ 'message' => __( 'Invalid settings data received.', 'ayecode-settings-framework' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Invalid settings data received.', 'ayecode-connect' ) ] );
 		}
 
 		if ( $is_partial_save ) {
@@ -71,12 +71,12 @@ class Ajax_Handler {
 
 		if ( $save_result ) {
 			wp_send_json_success( [
-				'message'  => __( 'Settings saved successfully!', 'ayecode-settings-framework' ),
+				'message'  => __( 'Settings saved successfully!', 'ayecode-connect' ),
 				'settings' => $this->framework->get_settings(), // Send back the freshly saved settings.
 			] );
 		} else {
 			wp_send_json_error( [
-				'message' => __( 'Failed to save settings. This may happen if the settings have not changed.', 'ayecode-settings-framework' ),
+				'message' => __( 'Failed to save settings. This may happen if the settings have not changed.', 'ayecode-connect' ),
 			] );
 		}
 	}
@@ -87,7 +87,7 @@ class Ajax_Handler {
 	public function handle_reset() {
 		if ( ! $this->verify_request() ) {
 			wp_send_json_error( [
-				'message' => __( 'Security check failed. Please refresh the page and try again.', 'ayecode-settings-framework' ),
+				'message' => __( 'Security check failed. Please refresh the page and try again.', 'ayecode-connect' ),
 			] );
 		}
 
@@ -96,12 +96,12 @@ class Ajax_Handler {
 
 		if ( $reset_result ) {
 			wp_send_json_success( [
-				'message'  => __( 'Settings reset to defaults successfully!', 'ayecode-settings-framework' ),
+				'message'  => __( 'Settings reset to defaults successfully!', 'ayecode-connect' ),
 				'settings' => $this->framework->get_settings(), // Send back the fresh default settings.
 			] );
 		} else {
 			wp_send_json_error( [
-				'message' => __( 'Failed to reset settings. Please try again.', 'ayecode-settings-framework' ),
+				'message' => __( 'Failed to reset settings. Please try again.', 'ayecode-connect' ),
 			] );
 		}
 	}

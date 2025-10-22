@@ -17,12 +17,12 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
             <div x-show="!config.page_config.connect_banner.is_localhost">
                 <div  class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="fw-bold">Connect Your Site for Seamless Updates</h6>
-                        <p class="mb-0 text-muted small">Unlock one-click installations and automatic updates. <a :href="config.page_config.connect_banner.learn_more_url" target="_blank" rel="noopener">Learn more</a>.</p>
+                        <h6 class="fw-bold"><?php esc_html_e( 'Connect Your Site for Seamless Updates', 'ayecode-connect' ); ?></h6>
+                        <p class="mb-0 text-muted small"><?php esc_html_e( 'Unlock one-click installations and automatic updates.', 'ayecode-connect' ); ?> <a :href="config.page_config.connect_banner.learn_more_url" target="_blank" rel="noopener"><?php esc_html_e( 'Learn more', 'ayecode-connect' ); ?></a>.</p>
                     </div>
                     <button @click="connect_site" class="btn btn-primary" :disabled="isConnecting">
                         <span x-show="isConnecting" class="spinner-border spinner-border-sm me-2" role="status"></span>
-                        <span x-text="isConnecting ? 'Connecting...' : 'Connect Site'"></span>
+                        <span x-text="isConnecting ? '<?php echo esc_js( __( 'Connecting...', 'ayecode-connect' ) ); ?>' : '<?php echo esc_js( __( 'Connect Site', 'ayecode-connect' ) ); ?>'"></span>
                     </button>
                 </div>
             </div>
@@ -31,9 +31,8 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                 <div class="d-flex justify-content-between align-items-center">
 
                     <div>
-                        <h6 class="fw-bold">Connect Site is Unavailable on Localhost</h6>
-                        <p class="mb-0 text-muted small">To activate products on a local site, please use your
-                            membership key or enter individual keys on the plugin page.</p>
+                        <h6 class="fw-bold"><?php esc_html_e( 'Connect Site is Unavailable on Localhost', 'ayecode-connect' ); ?></h6>
+                        <p class="mb-0 text-muted small"><?php esc_html_e( 'To activate products on a local site, please use your membership key or enter individual keys on the plugin page.', 'ayecode-connect' ); ?></p>
                     </div>
                     <button class="btn btn-secondary" @click="navigateTo(() => switchSection('membership'))">Enter
                         Membership Key
@@ -56,12 +55,12 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div class="btn-group btn-group-sm">
-            <button type="button" class="btn" @click="priceFilter = 'all'" :class="priceFilter === 'all' ? 'btn-primary' : 'btn-outline-secondary'">All</button>
-            <button type="button" class="btn" @click="priceFilter = 'paid'" :class="priceFilter === 'paid' ? 'btn-primary' : 'btn-outline-secondary'">Paid</button>
-            <button type="button" class="btn" @click="priceFilter = 'free'" :class="priceFilter === 'free' ? 'btn-primary' : 'btn-outline-secondary'">Free</button>
+            <button type="button" class="btn" @click="priceFilter = 'all'" :class="priceFilter === 'all' ? 'btn-primary' : 'btn-outline-secondary'"><?php esc_html_e( 'All', 'ayecode-connect' ); ?></button>
+            <button type="button" class="btn" @click="priceFilter = 'paid'" :class="priceFilter === 'paid' ? 'btn-primary' : 'btn-outline-secondary'"><?php esc_html_e( 'Paid', 'ayecode-connect' ); ?></button>
+            <button type="button" class="btn" @click="priceFilter = 'free'" :class="priceFilter === 'free' ? 'btn-primary' : 'btn-outline-secondary'"><?php esc_html_e( 'Free', 'ayecode-connect' ); ?></button>
         </div>
         <div class="input-group input-group-sm" style="max-width: 250px;">
-            <input type="search" class="form-control" x-model.debounce.300ms="searchQuery" placeholder="Search...">
+            <input type="search" class="form-control" x-model.debounce.300ms="searchQuery" placeholder="<?php esc_attr_e( 'Search...', 'ayecode-connect' ); ?>">
             <span class="input-group-text bg-transparent"><i class="fa-solid fa-magnifying-glass"></i></span>
         </div>
     </div>
@@ -125,14 +124,14 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                         <p class="card-text text-muted fs-xs flex-grow-1" x-html="item.info.excerpt"></p>
                     </div>
                     <div class="card-footer bg-light-subtle border-0 py-3 d-flex justify-content-between align-items-center">
-                        <button @click="show_more_info(item)" class="btn btn-sm btn-outline-secondary">More info</button>
+                        <button @click="show_more_info(item)" class="btn btn-sm btn-outline-secondary"><?php esc_html_e( 'More info', 'ayecode-connect' ); ?></button>
                         <span x-text="item.status"></span>
                         <div class="d-flex align-items-center justify-content-between"
                              data-bs-toggle="tooltip"
                              :title="item.status === 'active' && item.type === 'theme' ? 'This theme is active. Activate another theme to switch.' : ''"
                         >
                             <div x-show="itemActionInProgress[item.info.slug]" class="spinner-border spinner-border-sm text-primary me-2" role="status" x-cloak>
-                                <span class="visually-hidden">Loading...</span>
+                                <span class="visually-hidden"><?php esc_html_e( 'Loading...', 'ayecode-connect' ); ?></span>
                             </div>
                             <div
                                     class="form-check form-switch d-flex align-items-center mb-0 me-n3 pe-1"

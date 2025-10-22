@@ -67,7 +67,7 @@ class System_Status_Handler {
                 'Language'          => $environment['language'] ?? 'N/A',
         ];
         $status_sections['environment'] = [
-                'title' => __( 'WordPress Environment', 'ayecode-settings-framework' ),
+                'title' => __( 'WordPress Environment', 'ayecode-connect' ),
                 'icon'  => 'fa-brands fa-wordpress',
                 'data'  => $wp_environment_data,
                 'debug_data' => $wp_environment_data // Use separated data for consistency in copy
@@ -97,7 +97,7 @@ class System_Status_Handler {
                 'Remote Get Response'  => $environment['remote_get_response'] ?? 'N/A',
         ];
         $status_sections['server'] = [
-                'title' => __( 'Server Environment', 'ayecode-settings-framework' ),
+                'title' => __( 'Server Environment', 'ayecode-connect' ),
                 'icon'  => 'fa-solid fa-server',
                 'data'  => $server_environment_data, // Use the separated data for display rendering
                 'debug_data' => $environment // Keep the combined data for full debug report copy/paste
@@ -105,7 +105,7 @@ class System_Status_Handler {
 
         // Database Section
         $status_sections['database'] = [
-                'title' => __( 'Database', 'ayecode-settings-framework' ),
+                'title' => __( 'Database', 'ayecode-connect' ),
                 'icon'  => 'fa-solid fa-database',
                 'data'  => $database, // Pass raw DB info array
                 'debug_data' => $database
@@ -113,7 +113,7 @@ class System_Status_Handler {
 
         // Post Type Counts Section
         $status_sections['post_types'] = [
-                'title' => __( 'Post Type Counts', 'ayecode-settings-framework' ),
+                'title' => __( 'Post Type Counts', 'ayecode-connect' ),
                 'icon' => 'fa-solid fa-file-lines',
                 'data' => $post_type_counts, // Pass raw post type array
                 'debug_data' => $post_type_counts
@@ -121,7 +121,7 @@ class System_Status_Handler {
 
         // Active Plugins Section
         $status_sections['active_plugins'] = [
-                'title' => sprintf( __( 'Active Plugins (%d)', 'ayecode-settings-framework' ), count( $active_plugins ) ),
+                'title' => sprintf( __( 'Active Plugins (%d)', 'ayecode-connect' ), count( $active_plugins ) ),
                 'icon'  => 'fa-solid fa-plug',
                 'data'  => $active_plugins, // Pass raw plugin array
                 'debug_data' => $active_plugins
@@ -129,7 +129,7 @@ class System_Status_Handler {
 
         // Theme Section
         $status_sections['theme'] = [
-                'title' => __( 'Theme', 'ayecode-settings-framework' ),
+                'title' => __( 'Theme', 'ayecode-connect' ),
                 'icon'  => 'fa-solid fa-palette',
                 'data'  => $theme, // Pass raw theme array
                 'debug_data' => $theme
@@ -137,7 +137,7 @@ class System_Status_Handler {
 
         // Security Section
         $status_sections['security'] = [
-                'title' => __( 'Security', 'ayecode-settings-framework' ),
+                'title' => __( 'Security', 'ayecode-connect' ),
                 'icon' => 'fa-solid fa-shield-halved',
                 'data' => $security, // Pass raw security array
                 'debug_data' => $security
@@ -145,7 +145,7 @@ class System_Status_Handler {
 
         // Framework/Plugin Settings Section
         $status_sections['settings'] = [
-                'title' => __( 'Framework Settings', 'ayecode-settings-framework' ),
+                'title' => __( 'Framework Settings', 'ayecode-connect' ),
                 'icon' => 'fa-solid fa-sliders',
                 'data' => $settings, // Pass raw settings array
                 'debug_data' => $settings
@@ -153,7 +153,7 @@ class System_Status_Handler {
 
         // Framework/Plugin Pages Section
         $status_sections['pages'] = [
-                'title' => __( 'Framework Pages', 'ayecode-settings-framework' ),
+                'title' => __( 'Framework Pages', 'ayecode-connect' ),
                 'icon' => 'fa-solid fa-file-invoice',
                 'data' => $pages, // Pass raw pages array
                 'debug_data' => $pages
@@ -167,10 +167,10 @@ class System_Status_Handler {
         ob_start();
         ?>
         <div class="mb-4 d-flex justify-content-between align-items-center">
-            <p class="text-muted m-0"><?php esc_html_e( 'Please include this information when requesting support.', 'ayecode-settings-framework' ); ?></p>
+            <p class="text-muted m-0"><?php esc_html_e( 'Please include this information when requesting support.', 'ayecode-connect' ); ?></p>
             <?php // Button calls the global JS function ?>
             <button id="asf-copy-status-report" class="btn btn-primary btn-sm" onclick="window.asfCopyStatusReport(this)">
-                <i class="fa-solid fa-copy me-2"></i><?php esc_html_e( 'Copy for Support', 'ayecode-settings-framework' ); ?>
+                <i class="fa-solid fa-copy me-2"></i><?php esc_html_e( 'Copy for Support', 'ayecode-connect' ); ?>
             </button>
         </div>
 
@@ -300,7 +300,7 @@ class System_Status_Handler {
                         echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">' . wp_kses_post($plugin_name_html) . '</dt>'; // Allow link
                         // Render details in dd
                         $version_string = esc_html($plugin['version'] ?? 'N/A');
-                        if (!empty($plugin['latest_verison']) && version_compare($plugin['latest_verison'], $plugin['version'], '>')) { $version_string .= ' - <span class="badge bg-warning-subtle text-warning-emphasis">' . sprintf(__('Update: %s', 'ayecode-settings-framework'), esc_html($plugin['latest_verison'])) . '</span>'; }
+                        if (!empty($plugin['latest_verison']) && version_compare($plugin['latest_verison'], $plugin['version'], '>')) { $version_string .= ' - <span class="badge bg-warning-subtle text-warning-emphasis">' . sprintf(__('Update: %s', 'ayecode-connect'), esc_html($plugin['latest_verison'])) . '</span>'; }
                         $author_html = esc_html($plugin['author_name'] ?? 'Unknown');
                         if (!empty($plugin['author_url'])) { $author_html = '<a href="' . esc_url($plugin['author_url']) . '" target="_blank" rel="noopener">' . $author_html . '</a>'; }
                         $plugin_info = 'by ' . $author_html . ' &ndash; ' . $version_string;
@@ -315,7 +315,7 @@ class System_Status_Handler {
                 echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">Name</dt>';
                 echo '<dd class="col-sm-7 border-bottom pb-2 mb-2">' . esc_html($theme['name'] ?? 'N/A') . '</dd>';
                 $version_string = esc_html($theme['version'] ?? 'N/A');
-                if (!empty($theme['version_latest']) && version_compare($theme['version_latest'], $theme['version'], '>')) { $version_string .= ' - <span class="badge bg-warning-subtle text-warning-emphasis">' . sprintf(__('Update: %s', 'ayecode-settings-framework'), esc_html($theme['version_latest'])) . '</span>'; }
+                if (!empty($theme['version_latest']) && version_compare($theme['version_latest'], $theme['version'], '>')) { $version_string .= ' - <span class="badge bg-warning-subtle text-warning-emphasis">' . sprintf(__('Update: %s', 'ayecode-connect'), esc_html($theme['version_latest'])) . '</span>'; }
                 echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">Version</dt>';
                 echo '<dd class="col-sm-7 border-bottom pb-2 mb-2">' . wp_kses_post($version_string) . '</dd>';
                 echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">Author</dt>';
@@ -328,7 +328,7 @@ class System_Status_Handler {
                     echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">Parent Theme Name</dt>';
                     echo '<dd class="col-sm-7 border-bottom pb-2 mb-2">' . esc_html($theme['parent_name'] ?? 'N/A') . '</dd>';
                     $parent_version_string = esc_html($theme['parent_version'] ?? 'N/A');
-                    if (!empty($theme['parent_version_latest']) && version_compare($theme['parent_version_latest'], $theme['parent_version'], '>')) { $parent_version_string .= ' - <span class="badge bg-warning-subtle text-warning-emphasis">' . sprintf(__('Update: %s', 'ayecode-settings-framework'), esc_html($theme['parent_version_latest'])) . '</span>'; }
+                    if (!empty($theme['parent_version_latest']) && version_compare($theme['parent_version_latest'], $theme['parent_version'], '>')) { $parent_version_string .= ' - <span class="badge bg-warning-subtle text-warning-emphasis">' . sprintf(__('Update: %s', 'ayecode-connect'), esc_html($theme['parent_version_latest'])) . '</span>'; }
                     echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">Parent Theme Version</dt>';
                     echo '<dd class="col-sm-7 border-bottom pb-2 mb-2">' . wp_kses_post($parent_version_string) . '</dd>';
                     echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">Parent Author</dt>';
@@ -338,7 +338,7 @@ class System_Status_Handler {
                 }
                 if (isset($theme['overrides'])) {
                     $override_count = is_array($theme['overrides']) ? count($theme['overrides']) : 0;
-                    $override_text = $override_count > 0 ? sprintf(_n('%d override found', '%d overrides found', $override_count, 'ayecode-settings-framework'), $override_count) : 'None';
+                    $override_text = $override_count > 0 ? sprintf(_n('%d override found', '%d overrides found', $override_count, 'ayecode-connect'), $override_count) : 'None';
                     if ($theme['has_outdated_templates'] ?? false) { $override_text .= ' <span class="badge bg-warning-subtle text-warning-emphasis">Outdated</span>'; }
                     echo '<dt class="col-sm-5 text-muted fw-normal border-bottom pb-2 mb-2">Template Overrides</dt>';
                     echo '<dd class="col-sm-7 border-bottom pb-2 mb-2">' . wp_kses_post($override_text) . '</dd>';

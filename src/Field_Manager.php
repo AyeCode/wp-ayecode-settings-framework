@@ -351,7 +351,7 @@ class Field_Manager {
 					return new \WP_Error(
 						'duplicate_field_key',
 						sprintf(
-							__( 'Save failed. The field key "%s" is used more than once. Field keys must be unique.', 'ayecode-settings-framework' ),
+							__( 'Save failed. The field key "%s" is used more than once. Field keys must be unique.', 'ayecode-connect' ),
 							esc_html( $key_value )
 						)
 					);
