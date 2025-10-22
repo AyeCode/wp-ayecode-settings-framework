@@ -51,12 +51,17 @@ import '@/renderer/fields/conditions';
 import '@/renderer/fields/file';
 import '@/renderer/fields/googleApiKey';
 
+// Utils
+import { copySystemStatusReport } from '@/utils/systemStatus';
+
 
 
 // ---- Expose the same global used by your HTML: x-data="ayecodeSettingsApp()" ----
 if (typeof window !== 'undefined') {
     window.ayecodeSettingsApp = alpineApp;
 
+    // Expose the copy function globally
+    window.asfCopyStatusReport = copySystemStatusReport;
 }
 
 // ---- Alpine Initialization ----

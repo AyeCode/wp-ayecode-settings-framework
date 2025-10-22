@@ -285,6 +285,7 @@ abstract class Settings_Framework {
 		require_once $base_path . '/Field_Renderer.php'; // Kept for static helpers.
 		require_once $base_path . '/Field_Manager.php';   // The new decoupled field manager.
 		require_once $base_path . '/Extensions_Manager.php';
+		require_once $base_path . '/System_Status_Handler.php';
 	}
 
 	/**
@@ -443,36 +444,68 @@ abstract class Settings_Framework {
 		return $result;
 	}
 
+
 	/**
-	 * Generic handler for "Action Buttons". It fires a dynamic hook
-	 * that a specific settings implementation can listen for.
+	 * Generic handler for "Tool" actions (Action Buttons, Dashboard Widgets, Extension Actions, etc.).
+	 * It verifies the request and routes it to the appropriate handler based on the 'tool_action'.
+	 * Priority: Extension Manager -> Internal Tool Handler -> Child Class Hook.
+	 * NOTE: Content Pane actions are handled by handle_load_content_pane.
 	 */
 	public function handle_tool_action() {
 		check_ajax_referer( 'asf_tool_action', 'nonce' );
 		if ( ! current_user_can( $this->capability ) ) {
 			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+			wp_die(); // Ensure execution stops
 		}
 
 		$tool_action = isset( $_POST['tool_action'] ) ? sanitize_key( $_POST['tool_action'] ) : '';
 		if ( empty( $tool_action ) ) {
 			wp_send_json_error( [ 'message' => 'No tool action specified.' ] );
+			wp_die(); // Ensure execution stops
 		}
 
 		// --- Extension Action Router ---
-		$extension_actions = ['install_and_activate_item', 'install_wp_org_item', 'activate_item', 'deactivate_item', 'connect_site','get_connect_url'];
-		if ( in_array( $tool_action, $extension_actions, true ) ) {
+		$extension_actions = [
+			'get_extension_data',
+			'install_and_activate_item',
+			'install_wp_org_item',
+			'activate_item',
+			'deactivate_item',
+			'connect_site',
+			'get_connect_url'
+		];
+		if ( in_array( $tool_action, $extension_actions, true ) && isset($this->extensions_manager) ) {
+			// The handle_ajax_action method should call wp_send_json_* and wp_die()
 			$this->extensions_manager->handle_ajax_action( $tool_action );
+			// No need for wp_die() here as the handler should manage it.
 			return; // Stop further execution.
 		}
 
-		// --- Internal Action Router ---
-		$handler_method = 'handle_' . $tool_action;
-		if ( method_exists( $this->tool_ajax_handler, $handler_method ) ) {
-			$this->tool_ajax_handler->$handler_method( $_POST );
+		// --- Internal Tool Ajax Handler Router ---
+		// For built-in widgets (Stats, System Status Widget Data, RSS) or framework-level tools.
+		if ( isset($this->tool_ajax_handler) ) {
+			$handler_method = 'handle_' . $tool_action;
+			if ( method_exists( $this->tool_ajax_handler, $handler_method ) ) {
+				// The specific handler method should call wp_send_json_* and wp_die()
+				$this->tool_ajax_handler->$handler_method( $_POST );
+				// No need for wp_die() here as the handler should manage it.
+				return; // Stop further execution.
+			}
 		}
 
+		// --- Child Class Hook ---
+		// If no framework handler was found, fire the hook for the child class implementation.
+		// The child class's hook callback is responsible for sending the JSON response and dying.
 		do_action( 'asf_execute_tool_' . $this->page_slug, $tool_action, $_POST );
+
+		// --- Fallback Error ---
+		// If we reach this point, no handler sent a response.
+		if ( ! headers_sent() ) {
+			wp_send_json_error( [ 'message' => 'Unknown tool action specified or no handler responded.' ] );
+		}
+		wp_die(); // Final fallback to ensure script termination
 	}
+
 
 	/**
 	 * Handles the initial, temporary upload of a file for an import page.
@@ -562,19 +595,44 @@ abstract class Settings_Framework {
 
 	/**
 	 * Generic handler for loading "Custom Content Panes" via AJAX.
+	 * Routes known actions (like system status) and provides a hook for others.
 	 */
 	public function handle_load_content_pane() {
-		check_ajax_referer( 'asf_tool_action', 'nonce' );
+		check_ajax_referer( 'asf_tool_action', 'nonce' ); // Use the same nonce for simplicity
 		if ( ! current_user_can( $this->capability ) ) {
 			wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+			wp_die();
 		}
 
 		$content_action = isset( $_POST['content_action'] ) ? sanitize_key( $_POST['content_action'] ) : '';
 		if ( empty( $content_action ) ) {
 			wp_send_json_error( [ 'message' => 'No content action specified.' ] );
+			wp_die();
 		}
 
+		// --- Built-in Content Pane Router ---
+		if ( $content_action === 'get_system_status_content' ) {
+			// Ensure the handler class exists (it should if loaded in load_dependencies)
+			if ( class_exists( __NAMESPACE__ . '\System_Status_Handler' ) ) {
+				$status_handler = new System_Status_Handler( $this ); // Pass $this for context if needed
+				$html = $status_handler->generate_html();
+				wp_send_json_success( [ 'html' => $html ] );
+			} else {
+				wp_send_json_error( [ 'message' => 'System Status Handler class not found.' ] );
+			}
+			wp_die(); // Execution stops here for this action
+		}
+
+		// --- Fallback Hook for Child Class / Other Plugins ---
+		// Fire the hook for any other content_action. Callbacks hooked here
+		// MUST call wp_send_json_* and wp_die().
 		do_action( 'asf_render_content_pane_' . $this->page_slug, $content_action );
+
+		// --- Fallback Error if Hook Didn't Respond ---
+		if ( ! headers_sent() ) {
+			wp_send_json_error( [ 'message' => 'Unknown content action specified or no handler responded.' ] );
+		}
+		wp_die();
 	}
 
 	/**
