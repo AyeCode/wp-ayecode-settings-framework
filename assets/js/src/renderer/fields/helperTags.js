@@ -18,7 +18,7 @@ registerRenderer('helper_tags', (field) => {
       <div class="d-inline-flex align-items-center border rounded-pill px-2 py-1 me-2 mb-2 bg-light-subtle text-body fs-xs">
         <span 
           class="c-pointer" 
-          @click="navigator.clipboard.writeText('${escapedKey}'); aui_toast('aui-settings-tag-copied','success','Copied to Clipboard');"
+          @click="navigator.clipboard.writeText('${escapedKey}'); aui_toast('aui-settings-tag-copied','success',strings.copied_to_clipboard);"
           data-bs-toggle="tooltip"
           data-bs-placement="top"
           title="Click to copy"

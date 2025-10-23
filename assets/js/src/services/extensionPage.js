@@ -18,10 +18,10 @@ export async function loadExtensions(ctx, section) {
         if (data.success) {
             ctx.extensions = data.data.items;
         } else {
-            ctx.showNotification(data.data.message || 'Failed to fetch extensions.', 'error');
+            ctx.showNotification(data.data.message || ctx.strings.failed_fetch_extensions, 'error');
         }
     } catch (error) {
-        ctx.showNotification('An error occurred while fetching extensions.', 'error');
+        ctx.showNotification(ctx.strings.error_fetching_extensions, 'error');
     } finally {
         ctx.isFetchingExtensions = false;
     }

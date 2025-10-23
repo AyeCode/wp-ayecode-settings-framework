@@ -228,7 +228,7 @@ export async function saveFormBuilder(ctx) {
             }
             ctx.leftColumnView = 'field_list';
             ctx.editingField = window.__ASF_NULL_FIELD;
-            ctx.showNotification(data.data?.message || 'Form saved!', 'success');
+            ctx.showNotification(data.data?.message || ctx.strings.form_saved, 'success');
             return true;
         } else {
             ctx.showNotification(data.data?.message || ctx.strings.error, 'error');

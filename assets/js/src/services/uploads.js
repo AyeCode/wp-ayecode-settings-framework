@@ -34,7 +34,7 @@ export function handleFileUpload(ctx, event, pageId, hiddenFieldName) {
             if (response.success) {
                 state.status = 'selected'; state.uploadedFilename = response.data.filename; state.message = response.data.message;
                 ctx.settings[hiddenFieldName] = response.data.filename;
-            } else { state.status = 'error'; state.success = false; state.message = response.data.message || 'File upload failed.'; }
+            } else { state.status = 'error'; state.success = false; state.message = response.data.message || ctx.strings.file_upload_failed; }
         } else { state.status = 'error'; state.success = false; state.message = `Upload error: ${xhr.statusText}`; }
     };
     xhr.onerror = () => { state.isLoading = false; state.status = 'error'; state.success = false; state.message = 'A network error occurred during upload.'; };

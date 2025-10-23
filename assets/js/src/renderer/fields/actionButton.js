@@ -26,7 +26,7 @@ registerRenderer('action_button', (field) => {
                     @click="executeAction('${field.id}')" 
                     :disabled="${statePath}?.isLoading">
               <span x-show="${statePath}?.isLoading" class="spinner-border spinner-border-sm me-2" x-cloak></span>
-              <span x-text="${statePath}?.isLoading ? 'Processing...' : (${statePath}?.has_dummy_data ? '${removeCfg.button_text}' : '${insertCfg.button_text}')"></span>
+              <span x-text="${statePath}?.isLoading ? strings.processing : (${statePath}?.has_dummy_data ? '${removeCfg.button_text}' : '${insertCfg.button_text}')"></span>
             </button>
           </div>
         </div>
@@ -54,7 +54,7 @@ registerRenderer('action_button', (field) => {
           </div>
           <button type="button" id="${field.id}" class="btn ${buttonClass}" @click="executeAction('${field.id}')" :disabled="${statePath}?.isLoading">
             <span x-show="${statePath}?.isLoading" class="spinner-border spinner-border-sm me-2" x-cloak></span>
-            <span x-text="${statePath}?.isLoading ? 'Processing...' : '${field.button_text || 'Run'}'"></span>
+            <span x-text="${statePath}?.isLoading ? strings.processing : '${field.button_text || 'Run'}'"></span>
           </button>
         </div>
       </div>

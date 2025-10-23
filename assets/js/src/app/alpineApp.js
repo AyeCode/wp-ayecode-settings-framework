@@ -214,7 +214,7 @@ export default function alpineApp() {
                     if (saveSuccess) {
                         navigationAction();
                     } else {
-                        this.showNotification('Save failed. Navigation cancelled.', 'error');
+                        this.showNotification(this.strings.save_failed_navigation_cancelled, 'error');
                     }
                 } else if (userChoice === 'discard') {
                     this.discardChanges(false); // Pass false to skip native confirm
@@ -319,7 +319,7 @@ export default function alpineApp() {
 
         handleFieldClick(option) {
             if (option.limit && this.countFieldsByTemplateId(option) >= option.limit) {
-                window.aui_toast?.('asf-limit-reached', 'error', 'This field is single use only and is already being used.');
+                window.aui_toast?.('asf-limit-reached', 'error', this.strings.field_single_use_limit);
                 return;
             }
             this.addField(option);
@@ -333,7 +333,7 @@ export default function alpineApp() {
                 const allTemplates = this.activePageConfig.templates.flatMap(g => g.options);
                 actualTemplate = allTemplates.find(t => t.id === optionTemplate.base_id);
                 if (!actualTemplate) {
-                    alert(`Error: Base template with id '${optionTemplate.base_id}' could not be found.`);
+                    alert(this.strings.base_template_not_found.replace('%s', optionTemplate.base_id));
                     return;
                 }
                 defaultsToApply = optionTemplate.defaults || {};
@@ -410,7 +410,7 @@ export default function alpineApp() {
                         if (fieldSchema.extra_attributes?.required) {
                             const value = this.editingField[fieldSchema.id];
                             if (value === '' || value === null || value === undefined) {
-                                this.showNotification(`Error: The "${fieldSchema.label || fieldSchema.id}" field is required.`, 'error');
+                                this.showNotification(this.strings.field_required_error.replace('%s', fieldSchema.label || fieldSchema.id), 'error');
                                 this.$nextTick(() => {
                                     const invalidEl = document.getElementById(fieldSchema.id);
                                     if (invalidEl) {
@@ -552,7 +552,7 @@ export default function alpineApp() {
 
         async deleteField(field) {
             if (field._is_default) {
-                alert('This is a default field and cannot be deleted.');
+                alert(this.strings.default_field_cannot_delete);
                 return;
             }
 
@@ -592,14 +592,14 @@ export default function alpineApp() {
                         return;
                     }
                 } else if (!this.activePageConfig.nestable) {
-                    alert('Nesting is not enabled for this field.');
+                    alert(this.strings.nesting_not_enabled);
                     this.sortIteration++;
                     return;
                 }
             }
 
             if (parentId !== null && items.some(i => i._parent_id === movedItem._uid)) {
-                alert('Items that already have children cannot be nested.');
+                alert(this.strings.items_with_children_cannot_nest);
                 this.sortIteration++;
                 return;
             }

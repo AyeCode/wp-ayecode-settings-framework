@@ -375,6 +375,26 @@ abstract class Settings_Framework {
 					'search_placeholder' => __( 'Quick search...', 'ayecode-connect' ),
 					'no_results'        => __( 'No settings found', 'ayecode-connect' ),
 					'clear_search'      => __( 'Clear search', 'ayecode-connect' ),
+					// Form builder & Alpine app
+					'save_failed_navigation_cancelled' => __( 'Save failed. Navigation cancelled.', 'ayecode-connect' ),
+					'field_single_use_limit' => __( 'This field is single use only and is already being used.', 'ayecode-connect' ),
+					'default_field_cannot_delete' => __( 'This is a default field and cannot be deleted.', 'ayecode-connect' ),
+					'nesting_not_enabled' => __( 'Nesting is not enabled for this field.', 'ayecode-connect' ),
+					'items_with_children_cannot_nest' => __( 'Items that already have children cannot be nested.', 'ayecode-connect' ),
+					'field_required_error' => __( 'Error: The "%s" field is required.', 'ayecode-connect' ),
+					'base_template_not_found' => __( 'Error: Base template with id "%s" could not be found.', 'ayecode-connect' ),
+					// Extensions
+					'failed_fetch_extensions' => __( 'Failed to fetch extensions.', 'ayecode-connect' ),
+					'error_fetching_extensions' => __( 'An error occurred while fetching extensions.', 'ayecode-connect' ),
+					// Actions
+					'starting' => __( 'Starting...', 'ayecode-connect' ),
+					'something_went_wrong' => __( 'Something went wrong, please refresh and try again.', 'ayecode-connect' ),
+					'processing' => __( 'Processing...', 'ayecode-connect' ),
+					// Forms & uploads
+					'form_saved' => __( 'Form saved!', 'ayecode-connect' ),
+					'file_upload_failed' => __( 'File upload failed.', 'ayecode-connect' ),
+					// UI feedback
+					'copied_to_clipboard' => __( 'Copied to Clipboard', 'ayecode-connect' ),
 				],
 			]
 		);

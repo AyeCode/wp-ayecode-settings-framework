@@ -175,7 +175,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                                         </div>
                                     </div>
                                     <div x-show="duplicateKeys.includes(childField[activePageConfig.unique_key_property])" class="text-danger small mt-1 ps-2" x-cloak>
-                                        Warning: This field key is a duplicate.
+                                        <?php esc_html_e( 'Warning: This field key is a duplicate.', 'ayecode-connect' ); ?>
                                     </div>
                                 </div>
                             </template>

@@ -109,7 +109,7 @@ export async function executeAction(ctx, fieldId) {
     }
     if (!ajaxAction) { console.error('No ajax_action defined for:', fieldId); return; }
 
-    state.isLoading = true; state.message = 'Starting...'; state.progress = 0; state.success = null;
+    state.isLoading = true; state.message = ctx.strings.starting; state.progress = 0; state.success = null;
 
     const input = {};
     const buttonEl = document.getElementById(fieldId);
@@ -152,7 +152,7 @@ export async function executeAction(ctx, fieldId) {
                 }
             }
         } catch (e) {
-            state.success = false; state.message = 'Something went wrong, please refresh and try again.'; state.isLoading = false;
+            state.success = false; state.message = ctx.strings.something_went_wrong; state.isLoading = false;
             console.error('Action failed:', e);
         }
     };
