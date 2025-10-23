@@ -10,14 +10,43 @@ export function reinitializePlugins(ctx) {
 }
 export function changeView(ctx, updateFn) {
     if (ctx.isChangingView) return;
-    ctx.isChangingView = true;
+    ctx.isChangingView = true; // Set flag immediately
+
+    const pane = ctx.$refs.settingsPane; // Get the element reference
+    const transitionDuration = 150; // Match CSS duration in milliseconds
+
+    if (pane) {
+        // 1. Start fade out
+        pane.classList.remove('fade-in');
+        pane.classList.add('fade-out');
+    }
+
+    // 2. Wait for the fade-out transition to complete
     setTimeout(() => {
+        // 3. Update the underlying Alpine data (this triggers the content change via :key)
         updateFn();
+
+        // 4. Wait for Alpine to finish updating the DOM based on the data change
         ctx.$nextTick(() => {
-            ctx.isChangingView = false;
+            if (pane) {
+                // 5. Force browser reflow to ensure the fade-out style is applied
+                //    before we attempt to fade back in. VERY IMPORTANT!
+                void pane.offsetWidth;
+
+                // 6. Start fade in
+                pane.classList.remove('fade-out');
+                pane.classList.add('fade-in');
+            }
+
+            // 7. Reinitialize plugins *after* the new content is in the DOM
             reinitializePlugins(ctx);
+
+            // 8. Reset the isChangingView flag *after* the fade-in animation should be complete
+            setTimeout(() => {
+                ctx.isChangingView = false;
+            }, transitionDuration);
         });
-    }, 150);
+    }, transitionDuration); // Wait for fade-out before updating content
 }
 export function setupEventListeners(ctx) {
     window.addEventListener('beforeunload', (e) => {

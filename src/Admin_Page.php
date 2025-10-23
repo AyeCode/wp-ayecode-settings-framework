@@ -79,6 +79,33 @@ class Admin_Page {
                 background-color: rgba(255, 0, 8, 0.1) !important;
             }
 
+            .settings-pane-content {
+                /* Transition opacity and transform */
+                transition: opacity 150ms ease-in-out, transform 150ms ease-in-out;
+                /* Final state */
+                opacity: 1;
+                transform: translate(0, 0); /* End at original position (X=0, Y=0) */
+            }
+
+            /* State for being faded out AND slightly down/right */
+            .settings-pane-content.fade-out {
+                opacity: 0;
+                /* Start slightly lower (10px) AND slightly to the right (10px) */
+                transform: translate(5px, 5px);
+            }
+
+            /* State for being faded in AND in the final position */
+            .settings-pane-content.fade-in {
+                opacity: 1;
+                /*transform: translate(0, 0); !* Move back to original position *!*/
+                transform: none !important;
+            }
+
+            /* Optional: Prevent interaction during fade (keep this) */
+            .is-changing .settings-pane-content {
+                pointer-events: none;
+            }
+
         </style>
 
         <div class="bsui" x-data="ayecodeSettingsApp()" style="margin-left: -20px !important;">
@@ -92,8 +119,11 @@ class Admin_Page {
 
                     <div class="main-content w-100 d-flex flex-column justify-content-between position-relative bg-secondary-subtle">
                         <main class="asf-content container" :class="{ 'is-changing': isChangingView }">
-                            <div class="bg-light-subtle p-4 p-md-5 my-5 rounded border" :key="currentSection + '-' + currentSubsection" x-cloak >
-                                <template x-if="activePageConfig">
+                            <div class="bg-light-subtle p-4 p-md-5 my-5 rounded border settings-pane-content fade-in"
+                                 :key="currentSection + '-' + currentSubsection"
+                                 x-cloak
+                                 x-ref="settingsPane"
+                            >                                <template x-if="activePageConfig">
                                     <div>
                                         <?php // Default view for standard settings pages ?>
                                         <template x-if="!activePageConfig.type || (activePageConfig.type !== 'custom_page' && activePageConfig.type !== 'action_page' && activePageConfig.type !== 'import_page' && activePageConfig.type !== 'form_builder' && activePageConfig.type !== 'list_table' && activePageConfig.type !== 'dashboard' && activePageConfig.type !== 'extension_list_page')">
