@@ -486,7 +486,7 @@ abstract class Settings_Framework {
 
 		// --- Extension Action Router ---
 		$extension_actions = [
-			'get_extension_data',
+//			'get_extension_data',
 			'install_and_activate_item',
 			'install_wp_org_item',
 			'activate_item',

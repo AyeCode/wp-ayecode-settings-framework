@@ -7,6 +7,11 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 ?>
 <div x-data="listTableComponent(activePageConfig)">
+    <h2 class="h3" x-text="activePageConfig.page_title || activePageConfig.name"></h2>
+    <template x-if="activePageConfig.description">
+        <p class="text-muted" x-html="activePageConfig.description"></p>
+    </template>
+    <hr class="mt-4 mb-0">
 
     <div x-show="view === 'list'">
 
