@@ -286,6 +286,7 @@ abstract class Settings_Framework {
 		require_once $base_path . '/Field_Manager.php';   // The new decoupled field manager.
 		require_once $base_path . '/Extensions_Manager.php';
 		require_once $base_path . '/System_Status_Handler.php';
+		require_once $base_path . '/Setup_Wizard.php';     // Setup Wizard base class.
 	}
 
 	/**
@@ -348,12 +349,28 @@ abstract class Settings_Framework {
 		// 4. Add 'defer' to the Alpine scripts. WordPress will respect the dependency order.
 		add_filter( 'script_loader_tag', [ $this, 'add_defer_to_alpine_scripts' ], 10, 2 );
 
+		// Determine if this is a wizard instance
+		$is_wizard = $this instanceof Setup_Wizard;
 
-		// Localize the main script with all necessary data.
-		wp_localize_script(
-			'ayecode-settings-framework-admin',
-			'ayecodeSettingsFramework',
-			[
+		// Prepare localization data
+		$localization_object = $is_wizard ? 'ayecodeWizardFramework' : 'ayecodeSettingsFramework';
+
+		if ( $is_wizard ) {
+			// Wizard-specific localization
+			$localization_data = [
+				'steps'            => $this->get_wizard_config_for_js()['steps'] ?? [],
+				'wizard_config'    => $this->get_wizard_config_for_js()['wizard_config'] ?? [],
+				'is_connected'     => $this->get_wizard_config_for_js()['is_connected'] ?? false,
+				'is_localhost'     => $this->get_wizard_config_for_js()['is_localhost'] ?? false,
+				'ajax_url'         => admin_url( 'admin-ajax.php' ),
+				'tool_nonce'       => wp_create_nonce( 'asf_tool_action' ),
+				'tool_ajax_action' => 'asf_tool_action_' . $this->page_slug,
+				'page_slug'        => $this->page_slug,
+				'strings'          => method_exists( $this, 'get_wizard_strings' ) ? $this->get_wizard_strings() : [],
+			];
+		} else {
+			// Standard settings page localization
+			$localization_data = [
 				'config'         => $this->get_config_with_preloads(),
 				'settings'       => $this->get_settings(),
 				'image_previews' => $this->get_image_previews(),
@@ -396,7 +413,14 @@ abstract class Settings_Framework {
 					// UI feedback
 					'copied_to_clipboard' => __( 'Copied to Clipboard', 'ayecode-connect' ),
 				],
-			]
+			];
+		}
+
+		// Localize the main script with appropriate data
+		wp_localize_script(
+			'ayecode-settings-framework-admin',
+			$localization_object,
+			$localization_data
 		);
 
 		wp_add_inline_script(

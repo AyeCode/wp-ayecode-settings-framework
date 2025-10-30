@@ -13,6 +13,9 @@ import dashboardComponent from '@/components/dashboardComponent';
 // ... (imports remain the same)
 import extensionListComponent from '@/components/extensionListComponent';
 
+// Import the wizard component
+import setupWizardComponent from '@/components/setupWizardComponent';
+
 // ---- Renderer dispatcher (publishes window.asfFieldRenderer and fallback logic) ----
 import '@/renderer/index';
 
@@ -60,6 +63,9 @@ import { copySystemStatusReport } from '@/utils/systemStatus';
 if (typeof window !== 'undefined') {
     window.ayecodeSettingsApp = alpineApp;
 
+    // Expose the wizard component globally
+    window.setupWizardComponent = setupWizardComponent;
+
     // Expose the copy function globally
     window.asfCopyStatusReport = copySystemStatusReport;
 }
@@ -95,6 +101,9 @@ document.addEventListener("alpine:init", () => {
 
         // Register the new extension list component
         window.Alpine.data('extensionListComponent', extensionListComponent);
+
+        // Register the wizard component
+        window.Alpine.data('setupWizardComponent', setupWizardComponent);
 
     } else {
         console.log("x-sort directive not found ❌");

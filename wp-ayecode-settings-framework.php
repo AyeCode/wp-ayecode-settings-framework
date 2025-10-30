@@ -52,6 +52,9 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
         // Load the new Extensions page example class
         require_once __DIR__ . '/AyeCode_Extensions_Page_Example.php';
 
+        // Load the new Wizard page example class
+        require_once __DIR__ . '/AyeCode_Wizard_Example.php';
+
 
         // Add hooks for this specific settings page's tools.
         // The hooks are dynamic based on the page_slug.
@@ -685,6 +688,8 @@ class WP_AyeCode_Settings_Framework_Loader {
         // You can initialize other settings pages here as well.
         // new My_Other_Plugin_Settings();
         new WP_AyeCode_Framework_Demo_Dashboard_Page();
+
+        new AyeCode_Wizard_Example();
     }
 }
 
