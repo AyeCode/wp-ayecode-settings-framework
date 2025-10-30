@@ -13,8 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 ?>
 <div>
 	<!-- Step Icon -->
-	<div class="bg-primary bg-gradient text-white rounded-4 d-flex align-items-center justify-content-center mx-auto mb-4"
-	     style="width: 80px; height: 80px; font-size: 2.5rem;">
+	<div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4"
+	     style="width: 60px; height: 60px; font-size: 1.8rem;">
 		<i class="fa-solid fa-rocket"></i>
 	</div>
 
@@ -28,8 +28,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<template x-if="step.features && step.features.length > 0">
 		<div class="row g-2 mb-4">
 			<template x-for="feature in step.features" :key="feature">
-				<div class="col-6">
-					<div class="p-2 bg-light rounded small" x-text="feature"></div>
+				<div class="col-6 d-flex align-items-center justify-content-centerx">
+                    <span class="badge text-success bg-success-subtle mb-2x rounded-circle py-2 px-2 m-0 d-block fs-xm" ><i class="fa-solid fa-check"></i></span>
+<!--                    <i class="fa-solid fa-circle-check text-success fs-6"></i>-->
+					<span class="p-2 bg-lightx rounded small" x-text="feature"></span>
 				</div>
 			</template>
 		</div>

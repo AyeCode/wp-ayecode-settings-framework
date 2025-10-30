@@ -25,10 +25,17 @@ export default function setupWizardComponent(frameworkConfig) {
 		isConnecting: false,
 		strings: {},
 		wizardConfig: {},
+		theme: 'light',
 
 		// --- LIFECYCLE ---
 		init() {
 			console.log('Setup Wizard Component Initialized', this.config);
+
+			// Initialize theme from localStorage or system preference
+			const saved = localStorage.getItem('asf_theme');
+			const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+			this.theme = saved ? saved : (prefersDark ? 'dark' : 'light');
+			this.$watch('theme', (value) => localStorage.setItem('asf_theme', value));
 
 			// Extract configuration
 			this.steps = this.config.steps || [];
@@ -83,6 +90,15 @@ export default function setupWizardComponent(frameworkConfig) {
 			if (wizardContent) {
 				wizardContent.scrollTop = 0;
 			}
+		},
+
+		// --- THEME ---
+
+		/**
+		 * Toggles the theme between light and dark
+		 */
+		toggleTheme() {
+			this.theme = this.theme === 'light' ? 'dark' : 'light';
 		},
 
 		// --- WIZARD ACTIONS ---

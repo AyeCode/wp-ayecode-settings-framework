@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 <!-- White card container with shadow -->
-<div class="card shadow-lg border-0 rounded-4" style="max-width: 700px; width: 100%;" x-show="currentStep" x-cloak>
+<div class="card bg-light-subtle shadow-lg border-0 rounded-4 " style="max-width: 700px; width: 100%;" x-show="currentStep" x-cloak>
 	<div class="card-body p-4 p-md-5">
 
 		<!-- Loop through steps to render the active one -->
@@ -57,7 +57,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 						<!-- Navigation Buttons -->
 						<div class="d-flex gap-2 mt-4 justify-content-between">
-							<button class="btn btn-light"
+							<button class="btn btn-light-subtle border"
 							        @click="prevStep()"
 							        x-show="currentStepIndex > 0"
 							        x-text="strings.back || 'Back'">

@@ -17,16 +17,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 <!-- Full-height container with gradient background using Bootstrap utilities -->
 <div class="bsui">
-    <div class="d-flex flex-column vh-100 bg-primary bg-gradient overflow-hidden"
+    <div class="d-flex flex-column vh-100 bg-secondary-subtlex bg-warning-subtlex bg-dotted overflow-hidden"
+         style="--bs-bg-color: var(--bs-warning-bg-subtle); --bs-dot-color: var(--bs-warning)"
          x-data="setupWizardComponent(window.ayecodeWizardFramework)"
+         :data-bs-theme="theme"
          x-cloak>
 
         <?php include __DIR__ . '/partials/header.php'; ?>
 
         <!-- Content area - centered with padding -->
-        <div class="flex-fill d-flex align-items-center justify-content-center p-4 overflow-auto">
-            <?php include __DIR__ . '/partials/content-area.php'; ?>
+        <div class=" overflow-auto p-4">
+            <div class="flex-fill d-flex align-items-center justify-content-center p-4">
+                <?php include __DIR__ . '/partials/content-area.php'; ?>
+            </div>
         </div>
+
 
     </div>
 </div>

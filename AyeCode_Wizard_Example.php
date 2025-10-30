@@ -39,16 +39,16 @@ class AyeCode_Wizard_Example extends \AyeCode\SettingsFramework\Setup_Wizard {
 					'description' => __( 'Access all 30+ premium addons', 'ayecode-connect' ),
 					'template'    => 'membership', // Use built-in membership template
 					'features'    => [
-						__( '✓ Advanced Search & Filters', 'ayecode-connect' ),
-						__( '✓ Location Manager (multi-city)', 'ayecode-connect' ),
-						__( '✓ Pricing Manager (monetization)', 'ayecode-connect' ),
-						__( '✓ Claim Listings', 'ayecode-connect' ),
-						__( '✓ Events Calendar', 'ayecode-connect' ),
-						__( '✓ Custom Fields', 'ayecode-connect' ),
-						__( '✓ Payment Gateway Integration', 'ayecode-connect' ),
-						__( '✓ Reviews & Ratings', 'ayecode-connect' ),
-						__( '✓ Multi-directory types', 'ayecode-connect' ),
-						__( '✓ And 21+ more addons...', 'ayecode-connect' ),
+						__( 'Advanced Search & Filters', 'ayecode-connect' ),
+						__( 'Location Manager (multi-city)', 'ayecode-connect' ),
+						__( 'Pricing Manager (monetization)', 'ayecode-connect' ),
+						__( 'Claim Listings', 'ayecode-connect' ),
+						__( 'Events Calendar', 'ayecode-connect' ),
+						__( 'Custom Fields', 'ayecode-connect' ),
+						__( 'Payment Gateway Integration', 'ayecode-connect' ),
+						__( 'Reviews & Ratings', 'ayecode-connect' ),
+						__( 'Multi-directory types', 'ayecode-connect' ),
+						__( 'And 21+ more addons...', 'ayecode-connect' ),
 					],
 					'pricing_options' => [
 						[

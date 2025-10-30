@@ -70,7 +70,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 	<!-- Upsell for Free Users -->
 	<template x-if="!isPaidUser">
-		<div class="border border-warning border-2 rounded-4 p-4 mt-4" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);">
+		<div class="border border-warning border-2 rounded-4 p-4 mt-4" >
 			<div class="badge bg-warning text-dark mb-3">
 				<i class="fa-solid fa-gem"></i>
 				<span x-text="' ' + (strings.youre_on_free_plan || 'You\'re on the FREE plan')"></span>
