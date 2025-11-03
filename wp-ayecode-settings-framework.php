@@ -46,6 +46,7 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
     public function __construct() {
         parent::__construct(); // IMPORTANT: Always call the parent constructor!
 
+
         // Include the new manager class for API keys.
         require_once __DIR__ . '/AyeCode_API_Key_Manager_Example.php';
 
@@ -675,6 +676,10 @@ class WP_AyeCode_Settings_Framework_Loader {
     }
 
     public function init() {
+
+        if ( ! is_admin() ) {
+            return;
+        }
 
         require_once __DIR__ . '/Dashboard_Page.php';
 
