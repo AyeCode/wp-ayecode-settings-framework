@@ -357,11 +357,13 @@ abstract class Settings_Framework {
 
 		if ( $is_wizard ) {
 			// Wizard-specific localization
+			$wizard_config = $this->get_wizard_config_for_js();
 			$localization_data = [
-				'steps'            => $this->get_wizard_config_for_js()['steps'] ?? [],
-				'wizard_config'    => $this->get_wizard_config_for_js()['wizard_config'] ?? [],
-				'is_connected'     => $this->get_wizard_config_for_js()['is_connected'] ?? false,
-				'is_localhost'     => $this->get_wizard_config_for_js()['is_localhost'] ?? false,
+				'steps'            => $wizard_config['steps'] ?? [],
+				'wizard_config'    => $wizard_config['wizard_config'] ?? [],
+				'is_connected'     => $wizard_config['is_connected'] ?? false,
+				'is_member_active' => $wizard_config['is_member_active'] ?? false,
+				'is_localhost'     => $wizard_config['is_localhost'] ?? false,
 				'ajax_url'         => admin_url( 'admin-ajax.php' ),
 				'tool_nonce'       => wp_create_nonce( 'asf_tool_action' ),
 				'tool_ajax_action' => 'asf_tool_action_' . $this->page_slug,
@@ -912,6 +914,7 @@ abstract class Settings_Framework {
 	 * @return bool True if localhost, false otherwise.
 	 */
 	protected function is_localhost() {
+//		return false;
 		$host = ! empty( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : 'localhost';
 		$local_domains = [ '.localhost', '.test', 'localhost','.local' ]; // Common local domains
 		foreach ( $local_domains as $domain ) {
@@ -934,6 +937,7 @@ abstract class Settings_Framework {
 	 * @return bool True if connected, false otherwise.
 	 */
 	protected function is_connected() {
+		return true; // @todo remove after testing
 		if ( class_exists( 'AyeCode_Connect_Settings' ) ) {
 			try {
 				$settings = \AyeCode_Connect_Settings::instance();
@@ -946,6 +950,49 @@ abstract class Settings_Framework {
 				return false;
 			}
 		}
+		return false;
+	}
+
+	/**
+	 * Returns the domain to check for active membership licenses.
+	 * Child classes should override this to specify their product domain.
+	 *
+	 * @return string|null The domain (e.g., 'wpgeodirectory.com') or null if not applicable.
+	 */
+	protected function get_membership_domain() {
+		return null;
+	}
+
+	/**
+	 * Checks if the user has an active paid membership for a specific domain.
+	 * Looks for active license in the 'exup_keys' option.
+	 *
+	 * @param string|null $domain The domain to check (e.g., 'wpgeodirectory.com').
+	 *                            If null, uses get_membership_domain().
+	 * @return bool True if an active membership exists, false otherwise.
+	 */
+	protected function is_member_active( $domain = null ) {
+		return true;// @todo remove after testing
+		// Use provided domain or get from child class
+		if ( null === $domain ) {
+			$domain = $this->get_membership_domain();
+		}
+
+		// If no domain specified, return false
+		if ( empty( $domain ) ) {
+			return false;
+		}
+
+		// Get license keys from option
+		$keys = get_option( 'exup_keys', [] );
+
+		// Check if domain exists and has active status
+		if ( isset( $keys[ $domain ] ) && is_object( $keys[ $domain ] ) ) {
+			return isset( $keys[ $domain ]->status ) && 'active' === $keys[ $domain ]->status;
+		} elseif ( isset( $keys[ $domain ] ) && is_array( $keys[ $domain ] ) ) {
+			return isset( $keys[ $domain ]['status'] ) && 'active' === $keys[ $domain ]['status'];
+		}
+
 		return false;
 	}
 }

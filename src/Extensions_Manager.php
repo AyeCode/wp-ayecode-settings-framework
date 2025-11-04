@@ -97,6 +97,7 @@ class Extensions_Manager {
 			'install_and_activate_wp_org_item',
 			'connect_site',
 			'get_connect_url',
+			'refresh_membership_status',
 		];
 
 		if ( in_array( $action, $allowed_actions, true ) ) {
@@ -374,6 +375,35 @@ class Extensions_Manager {
 			deactivate_plugins( $main_file );
 
 			wp_send_json_success( [ 'message' => 'Plugin deactivated.' ] );
+		}
+	}
+
+	/**
+	 * Handles the 'Refresh Status' button action for membership status.
+	 * Checks if AyeCode Connect can refresh the license status.
+	 */
+	public function handle_refresh_membership_status() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => 'You do not have permission to refresh membership status.' ] );
+		}
+
+		// Check if AyeCode Connect is available and can refresh licenses
+		if ( class_exists( 'AyeCode_Connect_Helper' ) && method_exists( 'AyeCode_Connect_Helper', 'refresh_licenses' ) ) {
+			// Trigger license refresh
+			\AyeCode_Connect_Helper::refresh_licenses();
+
+			// Get updated membership status
+			$is_member_active = false;
+			if ( method_exists( $this->framework, 'is_member_active' ) ) {
+				$is_member_active = $this->framework->is_member_active();
+			}
+
+			wp_send_json_success( [
+				'message'          => __( 'Membership status refreshed successfully!', 'ayecode-connect' ),
+				'is_member_active' => $is_member_active,
+			] );
+		} else {
+			wp_send_json_error( [ 'message' => __( 'Unable to refresh membership status. Please try connecting your site first.', 'ayecode-connect' ) ] );
 		}
 	}
 }

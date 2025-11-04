@@ -91,18 +91,33 @@ if ( ! defined( 'ABSPATH' ) ) {
 			</button>
 		</template>
 
-		<!-- Connect Button (for existing members) -->
+		<!-- Connect Button (for existing members - NOT connected) -->
 		<button class="btn btn-outline-primary btn-lg"
 		        @click="connectSite()"
 		        :disabled="isConnecting"
-		        x-show="!isPaidUser">
+		        x-show="!isConnected">
 			<template x-if="!isConnecting">
-				<span x-text="strings.i_have_membership || 'I have a membership, Connect'"></span>
+				<span x-text="strings.i_have_membership || 'I have a membership, Log in'"></span>
 				<i class="fa-solid fa-arrow-right ms-2"></i>
 			</template>
 			<template x-if="isConnecting">
 				<span class="spinner-border spinner-border-sm me-2"></span>
 				<span x-text="strings.connecting || 'Connecting...'"></span>
+			</template>
+		</button>
+
+		<!-- Refresh Status Button (connected but NO active membership) -->
+		<button class="btn btn-outline-success btn-lg"
+		        @click="refreshMembershipStatus()"
+		        :disabled="isRefreshing"
+		        x-show="isConnected && !isMemberActive">
+			<template x-if="!isRefreshing">
+				<i class="fa-solid fa-arrows-rotate me-2"></i>
+				<span x-text="strings.refresh_status || 'Refresh Status'"></span>
+			</template>
+			<template x-if="isRefreshing">
+				<span class="spinner-border spinner-border-sm me-2"></span>
+				<span x-text="strings.refreshing || 'Refreshing...'"></span>
 			</template>
 		</button>
 
@@ -113,11 +128,36 @@ if ( ! defined( 'ABSPATH' ) ) {
 		</button>
 	</div>
 
-	<!-- Already Connected Message -->
-	<template x-if="isPaidUser">
+	<!-- License Key Input (for localhost only) -->
+	<template x-if="config.is_localhost">
+		<div class="mt-4 p-3 border rounded bg-light-subtle">
+			<label class="form-label fw-semibold">
+				<i class="fa-solid fa-key me-2"></i>
+				<span x-text="strings.membership_key || 'Membership Key'"></span>
+			</label>
+			<input type="text"
+			       x-model="wizardData.license_key"
+			       class="form-control mb-2"
+			       :placeholder="strings.enter_license_key || 'Enter your license key'">
+			<button class="btn btn-secondary w-100"
+			        @click="activateLicense()"
+			        :disabled="!wizardData.license_key || isConnecting">
+				<template x-if="!isConnecting">
+					<span x-text="strings.activate_license || 'Activate License'"></span>
+				</template>
+				<template x-if="isConnecting">
+					<span class="spinner-border spinner-border-sm me-2"></span>
+					<span x-text="strings.activating || 'Activating...'"></span>
+				</template>
+			</button>
+		</div>
+	</template>
+
+	<!-- Connected + Active Message -->
+	<template x-if="isConnected && isMemberActive">
 		<div class="alert alert-success mt-4 text-center">
 			<i class="fa-solid fa-circle-check"></i>
-			<span x-text="' ' + (strings.already_connected || 'Site is already connected!')"></span>
+			<span x-text="' ' + (strings.membership_active || 'Active membership detected!')"></span>
 		</div>
 	</template>
 

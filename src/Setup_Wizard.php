@@ -69,9 +69,10 @@ abstract class Setup_Wizard extends Settings_Framework {
 	public function get_wizard_config_for_js() {
 		$config = $this->get_config_raw();
 
-		// Add connection status for membership steps
-		$config['is_connected'] = $this->is_connected();
-		$config['is_localhost'] = $this->is_localhost();
+		// Add connection and membership status - ensure boolean values
+		$config['is_connected']    = (bool) $this->is_connected();
+		$config['is_member_active'] = (bool) $this->is_member_active();
+		$config['is_localhost']     = (bool) $this->is_localhost();
 
 		// Add wizard-specific metadata
 		if ( ! isset( $config['wizard_config'] ) ) {
@@ -88,7 +89,43 @@ abstract class Setup_Wizard extends Settings_Framework {
 			$config['wizard_config']['dashboard_url'] = admin_url();
 		}
 
+		// Filter steps based on user membership status
+		if ( isset( $config['steps'] ) && is_array( $config['steps'] ) ) {
+			$config['steps'] = $this->filter_steps_by_membership( $config['steps'], $config['is_connected'], $config['is_member_active'] );
+		}
+
 		return $config;
+	}
+
+	/**
+	 * Filters wizard steps based on membership status.
+	 * Removes steps that should only be shown to paid or free users.
+	 * Skips membership step entirely if user is connected AND has active membership.
+	 *
+	 * @param array $steps           The wizard steps configuration.
+	 * @param bool  $is_connected    Whether the site is connected via AyeCode Connect.
+	 * @param bool  $is_member_active Whether the user has an active paid membership.
+	 * @return array Filtered steps array.
+	 */
+	protected function filter_steps_by_membership( $steps, $is_connected, $is_member_active ) {
+		return array_values( array_filter( $steps, function( $step ) use ( $is_connected, $is_member_active ) {
+			// Skip membership step if user is connected AND has active membership
+			if ( ! empty( $step['template'] ) && 'membership' === $step['template'] && $is_connected && $is_member_active ) {
+				return false;
+			}
+
+			// Show step only to paid users (connected + active membership)
+			if ( ! empty( $step['show_if_paid'] ) && ! ( $is_connected && $is_member_active ) ) {
+				return false;
+			}
+
+			// Show step only to free users (not connected OR no active membership)
+			if ( ! empty( $step['show_if_free'] ) && ( $is_connected && $is_member_active ) ) {
+				return false;
+			}
+
+			return true;
+		} ) );
 	}
 
 	/**
@@ -117,6 +154,14 @@ abstract class Setup_Wizard extends Settings_Framework {
 			'i_have_membership'       => __( 'I have a membership, Log in', 'ayecode-connect' ),
 			'connecting'              => __( 'Connecting...', 'ayecode-connect' ),
 			'best_value'              => __( 'BEST VALUE', 'ayecode-connect' ),
+			'refresh_status'          => __( 'Refresh Status', 'ayecode-connect' ),
+			'refreshing'              => __( 'Refreshing...', 'ayecode-connect' ),
+			'membership_key'          => __( 'Membership Key', 'ayecode-connect' ),
+			'enter_license_key'       => __( 'Enter your license key', 'ayecode-connect' ),
+			'activate_license'        => __( 'Activate License', 'ayecode-connect' ),
+			'activating'              => __( 'Activating...', 'ayecode-connect' ),
+			'license_activated'       => __( 'License activated successfully!', 'ayecode-connect' ),
+			'invalid_license'         => __( 'Invalid license key. Please try again.', 'ayecode-connect' ),
 
 			// Complete step
 			'all_set'                 => __( 'All Set!', 'ayecode-connect' ),

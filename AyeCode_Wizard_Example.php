@@ -23,6 +23,35 @@ class AyeCode_Wizard_Example extends \AyeCode\SettingsFramework\Setup_Wizard {
 	protected $menu_position = 32;
 
 	/**
+	 * Override to specify the domain for membership license checks.
+	 * This determines which key to check in the 'exup_keys' option.
+	 *
+	 * @return string The domain to check for active membership.
+	 */
+	protected function get_membership_domain() {
+		return 'wpgeodirectory.com';
+	}
+
+	/**
+	 * TESTING ONLY: Force membership status for testing conditional fields.
+	 * Uncomment the methods below to test different membership states.
+	 */
+
+	// Force connected state for testing
+	protected function is_connected() {
+		error_log( 'AyeCode_Wizard_Example::is_connected() called - returning TRUE' );
+		return true; // Force connected
+		// return parent::is_connected(); // Uncomment for real check
+	}
+
+	// Force member active state for testing
+	protected function is_member_active( $domain = null ) {
+		error_log( 'AyeCode_Wizard_Example::is_member_active() called - returning TRUE' );
+		return true; // Force active membership
+		// return parent::is_member_active( $domain ); // Uncomment for real check
+	}
+
+	/**
 	 * Define the wizard configuration.
 	 * This method specifies all steps, their content, and wizard-level settings.
 	 *
@@ -82,12 +111,12 @@ class AyeCode_Wizard_Example extends \AyeCode\SettingsFramework\Setup_Wizard {
 							'type'    => 'checkbox_group',
 							'label'   => __( 'Directory Type', 'ayecode-connect' ),
 							'options' => [
+								'general'     => __( '📂 General - Multi-purpose directory', 'ayecode-connect' ),
 								'events'      => __( '🎭 Events - Concerts, festivals, activities', 'ayecode-connect' ),
 								'realestate'  => __( '🏠 Real Estate - Properties & listings', 'ayecode-connect' ),
 								'automotive'  => __( '🚗 Automotive - Cars, dealers, services', 'ayecode-connect' ),
 								'healthcare'  => __( '🏥 Healthcare - Doctors & medical services', 'ayecode-connect' ),
 								'restaurants' => __( '🍽️ Restaurants - Food & dining', 'ayecode-connect' ),
-								'general'     => __( '📂 General - Multi-purpose directory', 'ayecode-connect' ),
 							],
 							'default' => [ 'general' ],
 						],
@@ -97,6 +126,54 @@ class AyeCode_Wizard_Example extends \AyeCode\SettingsFramework\Setup_Wizard {
 							'label'       => __( 'Add sample listings', 'ayecode-connect' ),
 							'description' => __( 'Get started quickly with example content', 'ayecode-connect' ),
 							'default'     => true,
+						],
+						// Example: Field visible only to paid users (connected + active membership)
+						[
+							'id'          => 'premium_templates',
+							'type'        => 'checkbox_group',
+							'label'       => __( 'Premium Templates', 'ayecode-connect' ),
+							'description' => __( 'Select premium listing templates (Pro members only)', 'ayecode-connect' ),
+							'options'     => [
+								'modern'  => __( 'Modern Template', 'ayecode-connect' ),
+								'classic' => __( 'Classic Template', 'ayecode-connect' ),
+								'minimal' => __( 'Minimal Template', 'ayecode-connect' ),
+							],
+							'show_if'     => [
+								'field'      => 'user_membership_status',
+								'value'      => 'paid',
+								'comparison' => '===',
+							],
+						],
+						// Example: Alternative - Check is_member_active directly
+						[
+							'id'          => 'advanced_seo',
+							'type'        => 'toggle',
+							'label'       => __( 'Enable Advanced SEO', 'ayecode-connect' ),
+							'description' => __( 'Premium SEO features', 'ayecode-connect' ),
+							'show_if'     => [
+								'field'      => 'is_member_active',
+								'value'      => true,
+								'comparison' => '===',
+							],
+						],
+						// Example: Show only to connected users (regardless of active status)
+						[
+							'id'          => 'upgrade_prompt',
+							'type'        => 'info',
+							'label'       => __( 'Upgrade Your Membership', 'ayecode-connect' ),
+							'description' => __( 'Your membership has expired. Renew to access premium features.', 'ayecode-connect' ),
+							'show_if'     => [
+								[
+									'field'      => 'is_connected',
+									'value'      => true,
+									'comparison' => '===',
+								],
+								[
+									'field'      => 'is_member_active',
+									'value'      => false,
+									'comparison' => '===',
+								],
+							],
 						],
 					],
 				],
@@ -150,6 +227,49 @@ class AyeCode_Wizard_Example extends \AyeCode\SettingsFramework\Setup_Wizard {
 					],
 				],
 
+				// Example: Step visible only to paid users
+				[
+					'id'            => 'premium_addons',
+					'title'         => __( 'Configure Premium Addons', 'ayecode-connect' ),
+					'description'   => __( 'Select and configure your premium addons.', 'ayecode-connect' ),
+					'icon'          => '⭐',
+					'show_if_paid'  => true, // Only shown to paid users
+					'fields'        => [
+						[
+							'id'          => 'enable_advanced_search',
+							'type'        => 'toggle',
+							'label'       => __( 'Enable Advanced Search', 'ayecode-connect' ),
+							'description' => __( 'Add advanced filtering to your directory', 'ayecode-connect' ),
+							'default'     => true,
+						],
+						[
+							'id'          => 'enable_payment_gateway',
+							'type'        => 'toggle',
+							'label'       => __( 'Enable Payment Gateway', 'ayecode-connect' ),
+							'description' => __( 'Accept payments for listings', 'ayecode-connect' ),
+							'default'     => false,
+						],
+					],
+				],
+
+				// Example: Step visible only to free users
+				[
+					'id'            => 'free_upgrade_reminder',
+					'title'         => __( 'Upgrade to Unlock More Features', 'ayecode-connect' ),
+					'description'   => __( 'See what you\'re missing with the free plan.', 'ayecode-connect' ),
+					'icon'          => '💎',
+					'show_if_free'  => true, // Only shown to free users
+					'fields'        => [
+						[
+							'id'          => 'understand_limitations',
+							'type'        => 'toggle',
+							'label'       => __( 'I understand the free plan limitations', 'ayecode-connect' ),
+							'description' => __( 'Free plan includes basic features only', 'ayecode-connect' ),
+							'default'     => false,
+						],
+					],
+				],
+
 				// Step 5: Complete (uses built-in template)
 				[
 					'id'          => 'complete',
@@ -198,4 +318,5 @@ class AyeCode_Wizard_Example extends \AyeCode\SettingsFramework\Setup_Wizard {
 
 // Initialize the example wizard
 // Note: This would typically be done in your main plugin file
+// Instantiation is handled in wp-ayecode-settings-framework.php
 // new AyeCode_Wizard_Example();

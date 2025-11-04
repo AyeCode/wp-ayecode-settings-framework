@@ -21,8 +21,11 @@ export default function setupWizardComponent(frameworkConfig) {
 		steps: [],
 		currentStepIndex: 0,
 		wizardData: {},
+		isConnected: false,
+		isMemberActive: false,
 		isPaidUser: false,
 		isConnecting: false,
+		isRefreshing: false,
 		strings: {},
 		wizardConfig: {},
 		theme: 'light',
@@ -41,7 +44,24 @@ export default function setupWizardComponent(frameworkConfig) {
 			this.steps = this.config.steps || [];
 			this.strings = this.config.strings || {};
 			this.wizardConfig = this.config.wizard_config || {};
-			this.isPaidUser = this.config.is_connected || false;
+			this.isConnected = this.config.is_connected || false;
+			this.isMemberActive = this.config.is_member_active || false;
+			this.isPaidUser = this.isConnected && this.isMemberActive;
+
+			// Add user membership status to wizardData for conditional field visibility
+			this.wizardData.user_membership_status = this.isPaidUser ? 'paid' : 'free';
+			this.wizardData.is_connected = this.isConnected;
+			this.wizardData.is_member_active = this.isMemberActive;
+
+			// Debug: Log membership status
+			console.log('Membership Status Initialized:', {
+				isConnected: this.isConnected,
+				isMemberActive: this.isMemberActive,
+				isPaidUser: this.isPaidUser,
+				user_membership_status: this.wizardData.user_membership_status,
+				is_connected_in_wizardData: this.wizardData.is_connected,
+				is_member_active_in_wizardData: this.wizardData.is_member_active
+			});
 
 			// Initialize wizard data with defaults from fields
 			this.steps.forEach(step => {
@@ -133,7 +153,12 @@ export default function setupWizardComponent(frameworkConfig) {
 				if (result.success) {
 					// Check if already connected
 					if (result.data.already_connected) {
+						this.isConnected = true;
+						this.isMemberActive = true;
 						this.isPaidUser = true;
+						this.wizardData.is_connected = true;
+						this.wizardData.is_member_active = true;
+						this.wizardData.user_membership_status = 'paid';
 						this.showNotification(result.data.message || this.strings.already_connected || 'Site is already connected!', 'success');
 						// Auto-advance after brief delay
 						setTimeout(() => this.nextStep(), 1500);
@@ -180,6 +205,48 @@ export default function setupWizardComponent(frameworkConfig) {
 			} catch (error) {
 				console.error('Get connect URL error:', error);
 				this.showNotification('Failed to get connect URL', 'error');
+			}
+		},
+
+		/**
+		 * Refresh membership status for connected sites without active membership
+		 */
+		async refreshMembershipStatus() {
+			this.isRefreshing = true;
+
+			try {
+				const formData = new FormData();
+				formData.append('action', this.config.tool_ajax_action || 'asf_tool_action_' + this.config.page_slug);
+				formData.append('tool_action', 'refresh_membership_status');
+				formData.append('nonce', this.config.tool_nonce || '');
+
+				const response = await fetch(this.config.ajax_url || window.ajaxurl, {
+					method: 'POST',
+					body: formData
+				});
+
+				const result = await response.json();
+
+				if (result.success) {
+					this.isMemberActive = result.data.is_member_active || false;
+					this.isPaidUser = this.isConnected && this.isMemberActive;
+					this.wizardData.user_membership_status = this.isPaidUser ? 'paid' : 'free';
+					this.wizardData.is_member_active = this.isMemberActive;
+
+					this.showNotification(result.data.message || this.strings.membership_refreshed || 'Status refreshed!', 'success');
+
+					// If now active, auto-advance
+					if (this.isMemberActive) {
+						setTimeout(() => this.nextStep(), 1500);
+					}
+				} else {
+					this.showNotification(result.data?.message || 'Failed to refresh status', 'error');
+				}
+			} catch (error) {
+				console.error('Refresh membership status error:', error);
+				this.showNotification('Failed to refresh status. Please try again.', 'error');
+			} finally {
+				this.isRefreshing = false;
 			}
 		},
 
@@ -255,13 +322,29 @@ export default function setupWizardComponent(frameworkConfig) {
 
 			// Reuse the framework's conditional logic if available
 			if (typeof window.asfFieldRenderer !== 'undefined' && typeof window.asfFieldRenderer.evaluateConditions === 'function') {
-				return window.asfFieldRenderer.evaluateConditions(field.show_if, this.wizardData);
+				const result = window.asfFieldRenderer.evaluateConditions(field.show_if, this.wizardData);
+
+				// Debug logging
+				if (field.id === 'premium_templates' || field.id === 'advanced_seo' || field.id === 'upgrade_prompt') {
+					console.log('Field visibility check:', {
+						fieldId: field.id,
+						show_if: field.show_if,
+						wizardData: {
+							user_membership_status: this.wizardData.user_membership_status,
+							is_connected: this.wizardData.is_connected,
+							is_member_active: this.wizardData.is_member_active
+						},
+						result: result
+					});
+				}
+
+				return result;
 			}
 
 			// Simple fallback implementation
 			const conditions = Array.isArray(field.show_if) ? field.show_if : [field.show_if];
 
-			return conditions.every(condition => {
+			const result = conditions.every(condition => {
 				const targetValue = this.wizardData[condition.field];
 				const compareValue = condition.value;
 
@@ -286,6 +369,22 @@ export default function setupWizardComponent(frameworkConfig) {
 						return true;
 				}
 			});
+
+			// Debug logging for fallback
+			if (field.id === 'premium_templates' || field.id === 'advanced_seo' || field.id === 'upgrade_prompt') {
+				console.log('Field visibility check (fallback):', {
+					fieldId: field.id,
+					show_if: field.show_if,
+					wizardData: {
+						user_membership_status: this.wizardData.user_membership_status,
+						is_connected: this.wizardData.is_connected,
+						is_member_active: this.wizardData.is_member_active
+					},
+					result: result
+				});
+			}
+
+			return result;
 		},
 
 		// --- UTILITIES ---
