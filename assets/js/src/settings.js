@@ -36,6 +36,7 @@ import '@/renderer/fields/checkbox';
 import '@/renderer/fields/radio';
 import '@/renderer/fields/multiselect';
 import '@/renderer/fields/checkboxGroup';
+import '@/renderer/fields/checkboxCardGroup';
 import '@/renderer/fields/group';
 import '@/renderer/fields/accordion';
 

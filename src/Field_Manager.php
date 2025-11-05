@@ -124,7 +124,7 @@ class Field_Manager {
 				$type = $field_config['type'];
 				if ( $type === 'checkbox' || $type === 'toggle' ) {
 					$current_settings[ $key ] = 0;
-				} elseif ( $type === 'multiselect' || $type === 'checkbox_group' ) {
+				} elseif ( $type === 'multiselect' || $type === 'checkbox_group' || $type === 'checkbox_card_group' ) {
 					$current_settings[ $key ] = [];
 				}
 			}
@@ -170,6 +170,7 @@ class Field_Manager {
 
 			case 'multiselect':
 			case 'checkbox_group':
+			case 'checkbox_card_group':
 				return is_array( $value ) ? array_map( 'sanitize_text_field', $value ) : [];
 
 			case 'color':

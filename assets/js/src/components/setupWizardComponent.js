@@ -74,7 +74,7 @@ export default function setupWizardComponent(frameworkConfig) {
 							this.wizardData[field.id] = field.default;
 						}
 						// Otherwise, set sensible defaults based on field type
-						else if (field.type === 'checkbox_group' || field.type === 'multiselect') {
+						else if (field.type === 'checkbox_group' || field.type === 'checkbox_card_group' || field.type === 'multiselect') {
 							this.wizardData[field.id] = [];
 						}
 						else if (field.type === 'toggle' || field.type === 'checkbox') {

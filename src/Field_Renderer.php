@@ -73,6 +73,10 @@ class Field_Renderer {
                 'label' => __('Checkbox Group', 'ayecode-connect'),
                 'description' => __('Multiple checkboxes for multiple selections', 'ayecode-connect')
             ),
+            'checkbox_card_group' => array(
+                'label' => __('Checkbox Card Group', 'ayecode-connect'),
+                'description' => __('Multiple selections displayed as cards with icons/images', 'ayecode-connect')
+            ),
             'color' => array(
                 'label' => __('Color Picker', 'ayecode-connect'),
                 'description' => __('Color selection with picker', 'ayecode-connect')
@@ -220,6 +224,7 @@ class Field_Renderer {
 
             case 'multiselect':
             case 'checkbox_group':
+            case 'checkbox_card_group':
                 return array();
 
             case 'number':

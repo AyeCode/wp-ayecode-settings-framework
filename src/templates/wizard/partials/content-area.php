@@ -34,10 +34,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<div>
 						<!-- Step Icon (if provided) -->
 						<template x-if="step.icon">
-							<div class="bg-primary bg-gradient text-white rounded-4 d-flex align-items-center justify-content-center mx-auto mb-4"
-							     style="width: 80px; height: 80px; font-size: 2.5rem;">
-								<span x-html="step.icon"></span>
-							</div>
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4"
+                                 style="width: 60px; height: 60px; font-size: 1.8rem;">
+                                <span x-html="step.icon"></span>
+                            </div>
 						</template>
 
 						<!-- Step Title -->

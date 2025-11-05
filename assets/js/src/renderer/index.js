@@ -53,6 +53,7 @@ export const renderCheckboxField = (f, m)=>callNamed('checkbox', f, m);
 export const renderRadioField = (f, m)=>callNamed('radio', f, m);
 export const renderMultiselectField = (f, m)=>callNamed('multiselect', f, m);
 export const renderCheckboxGroupField = (f, m)=>callNamed('checkbox_group', f, m);
+export const renderCheckboxCardGroupField = (f, m)=>callNamed('checkbox_card_group', f, m);
 export const renderGroupField = (f, m)=>callNamed('group', f, m);
 export const renderImageField = (f, m)=>callNamed('image', f, m);
 export const renderHiddenField = (f, m)=>callNamed('hidden', f, m);
@@ -86,6 +87,7 @@ export const renderCustomField = (f, m)=>callNamed('custom_renderer', f, m);
         renderRadioField,
         renderMultiselectField,
         renderCheckboxGroupField,
+        renderCheckboxCardGroupField,
         renderGroupField,
         renderImageField,
         renderHiddenField,

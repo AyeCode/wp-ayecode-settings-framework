@@ -104,21 +104,46 @@ class AyeCode_Wizard_Example extends \AyeCode\SettingsFramework\Setup_Wizard {
 					'id'          => 'type',
 					'title'       => __( 'Choose Your Directory Type', 'ayecode-connect' ),
 					'description' => __( 'What type of directory are you building?', 'ayecode-connect' ),
-					'icon'        => '📁',
+//					'icon'        => '<i class="fa-solid fa-folder-tree"></i>',
 					'fields'      => [
 						[
-							'id'      => 'directory_type',
-							'type'    => 'checkbox_group',
-							'label'   => __( 'Directory Type', 'ayecode-connect' ),
-							'options' => [
-								'general'     => __( '📂 General - Multi-purpose directory', 'ayecode-connect' ),
-								'events'      => __( '🎭 Events - Concerts, festivals, activities', 'ayecode-connect' ),
-								'realestate'  => __( '🏠 Real Estate - Properties & listings', 'ayecode-connect' ),
-								'automotive'  => __( '🚗 Automotive - Cars, dealers, services', 'ayecode-connect' ),
-								'healthcare'  => __( '🏥 Healthcare - Doctors & medical services', 'ayecode-connect' ),
-								'restaurants' => __( '🍽️ Restaurants - Food & dining', 'ayecode-connect' ),
+							'id'          => 'directory_type',
+							'type'        => 'checkbox_card_group',
+							'label'       => __( 'Directory Type', 'ayecode-connect' ),
+							'description' => __( 'Select one or more directory types to configure', 'ayecode-connect' ),
+							'options'     => [
+								'general'     => [
+									'label'       => __( 'General', 'ayecode-connect' ),
+									'icon'        => 'fas fa-folder-open',
+									'description' => __( 'Multi-purpose directory', 'ayecode-connect' ),
+								],
+								'events'      => [
+									'label'       => __( 'Events', 'ayecode-connect' ),
+									'icon'        => 'fas fa-calendar-alt',
+									'description' => __( 'Concerts, festivals, activities', 'ayecode-connect' ),
+								],
+								'realestate'  => [
+									'label'       => __( 'Real Estate', 'ayecode-connect' ),
+									'icon'        => 'fas fa-home',
+									'description' => __( 'Properties & listings', 'ayecode-connect' ),
+								],
+								'automotive'  => [
+									'label'       => __( 'Automotive', 'ayecode-connect' ),
+									'icon'        => 'fas fa-car',
+									'description' => __( 'Cars, dealers, services', 'ayecode-connect' ),
+								],
+								'healthcare'  => [
+									'label'       => __( 'Healthcare', 'ayecode-connect' ),
+									'icon'        => 'fas fa-hospital',
+									'description' => __( 'Doctors & medical services', 'ayecode-connect' ),
+								],
+								'restaurants' => [
+									'label'       => __( 'Restaurants', 'ayecode-connect' ),
+									'icon'        => 'fas fa-utensils',
+									'description' => __( 'Food & dining', 'ayecode-connect' ),
+								],
 							],
-							'default' => [ 'general' ],
+							'default'     => [ 'general' ],
 						],
 						[
 							'id'          => 'add_sample_data',
@@ -130,13 +155,25 @@ class AyeCode_Wizard_Example extends \AyeCode\SettingsFramework\Setup_Wizard {
 						// Example: Field visible only to paid users (connected + active membership)
 						[
 							'id'          => 'premium_templates',
-							'type'        => 'checkbox_group',
+							'type'        => 'checkbox_card_group',
 							'label'       => __( 'Premium Templates', 'ayecode-connect' ),
 							'description' => __( 'Select premium listing templates (Pro members only)', 'ayecode-connect' ),
 							'options'     => [
-								'modern'  => __( 'Modern Template', 'ayecode-connect' ),
-								'classic' => __( 'Classic Template', 'ayecode-connect' ),
-								'minimal' => __( 'Minimal Template', 'ayecode-connect' ),
+								'modern'  => [
+									'label'       => __( 'Modern', 'ayecode-connect' ),
+									'icon'        => 'fas fa-palette',
+									'description' => __( 'Clean & contemporary design', 'ayecode-connect' ),
+								],
+								'classic' => [
+									'label'       => __( 'Classic', 'ayecode-connect' ),
+									'icon'        => 'fas fa-columns',
+									'description' => __( 'Traditional layout', 'ayecode-connect' ),
+								],
+								'minimal' => [
+									'label'       => __( 'Minimal', 'ayecode-connect' ),
+									'icon'        => 'fas fa-compress',
+									'description' => __( 'Simple & elegant', 'ayecode-connect' ),
+								],
 							],
 							'show_if'     => [
 								'field'      => 'user_membership_status',
@@ -183,7 +220,7 @@ class AyeCode_Wizard_Example extends \AyeCode\SettingsFramework\Setup_Wizard {
 					'id'          => 'location',
 					'title'       => __( 'Set Your Default Location', 'ayecode-connect' ),
 					'description' => __( 'Configure where your directory listings will be located.', 'ayecode-connect' ),
-					'icon'        => '📍',
+//					'icon'        => '📍',
 					'fields'      => [
 						[
 							'id'          => 'default_location',
