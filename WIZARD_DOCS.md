@@ -358,6 +358,28 @@ Field-based steps support **all framework field types**:
 - `repeater`, `wysiwyg`, `code`
 - And more...
 
+### Automatic Default Values
+
+The wizard automatically initializes fields with sensible defaults based on type, **even if you don't specify a `default` property**:
+
+| Field Type | Auto Default |
+|------------|--------------|
+| `checkbox_group`, `multiselect` | `[]` (empty array) |
+| `toggle`, `checkbox` | `false` |
+| `number` | `0` |
+| All others | `''` (empty string) |
+
+**You can override** these by explicitly setting a `default` value:
+
+```php
+[
+    'id'      => 'features',
+    'type'    => 'checkbox_group',
+    'options' => [/* ... */],
+    'default' => ['feature1', 'feature2'], // Pre-selected
+]
+```
+
 ### Example with Multiple Field Types
 
 ```php

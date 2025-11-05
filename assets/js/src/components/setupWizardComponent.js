@@ -67,8 +67,24 @@ export default function setupWizardComponent(frameworkConfig) {
 			this.steps.forEach(step => {
 				if (step.fields && Array.isArray(step.fields)) {
 					step.fields.forEach(field => {
-						if (field.id && field.default !== undefined) {
+						if (!field.id) return;
+
+						// Use explicit default if provided
+						if (field.default !== undefined) {
 							this.wizardData[field.id] = field.default;
+						}
+						// Otherwise, set sensible defaults based on field type
+						else if (field.type === 'checkbox_group' || field.type === 'multiselect') {
+							this.wizardData[field.id] = [];
+						}
+						else if (field.type === 'toggle' || field.type === 'checkbox') {
+							this.wizardData[field.id] = false;
+						}
+						else if (field.type === 'number') {
+							this.wizardData[field.id] = 0;
+						}
+						else {
+							this.wizardData[field.id] = '';
 						}
 					});
 				}

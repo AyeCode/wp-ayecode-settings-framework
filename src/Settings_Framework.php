@@ -937,7 +937,7 @@ abstract class Settings_Framework {
 	 * @return bool True if connected, false otherwise.
 	 */
 	protected function is_connected() {
-		return true; // @todo remove after testing
+		return true; //  @todo remove after testing
 		if ( class_exists( 'AyeCode_Connect_Settings' ) ) {
 			try {
 				$settings = \AyeCode_Connect_Settings::instance();
@@ -972,7 +972,7 @@ abstract class Settings_Framework {
 	 * @return bool True if an active membership exists, false otherwise.
 	 */
 	protected function is_member_active( $domain = null ) {
-		return true;// @todo remove after testing
+		return true;//  @todo remove after testing
 		// Use provided domain or get from child class
 		if ( null === $domain ) {
 			$domain = $this->get_membership_domain();
