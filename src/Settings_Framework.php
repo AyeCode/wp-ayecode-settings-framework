@@ -217,6 +217,7 @@ abstract class Settings_Framework {
 
 		// Register core hooks.
 		add_action( 'admin_menu', [ $this, 'add_admin_menu' ] );
+		add_action( 'admin_enqueue_scripts', [ $this, 'register_assets' ], 5 ); // Register early so other scripts can use them
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 
 		// Register AJAX actions.
@@ -318,6 +319,22 @@ abstract class Settings_Framework {
 	}
 
 	/**
+	 * Registers Alpine.js scripts so they can be enqueued by external scripts.
+	 * Runs early (priority 5) on admin_enqueue_scripts.
+	 *
+	 * @param string $hook The current admin page hook.
+	 */
+	public function register_assets( $hook ) {
+		$assets_url = plugin_dir_url( dirname( __FILE__ ) ) . 'assets/';
+
+		// Register Alpine Sort plugin with no dependencies
+		wp_register_script( 'alpine-js-sort', $assets_url . 'js/alpine.sort.min.js', [], '3.14.9', true );
+
+		// Register Alpine.js Core with sort plugin dependency
+		wp_register_script( 'alpine-js', $assets_url . 'js/alpine.min.js', ['alpine-js-sort'], '3.14.9', true );
+	}
+
+	/**
 	 * Enqueues CSS and JavaScript assets for the settings page.
 	 * This function is hooked into `admin_enqueue_scripts` and will only
 	 * load assets on the correct admin page to maintain performance.
@@ -336,12 +353,11 @@ abstract class Settings_Framework {
 		$assets_url = plugin_dir_url( dirname( __FILE__ ) ) . 'assets/';
 		$version    = self::VERSION;
 
-		// 1. Enqueue the Alpine Sort plugin FIRST, with no dependencies.
-		wp_enqueue_script( 'alpine-js-sort', $assets_url . 'js/alpine.sort.min.js', [], '3.14.9', true );
+		// 1. Enqueue the Alpine Sort plugin FIRST (already registered).
+		wp_enqueue_script( 'alpine-js-sort' );
 
-		// 2. Enqueue Alpine.js Core SECOND, making it dependent on the sort plugin.
-		// This ensures the plugin script tag appears before the core script tag in the HTML.
-		wp_enqueue_script( 'alpine-js', $assets_url . 'js/alpine.min.js', ['alpine-js-sort'], '3.14.9', true );
+		// 2. Enqueue Alpine.js Core SECOND (already registered with sort dependency).
+		wp_enqueue_script( 'alpine-js' );
 
 		// 3. Your main app script depends on the Alpine core being ready.
 		wp_enqueue_script( 'ayecode-settings-framework-admin', $assets_url . 'dist/js/settings.js', [ 'alpine-js' ], $version, true );

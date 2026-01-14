@@ -12,6 +12,7 @@ registerRenderer('checkbox_card_group', (field) => {
             const isObject = typeof option === 'object' && option !== null;
             const label = isObject ? option.label : option;
             const icon = isObject ? option.icon : null;
+            const iconColor = isObject ? option.icon_color : null;
             const image = isObject ? option.image : null;
             const html = isObject ? option.html : null;
             const description = isObject ? option.description : null;
@@ -23,7 +24,8 @@ registerRenderer('checkbox_card_group', (field) => {
             } else if (image) {
                 visualHtml = `<img src="${image}" class="card-img-top" alt="${label}" style="height: 120px; object-fit: cover;">`;
             } else if (icon) {
-                visualHtml = `<div class="card-img-top d-flex align-items-center justify-content-center pt-3 pb-0 fs-3" ><i class="${icon}"></i></div>`;
+                const iconStyle = iconColor ? `style="color: ${iconColor};"` : '';
+                visualHtml = `<div class="card-img-top d-flex align-items-center justify-content-center pt-3 pb-0 fs-3"><i class="${icon}" ${iconStyle}></i></div>`;
             }
 
             cardsHtml += `

@@ -115,31 +115,37 @@ class AyeCode_Wizard_Example extends \AyeCode\SettingsFramework\Setup_Wizard {
 								'general'     => [
 									'label'       => __( 'General', 'ayecode-connect' ),
 									'icon'        => 'fas fa-folder-open',
+									'icon_color'  => '#6c757d',
 									'description' => __( 'Multi-purpose directory', 'ayecode-connect' ),
 								],
 								'events'      => [
 									'label'       => __( 'Events', 'ayecode-connect' ),
 									'icon'        => 'fas fa-calendar-alt',
+									'icon_color'  => '#0d6efd',
 									'description' => __( 'Concerts, festivals, activities', 'ayecode-connect' ),
 								],
 								'realestate'  => [
 									'label'       => __( 'Real Estate', 'ayecode-connect' ),
 									'icon'        => 'fas fa-home',
+									'icon_color'  => '#198754',
 									'description' => __( 'Properties & listings', 'ayecode-connect' ),
 								],
 								'automotive'  => [
 									'label'       => __( 'Automotive', 'ayecode-connect' ),
 									'icon'        => 'fas fa-car',
+									'icon_color'  => '#dc3545',
 									'description' => __( 'Cars, dealers, services', 'ayecode-connect' ),
 								],
 								'healthcare'  => [
 									'label'       => __( 'Healthcare', 'ayecode-connect' ),
 									'icon'        => 'fas fa-hospital',
+									'icon_color'  => '#d63384',
 									'description' => __( 'Doctors & medical services', 'ayecode-connect' ),
 								],
 								'restaurants' => [
 									'label'       => __( 'Restaurants', 'ayecode-connect' ),
 									'icon'        => 'fas fa-utensils',
+									'icon_color'  => '#fd7e14',
 									'description' => __( 'Food & dining', 'ayecode-connect' ),
 								],
 							],
@@ -152,66 +158,66 @@ class AyeCode_Wizard_Example extends \AyeCode\SettingsFramework\Setup_Wizard {
 							'description' => __( 'Get started quickly with example content', 'ayecode-connect' ),
 							'default'     => true,
 						],
-						// Example: Field visible only to paid users (connected + active membership)
-						[
-							'id'          => 'premium_templates',
-							'type'        => 'checkbox_card_group',
-							'label'       => __( 'Premium Templates', 'ayecode-connect' ),
-							'description' => __( 'Select premium listing templates (Pro members only)', 'ayecode-connect' ),
-							'options'     => [
-								'modern'  => [
-									'label'       => __( 'Modern', 'ayecode-connect' ),
-									'icon'        => 'fas fa-palette',
-									'description' => __( 'Clean & contemporary design', 'ayecode-connect' ),
-								],
-								'classic' => [
-									'label'       => __( 'Classic', 'ayecode-connect' ),
-									'icon'        => 'fas fa-columns',
-									'description' => __( 'Traditional layout', 'ayecode-connect' ),
-								],
-								'minimal' => [
-									'label'       => __( 'Minimal', 'ayecode-connect' ),
-									'icon'        => 'fas fa-compress',
-									'description' => __( 'Simple & elegant', 'ayecode-connect' ),
-								],
-							],
-							'show_if'     => [
-								'field'      => 'user_membership_status',
-								'value'      => 'paid',
-								'comparison' => '===',
-							],
-						],
-						// Example: Alternative - Check is_member_active directly
-						[
-							'id'          => 'advanced_seo',
-							'type'        => 'toggle',
-							'label'       => __( 'Enable Advanced SEO', 'ayecode-connect' ),
-							'description' => __( 'Premium SEO features', 'ayecode-connect' ),
-							'show_if'     => [
-								'field'      => 'is_member_active',
-								'value'      => true,
-								'comparison' => '===',
-							],
-						],
-						// Example: Show only to connected users (regardless of active status)
-						[
-							'id'          => 'upgrade_prompt',
-							'type'        => 'info',
-							'label'       => __( 'Upgrade Your Membership', 'ayecode-connect' ),
-							'description' => __( 'Your membership has expired. Renew to access premium features.', 'ayecode-connect' ),
-							'show_if'     => [
-								[
-									'field'      => 'is_connected',
-									'value'      => true,
-									'comparison' => '===',
-								],
-								[
-									'field'      => 'is_member_active',
-									'value'      => false,
-									'comparison' => '===',
-								],
-							],
-						],
+//						// Example: Field visible only to paid users (connected + active membership)
+//						[
+//							'id'          => 'premium_templates',
+//							'type'        => 'checkbox_card_group',
+//							'label'       => __( 'Premium Templates', 'ayecode-connect' ),
+//							'description' => __( 'Select premium listing templates (Pro members only)', 'ayecode-connect' ),
+//							'options'     => [
+//								'modern'  => [
+//									'label'       => __( 'Modern', 'ayecode-connect' ),
+//									'icon'        => 'fas fa-palette',
+//									'description' => __( 'Clean & contemporary design', 'ayecode-connect' ),
+//								],
+//								'classic' => [
+//									'label'       => __( 'Classic', 'ayecode-connect' ),
+//									'icon'        => 'fas fa-columns',
+//									'description' => __( 'Traditional layout', 'ayecode-connect' ),
+//								],
+//								'minimal' => [
+//									'label'       => __( 'Minimal', 'ayecode-connect' ),
+//									'icon'        => 'fas fa-compress',
+//									'description' => __( 'Simple & elegant', 'ayecode-connect' ),
+//								],
+//							],
+//							'show_if'     => [
+//								'field'      => 'user_membership_status',
+//								'value'      => 'paid',
+//								'comparison' => '===',
+//							],
+//						],
+//						// Example: Alternative - Check is_member_active directly
+//						[
+//							'id'          => 'advanced_seo',
+//							'type'        => 'toggle',
+//							'label'       => __( 'Enable Advanced SEO', 'ayecode-connect' ),
+//							'description' => __( 'Premium SEO features', 'ayecode-connect' ),
+//							'show_if'     => [
+//								'field'      => 'is_member_active',
+//								'value'      => true,
+//								'comparison' => '===',
+//							],
+//						],
+//						// Example: Show only to connected users (regardless of active status)
+//						[
+//							'id'          => 'upgrade_prompt',
+//							'type'        => 'info',
+//							'label'       => __( 'Upgrade Your Membership', 'ayecode-connect' ),
+//							'description' => __( 'Your membership has expired. Renew to access premium features.', 'ayecode-connect' ),
+//							'show_if'     => [
+//								[
+//									'field'      => 'is_connected',
+//									'value'      => true,
+//									'comparison' => '===',
+//								],
+//								[
+//									'field'      => 'is_member_active',
+//									'value'      => false,
+//									'comparison' => '===',
+//								],
+//							],
+//						],
 					],
 				],
 
