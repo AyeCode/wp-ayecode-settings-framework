@@ -169,7 +169,21 @@ export async function saveSettings(ctx) {
         });
         const data = await res.json();
         if (data.success) {
-            ctx.settings = data.data.settings;
+            // Update ctx.settings in-place to maintain references for event listeners and watchers
+            const newSettings = data.data.settings;
+
+            // Remove properties that no longer exist in the new settings
+            Object.keys(ctx.settings).forEach(key => {
+                if (!(key in newSettings)) {
+                    delete ctx.settings[key];
+                }
+            });
+
+            // Update or add properties from the new settings
+            Object.keys(newSettings).forEach(key => {
+                ctx.settings[key] = newSettings[key];
+            });
+
             ctx.originalSettings = JSON.parse(JSON.stringify(ctx.settings));
             ctx.originalImagePreviews = JSON.parse(JSON.stringify(ctx.imagePreviews));
             ctx.showNotification(data.data?.message || ctx.strings.saved, 'success');
