@@ -139,7 +139,7 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                                                         [ 'id' => 'key', 'type' => 'text', 'label' => 'Field Key', 'default' => 'new_text_field' ],
                                                                         [ 'id' => 'icon', 'type' => 'icon', 'label' => 'Icon', 'default' => 'fa-solid fa-font' ],
                                                                         [ 'id' => 'description', 'type' => 'textarea', 'label' => 'Description', 'rows' => 2 ],
-                                                                        [ 'id' => 'placeholder', 'type' => 'text', 'label' => 'Placeholder' ],
+                                                                        [ 'id' => 'placeholder', 'type' => 'text', 'label' => 'Placeholder', 'show_if' => "[%is_required%] > 0" ],
                                                                         [ 'id' => 'is_required', 'type' => 'toggle', 'label' => 'Is Required' ],
                                                                         [ 'id' => 'is_active', 'type' => 'toggle', 'label' => 'Is Active', 'default' => true ],
                                                                         [

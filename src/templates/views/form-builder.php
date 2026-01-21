@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                     <template x-if="editingField">
                         <div>
                             <template x-for="(fieldSchema, index) in editingField.fields" :key="index">
-                                <div x-show="fieldSchema.type !== 'hidden'">
+                                <div x-show="fieldSchema.type !== 'hidden' && shouldShowField(fieldSchema)">
                                     <div class="pb-4"
                                          x-html="renderField(fieldSchema, 'editingField', activePageConfig)"
                                          x-effect="$nextTick(() => Alpine.initTree($el))"></div>
