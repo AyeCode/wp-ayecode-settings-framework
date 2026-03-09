@@ -10,7 +10,7 @@ registerRenderer('number', (field) => {
     const extra = renderExtraAttributes(field);
     const customDescHtml = renderCustomDesc(field);
 
-    const input = `<input type="number" class="form-control ${customClass}" id="${field.id}" name="${field.id}" x-model="settings.${field.id}" ${min} ${max} ${step} placeholder="${field.placeholder || ''}" ${extra}>`;
+    const input = `<input type="number" class="form-control ${customClass}" id="${field.id}" name="${field.id}" x-model.number="settings.${field.id}" ${min} ${max} ${step} placeholder="${field.placeholder || ''}" ${extra}>`;
     const finalInput = field.input_group_right ? `<div class="input-group">${input}${field.input_group_right}</div>` : input;
 
     return `

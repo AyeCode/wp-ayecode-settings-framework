@@ -38,7 +38,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                                     </a>
                                     <ul class="list-group list-group-flush">
                                         <template x-for="result in group.results" :key="result.field.id">
-                                            <li class="list-group-item list-group-item-action border-0 rounded py-1"><a href="#" @click.prevent="goToSearchResult(result)" class="text-decoration-none text-dark-subtle d-block p-2"><div x-text="result.field.label"></div><div class="small text-muted" x-show="result.field.description" x-text="result.field.description"></div></a></li>
+                                            <li class="list-group-item list-group-item-action border-0 rounded py-1"><a href="#" @click.prevent="goToSearchResult(result)" class="text-decoration-none text-dark-subtle d-block p-2"><div x-text="result.field.label"></div><div class="small text-muted" x-show="result.field.description" x-text="result.field.description?.replace(/<[^>]*>/g, '')"></div></a></li>
                                         </template>
                                     </ul>
                                 </div>
@@ -59,7 +59,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                                                         <span x-text="result.title"></span>
                                                         <i x-show="result.external" class="fa-solid fa-up-right-from-square fa-xs ms-1"></i>
                                                     </div>
-                                                    <div class="small text-muted" x-show="result.description" x-text="result.description"></div>
+                                                    <div class="small text-muted" x-show="result.description" x-text="result.description?.replace(/<[^>]*>/g, '')"></div>
                                                 </a>
                                             </li>
                                         </template>

@@ -179,7 +179,7 @@ export async function saveSettings(ctx) {
                 }
             });
 
-            // Update or add properties from the new settings
+            // Update or add properties from the new settings (already normalized by PHP)
             Object.keys(newSettings).forEach(key => {
                 ctx.settings[key] = newSettings[key];
             });
@@ -288,9 +288,13 @@ export function renderFieldCompat(field, modelPrefix = 'settings') {
         html = `<div class="alert alert-warning">Field renderer for type "${field.type}" not found.</div>`;
     }
 
+    // Fix field IDs with hyphens/special characters by converting dot notation to bracket notation
+    // Example: settings.kit-url => settings['kit-url']
+    html = html.replace(/settings\.([a-zA-Z0-9_-]+)/g, "settings['$1']");
+
+    // Handle model prefix replacement for non-settings contexts (form builder, etc.)
     if (modelPrefix !== 'settings') {
-        const replacementRegex = new RegExp(`(x-model|:checked|@click|@focus|x-show)="(settings|\\s*settings)\\.`, 'g');
-        html = html.replace(replacementRegex, `$1="${modelPrefix}.`);
+        html = html.replace(/settings\[/g, `${modelPrefix}[`);
     }
 
     return html;

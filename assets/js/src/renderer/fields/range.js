@@ -16,7 +16,7 @@ registerRenderer('range', (field) => {
       </div>
       <div class="col-md-8">
         <div class="d-flex align-items-center">
-          <input type="range" class="form-range" id="${field.id}" name="${field.id}" min="${min}" max="${max}" step="${step}" x-model="settings.${field.id}" ${extra}>
+          <input type="range" class="form-range" id="${field.id}" name="${field.id}" min="${min}" max="${max}" step="${step}" x-model.number="settings.${field.id}" ${extra}>
           <span class="badge bg-secondary ms-3" x-text="settings.${field.id}"></span>
         </div>
         ${customDescHtml}

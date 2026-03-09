@@ -434,11 +434,14 @@ abstract class Settings_Framework {
 			];
 		}
 
-		// Localize the main script with appropriate data
-		wp_localize_script(
+		// Output settings data with proper type preservation using wp_json_encode
+		// Note: We use wp_add_inline_script instead of wp_localize_script because
+		// wp_localize_script converts all values to strings, breaking our type normalization
+		$json_data = wp_json_encode( $localization_data, JSON_NUMERIC_CHECK );
+		wp_add_inline_script(
 			'ayecode-settings-framework-admin',
-			$localization_object,
-			$localization_data
+			"window.{$localization_object} = {$json_data};",
+			'before'
 		);
 
 		wp_add_inline_script(
@@ -471,7 +474,127 @@ abstract class Settings_Framework {
 	 * @return array Current settings.
 	 */
 	public function get_settings() {
-		return get_option( $this->option_name, [] );
+		$settings = get_option( $this->option_name, [] );
+		return $this->normalize_setting_types( $settings );
+	}
+
+	/**
+	 * Installs default settings to the database.
+	 * Useful for plugin activation or manual initialization.
+	 * Will only install if the option doesn't exist yet.
+	 *
+	 * @param bool $force If true, overwrites existing settings with defaults. Default false.
+	 * @return bool True if defaults were installed, false if option already exists.
+	 */
+	public function install_defaults( $force = false ) {
+		$existing = get_option( $this->option_name, null );
+
+		// Don't overwrite existing settings unless forced
+		if ( ! $force && $existing !== null && $existing !== false ) {
+			return false;
+		}
+
+		$defaults   = $this->field_manager->get_default_settings();
+		$normalized = $this->normalize_setting_types( $defaults );
+		update_option( $this->option_name, $normalized );
+
+		do_action( 'ayecode_settings_framework_defaults_installed', $normalized, $this->option_name );
+
+		return true;
+	}
+
+	/**
+	 * Fills in missing settings with their default values.
+	 * Only adds keys that don't exist - preserves all existing values.
+	 * This does NOT save to database, only merges in memory.
+	 *
+	 * @param array $settings The current settings array.
+	 * @return array Settings with missing defaults filled in.
+	 */
+	public function fill_missing_defaults( $settings ) {
+		$defaults = $this->field_manager->get_default_settings();
+
+		// Only add keys that don't exist in settings
+		foreach ( $defaults as $key => $value ) {
+			if ( ! isset( $settings[ $key ] ) ) {
+				$settings[ $key ] = $value;
+			}
+		}
+
+		return $settings;
+	}
+
+	/**
+	 * Normalizes setting values to ensure type consistency for JavaScript.
+	 * Framework standard: toggles/checkboxes use 1/0 (numbers), number fields use actual numbers.
+	 *
+	 * @param array $settings The settings array to normalize.
+	 * @return array The normalized settings array.
+	 */
+	private function normalize_setting_types( $settings ) {
+		$config = $this->get_config_raw();
+
+		// Collect all field definitions
+		$all_fields = [];
+		foreach ( $config['sections'] as $section ) {
+			$this->collect_fields_recursive( $section['fields'] ?? [], $all_fields );
+			if ( ! empty( $section['subsections'] ) ) {
+				foreach ( $section['subsections'] as $subsection ) {
+					$this->collect_fields_recursive( $subsection['fields'] ?? [], $all_fields );
+				}
+			}
+		}
+
+		// Normalize each setting based on field type
+		foreach ( $all_fields as $field ) {
+			if ( empty( $field['id'] ) || ! isset( $settings[ $field['id'] ] ) ) {
+				continue;
+			}
+
+			$value = $settings[ $field['id'] ];
+
+			// Number fields: convert to actual numbers
+			if ( in_array( $field['type'], [ 'number', 'range' ], true ) ) {
+				if ( is_string( $value ) && $value !== '' ) {
+					$parsed = floatval( $value );
+					$settings[ $field['id'] ] = $parsed;
+				} elseif ( $value === '' || is_null( $value ) ) {
+					$settings[ $field['id'] ] = isset( $field['default'] ) ? $field['default'] : 0;
+				}
+				// If already a number, leave it
+			}
+
+			// Toggle/checkbox fields: normalize to 1/0 (numbers)
+			elseif ( in_array( $field['type'], [ 'toggle', 'checkbox' ], true ) ) {
+				if ( $value === '1' || $value === 1 || $value === 'true' || $value === true ) {
+					$settings[ $field['id'] ] = 1;
+				} else {
+					$settings[ $field['id'] ] = 0;
+				}
+			}
+		}
+
+		return $settings;
+	}
+
+	/**
+	 * Recursively collects field definitions from a fields array.
+	 *
+	 * @param array $fields The fields array.
+	 * @param array $all_fields Reference to the collector array.
+	 */
+	private function collect_fields_recursive( $fields, &$all_fields ) {
+		if ( empty( $fields ) ) {
+			return;
+		}
+
+		foreach ( $fields as $field ) {
+			if ( $field['type'] === 'group' && ! empty( $field['fields'] ) ) {
+				$this->collect_fields_recursive( $field['fields'], $all_fields );
+			} elseif ( ! empty( $field['id'] ) ) {
+				$all_fields[] = $field;
+			}
+		}
 	}
 
 	/**
@@ -484,6 +607,9 @@ abstract class Settings_Framework {
 	public function save_settings( $new_settings ) {
 		$current_settings = $this->get_settings();
 		$sanitized        = $this->field_manager->sanitize_and_prepare_settings( $new_settings, $current_settings );
+
+		// Normalize types before saving to ensure consistency
+		$sanitized = $this->normalize_setting_types( $sanitized );
 
 		$result = update_option( $this->option_name, $sanitized );
 
@@ -499,6 +625,7 @@ abstract class Settings_Framework {
 	 */
 	public function reset_settings() {
 		$defaults = $this->field_manager->get_default_settings();
+		$defaults = $this->normalize_setting_types( $defaults );
 		$result   = update_option( $this->option_name, $defaults );
 
 		do_action( 'ayecode_settings_framework_reset', $defaults, $this->option_name );
