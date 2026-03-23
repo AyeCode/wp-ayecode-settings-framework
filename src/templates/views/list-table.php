@@ -32,7 +32,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                                class="list-group-item list-group-item-action d-flex fw-normal py-2 fs-xs "
                                :class="{ 'active': currentStatus === status }"
                                @click.prevent="filter_by_status(status)">
-                                <span x-text="label"></span>
+                                <span class="text-nowrap" x-text="label"></span>
                                 <span class="count ms-1" x-text="'(' + (config.table_config.statuses.counts[status] || 0) + ')'"></span>
                             </a>
                         </template>
@@ -41,7 +41,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
             </template>
 
             <div class="ms-auto">
-                <button class="btn btn-primary btn-sm" @click="open_modal()" x-show="config.post_create_view">
+                <button class="btn btn-primary btn-sm" @click="open_modal()" x-show="config.modal_config">
                     <i class="fa-solid fa-plus me-1"></i>
                     <span x-text="'Add ' + (config.table_config.singular || 'Item')"></span>
                 </button>
@@ -94,7 +94,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                 <p x-show="!config.table_config.statuses || currentStatus === 'all'" x-text="'No ' + (config.table_config.plural.toLowerCase() || 'items') + ' found.'"></p>
                 <p x-show="config.table_config.statuses && currentStatus !== 'all'" x-cloak x-text="'No ' + (config.table_config.plural.toLowerCase() || 'items') + ' found in this view.'"></p>
 
-                <button class="btn btn-primary btn-lg" @click="open_modal()" x-show="config.post_create_view && (!config.table_config.statuses || currentStatus === 'all')">
+                <button class="btn btn-primary btn-lg" @click="open_modal()" x-show="config.modal_config && (!config.table_config.statuses || currentStatus === 'all')">
                     <span x-text="'Create Your First ' + (config.table_config.singular || 'Item')"></span>
                 </button>
             </div>

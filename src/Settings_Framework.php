@@ -475,6 +475,7 @@ abstract class Settings_Framework {
 	 */
 	public function get_settings() {
 		$settings = get_option( $this->option_name, [] );
+		$settings = $this->fill_missing_defaults( $settings );
 		return $this->normalize_setting_types( $settings );
 	}
 
@@ -522,6 +523,22 @@ abstract class Settings_Framework {
 		}
 
 		return $settings;
+	}
+
+	/**
+	 * Saves missing default settings to the database.
+	 * Useful for plugin updates when new fields are added.
+	 * Only adds keys that don't exist - preserves all existing values.
+	 *
+	 * @return bool True on success.
+	 */
+	public function save_missing_defaults() {
+		$current    = get_option( $this->option_name, [] );
+		$updated    = $this->fill_missing_defaults( $current );
+		$normalized = $this->normalize_setting_types( $updated );
+		update_option( $this->option_name, $normalized );
+
+		return true;
 	}
 
 	/**

@@ -7,22 +7,64 @@ export function shouldShowField(ctx, field) {
     catch (e) { console.error(`Error evaluating show_if for "${field.id}":`, e); return true; }
 }
 export function evaluateCondition(ctx, rule) {
-    // This function now receives the correct context (ctx)
+    // Replace placeholders with actual values
     const populated = rule.replace(/\[%(\w+)%\]/g, (m, id) => {
-        // Use the passed-in context (ctx) to get the value, not the global settings
         const v = ctx[id];
         if (typeof v === 'string') return `'${v.replace(/'/g, "\\'")}'`;
         if (typeof v === 'boolean' || typeof v === 'number') return v;
         return 'null';
     });
-    const orGroups = populated.split('||');
-    for (const or of orGroups) {
-        const ands = or.split('&&');
-        let ok = true;
-        for (const cond of ands) { if (!evaluateSimpleComparison(cond.trim())) { ok = false; break; } }
-        if (ok) return true;
+
+    // Evaluate the expression with parentheses support
+    return evaluateExpression(populated);
+}
+
+function evaluateExpression(expr) {
+    expr = expr.trim();
+
+    // Handle parentheses recursively
+    while (expr.includes('(')) {
+        // Find the innermost parentheses
+        const regex = /\(([^()]+)\)/;
+        const match = expr.match(regex);
+
+        if (!match) {
+            throw new Error('Mismatched parentheses');
+        }
+
+        // Evaluate the content inside parentheses
+        const innerExpr = match[1];
+        const innerResult = evaluateExpression(innerExpr);
+
+        // Replace the parentheses with the result
+        expr = expr.replace(match[0], innerResult ? 'true' : 'false');
     }
-    return false;
+
+    // Now evaluate the expression without parentheses
+    // Handle OR operations (||)
+    if (expr.includes('||')) {
+        const orGroups = expr.split('||');
+        for (const orGroup of orGroups) {
+            if (evaluateExpression(orGroup.trim())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Handle AND operations (&&)
+    if (expr.includes('&&')) {
+        const andGroups = expr.split('&&');
+        for (const andGroup of andGroups) {
+            if (!evaluateExpression(andGroup.trim())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Single comparison or boolean value
+    return evaluateSimpleComparison(expr);
 }
 export function evaluateSimpleComparison(expr) {
     if (!['==','!=','>','<','>=','<='].some(op => expr.includes(op))) {

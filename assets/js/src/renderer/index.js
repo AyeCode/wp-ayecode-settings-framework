@@ -51,6 +51,8 @@ export const renderColorField = (f, m)=>callNamed('color', f, m);
 export const renderRangeField = (f, m)=>callNamed('range', f, m);
 export const renderCheckboxField = (f, m)=>callNamed('checkbox', f, m);
 export const renderRadioField = (f, m)=>callNamed('radio', f, m);
+export const renderRadioGroupField = (f, m)=>callNamed('radio_group', f, m);
+export const renderRadioCardGroupField = (f, m)=>callNamed('radio_card_group', f, m);
 export const renderMultiselectField = (f, m)=>callNamed('multiselect', f, m);
 export const renderCheckboxGroupField = (f, m)=>callNamed('checkbox_group', f, m);
 export const renderCheckboxCardGroupField = (f, m)=>callNamed('checkbox_card_group', f, m);
@@ -58,6 +60,7 @@ export const renderGroupField = (f, m)=>callNamed('group', f, m);
 export const renderImageField = (f, m)=>callNamed('image', f, m);
 export const renderHiddenField = (f, m)=>callNamed('hidden', f, m);
 export const renderFileField = (f, m)=>callNamed('file', f, m);
+export const renderSlugField = (f, m)=>callNamed('slug', f, m);
 export const renderIconField = (f, m)=>callNamed('font-awesome', f, m);
 export const renderGdMapField = (f, m)=>callNamed('gd_map', f, m);
 export const renderHelperTagsField = (f, m)=>callNamed('helper_tags', f, m);
@@ -85,6 +88,8 @@ export const renderCustomField = (f, m)=>callNamed('custom_renderer', f, m);
         renderRangeField,
         renderCheckboxField,
         renderRadioField,
+        renderRadioGroupField,
+        renderRadioCardGroupField,
         renderMultiselectField,
         renderCheckboxGroupField,
         renderCheckboxCardGroupField,
@@ -92,6 +97,7 @@ export const renderCustomField = (f, m)=>callNamed('custom_renderer', f, m);
         renderImageField,
         renderHiddenField,
         renderFileField,
+        renderSlugField,
         renderIconField,
         renderGdMapField,
         renderHelperTagsField,

@@ -407,6 +407,11 @@ export default function alpineApp() {
 
                 const recursiveValidate = (fields) => {
                     for (const fieldSchema of fields) {
+                        // Skip validation if field is hidden by show_if
+                        if (!this.shouldShowField(fieldSchema)) {
+                            continue;
+                        }
+
                         if (fieldSchema.extra_attributes?.required) {
                             const value = this.editingField[fieldSchema.id];
                             if (value === '' || value === null || value === undefined) {

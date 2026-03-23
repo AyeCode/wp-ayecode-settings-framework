@@ -34,6 +34,8 @@ import '@/renderer/fields/select';
 import '@/renderer/fields/range';
 import '@/renderer/fields/checkbox';
 import '@/renderer/fields/radio';
+import '@/renderer/fields/radioGroup';
+import '@/renderer/fields/radioCardGroup';
 import '@/renderer/fields/multiselect';
 import '@/renderer/fields/checkboxGroup';
 import '@/renderer/fields/checkboxCardGroup';

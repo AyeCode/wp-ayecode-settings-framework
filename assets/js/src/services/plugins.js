@@ -57,7 +57,7 @@ export function setupEventListeners(ctx) {
     });
     document.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); ctx.searchModal?.show?.(); }
-    });
+    },true);
     window.addEventListener('hashchange', () => ctx.handleUrlHash());
 }
 

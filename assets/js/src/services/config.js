@@ -24,10 +24,10 @@ export function flattenAllFields(ctx) {
         });
     };
     ctx.sections.forEach(section => {
-        ctx.allFields.push({ type: 'section', id: section.id, name: section.name, icon: section.icon, keywords: section.keywords || [] });
+        ctx.allFields.push({ type: 'section', id: section.id, name: section.name, icon: section.icon, searchable: section.searchable || [] });
         process(section.fields, section);
         section.subsections?.forEach(sub => {
-            ctx.allFields.push({ type: 'subsection', id: sub.id, name: sub.name, icon: section.icon, sectionId: section.id, sectionName: section.name, keywords: sub.keywords || [] });
+            ctx.allFields.push({ type: 'subsection', id: sub.id, name: sub.name, icon: section.icon, sectionId: section.id, sectionName: section.name, searchable: sub.searchable || [] });
             process(sub.fields, section, sub);
         });
     });

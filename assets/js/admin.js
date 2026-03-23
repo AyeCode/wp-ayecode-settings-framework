@@ -770,7 +770,7 @@ function ayecodeSettingsApp() {
                     e.preventDefault();
                     this.searchModal.show();
                 }
-            });
+            },true);
 
             window.addEventListener('hashchange', () => this.handleUrlHash());
         },

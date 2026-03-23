@@ -1,5 +1,7 @@
 // assets/js/src/services/settings.js
 
+import { shouldShowField } from '@/utils/conditions';
+
 /**
  * Recursively removes empty arrays and objects from a value.
  * This is used to ensure only meaningful data changes trigger the "unsaved" status.
@@ -132,6 +134,11 @@ function validateStandardSettings(ctx) {
     document.querySelectorAll('.asf-field-error').forEach(el => el.classList.remove('asf-field-error'));
     const fields = Array.isArray(ctx.activePageConfig.fields) ? ctx.activePageConfig.fields : Object.values(ctx.activePageConfig.fields);
     for (const field of fields) {
+        // Skip validation if field is hidden by show_if
+        if (!shouldShowField(ctx.settings, field)) {
+            continue;
+        }
+
         if (field.extra_attributes?.required) {
             const value = ctx.settings[field.id];
             if (value === '' || value === null || value === undefined || (Array.isArray(value) && value.length === 0)) {

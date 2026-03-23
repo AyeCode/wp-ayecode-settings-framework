@@ -1,10 +1,11 @@
 # Default Settings
 
-The AyeCode Settings Framework provides manual methods to manage default values for your settings fields, giving you full control over when and how defaults are installed.
+The AyeCode Settings Framework automatically applies default values to all settings fields. Defaults are merged in-memory whenever settings are accessed, ensuring fields always have their configured default values available.
 
 ## Table of Contents
 
 - [Overview](#overview)
+- [Automatic Defaults](#automatic-defaults)
 - [Installation Methods](#installation-methods)
 - [Usage Examples](#usage-examples)
 - [Helper Methods](#helper-methods)
@@ -16,12 +17,53 @@ The AyeCode Settings Framework provides manual methods to manage default values 
 
 ## Overview
 
-The framework provides two main public methods for working with default settings:
+The framework provides three main public methods for working with default settings:
 
-1. **`install_defaults($force = false)`** - Saves defaults to the database (one-time setup)
-2. **`fill_missing_defaults($settings)`** - Merges defaults in memory (useful for runtime)
+1. **`get_settings()`** - Automatically merges defaults with saved settings (happens automatically)
+2. **`install_defaults($force = false)`** - Saves defaults to the database (one-time setup)
+3. **`save_missing_defaults()`** - Saves only missing defaults to database (useful for plugin updates)
 
-Both methods automatically normalize types (booleans → integers, strings → numbers) for consistency between PHP and JavaScript.
+All methods automatically normalize types (booleans → integers, strings → numbers) for consistency between PHP and JavaScript.
+
+---
+
+## Automatic Defaults
+
+**New in v1.2.0:** The framework now automatically applies default values when reading settings. You don't need to manually call any methods for defaults to appear in the UI.
+
+### How It Works
+
+When you call `get_settings()` (which happens automatically when rendering the settings page), the framework:
+
+1. Retrieves saved settings from the database
+2. Merges in default values for any missing fields
+3. Normalizes types for JavaScript compatibility
+4. Returns the complete settings array
+
+**What this means:**
+- ✅ Defaults work immediately without any setup
+- ✅ New fields show their default values automatically
+- ✅ No need to call `install_defaults()` unless you want to persist defaults
+- ✅ Radio buttons, checkboxes, and all field types show correct defaults
+
+### Example
+
+```php
+// Define a field with a default
+[
+    'id' => 'radio_example',
+    'type' => 'radio',
+    'options' => [
+        'option_one' => 'Option One',
+        'option_two' => 'Option Two',
+    ],
+    'default' => 'option_two',
+]
+```
+
+**Before v1.2.0:** The radio field would show no selection until you called `install_defaults()`.
+
+**From v1.2.0:** The radio field automatically shows "Option Two" selected, even if the user has never saved settings.
 
 ---
 
@@ -170,9 +212,38 @@ function get_my_setting($key) {
 
 **Use case:** When you're adding new fields and want them to have defaults even before user saves.
 
-### Example 3: Migration Script
+### Example 3: Version-Based Migration (Recommended)
 
-Update existing installations with new defaults:
+Update existing installations with new defaults when plugin version changes:
+
+```php
+function my_plugin_check_version() {
+    $current_version = get_option('my_plugin_version');
+    $new_version = MY_PLUGIN_VERSION; // Define this constant in your main plugin file
+
+    // Only run if version has changed
+    if (version_compare($current_version, $new_version, '<')) {
+        $settings = new My_Plugin_Settings();
+
+        // Save any new field defaults to database
+        $settings->save_missing_defaults();
+
+        // Update version number
+        update_option('my_plugin_version', $new_version);
+    }
+}
+add_action('admin_init', 'my_plugin_check_version');
+```
+
+**Why this is better:**
+- ✅ Automatically runs on every version update
+- ✅ Only saves missing defaults (preserves user settings)
+- ✅ Simple version tracking
+- ✅ No need to manually track migration flags
+
+### Example 3b: Migration Script (Alternative)
+
+If you prefer manual migration flags:
 
 ```php
 function my_plugin_migrate_to_v2() {
@@ -182,13 +253,11 @@ function my_plugin_migrate_to_v2() {
     }
 
     $settings = new My_Plugin_Settings();
-    $current = $settings->get_settings();
 
-    // Add new defaults for v2 fields
-    $current = $settings->fill_missing_defaults($current);
+    // Save missing defaults
+    $settings->save_missing_defaults();
 
-    // Save updated settings
-    update_option('my_plugin_settings', $current);
+    // Mark as migrated
     update_option('my_plugin_v2_migrated', true);
 }
 add_action('admin_init', 'my_plugin_migrate_to_v2');
@@ -242,6 +311,37 @@ $installed = $settings->install_defaults();
 $settings->install_defaults(true);
 ```
 
+### `save_missing_defaults()`
+
+**New in v1.2.0:** Saves missing default settings to the database. Perfect for plugin updates when new fields are added.
+
+**Parameters:**
+- None
+
+**Returns:**
+- `true` on success
+
+**Example:**
+```php
+$settings = new My_Plugin_Settings();
+
+// Save any missing defaults to database
+$settings->save_missing_defaults();
+```
+
+**When to use:**
+- Plugin version updates (add new field defaults)
+- After adding new fields to existing plugins
+- When you want to persist defaults to the database
+
+**What it does:**
+1. Gets current settings from database
+2. Merges in defaults for missing fields only
+3. Normalizes types
+4. Saves back to database
+
+**Important:** This only adds missing fields. It NEVER overwrites existing user settings.
+
 ### `fill_missing_defaults($settings)`
 
 Merges default values for missing keys. Does NOT save to database.
@@ -257,12 +357,14 @@ Merges default values for missing keys. Does NOT save to database.
 $settings = new My_Plugin_Settings();
 $current = $settings->get_settings();  // From DB
 
-// Add missing defaults
+// Add missing defaults in memory only
 $complete = $settings->fill_missing_defaults($current);
 
 // $current['new_field'] might not exist
 // $complete['new_field'] will have the default value
 ```
+
+**Note:** As of v1.2.0, `get_settings()` automatically calls this method, so you rarely need to call it directly.
 
 ### `reset_settings()`
 
@@ -474,22 +576,57 @@ add_action('ayecode_settings_framework_reset', function($defaults, $option_name)
 ['type' => 'number', 'default' => "10"]    // string → 10 (int)
 ```
 
-### 3. Install on Activation
+### 3. Persist Defaults on Activation (Optional)
+
+**New in v1.2.0:** Calling `install_defaults()` is now optional since defaults are automatically applied when reading settings.
 
 ```php
-// RECOMMENDED
+// OPTIONAL - Only if you want defaults persisted immediately
 register_activation_hook(__FILE__, function() {
     $settings = new My_Plugin_Settings();
     $settings->install_defaults();
 });
 ```
 
-This ensures:
-- ✅ Settings exist immediately after activation
-- ✅ Other code can use `get_option()` right away
-- ✅ No waiting for first admin visit
+**When to use:**
+- ✅ If other code accesses settings via `get_option()` before user visits settings page
+- ✅ If you want to guarantee settings exist in database immediately
+- ✅ If you want to trigger the `ayecode_settings_framework_defaults_installed` hook
 
-### 4. Check Return Value
+**When NOT needed:**
+- ❌ If defaults only need to appear in the settings UI (automatic as of v1.2.0)
+- ❌ If all access goes through the framework's `get_settings()` method
+
+### 4. Use save_missing_defaults() for Version Updates
+
+**New in v1.2.0:** When adding new fields in plugin updates:
+
+```php
+// RECOMMENDED - Version-based approach
+function my_plugin_check_version() {
+    $current_version = get_option('my_plugin_version');
+
+    if (version_compare($current_version, MY_PLUGIN_VERSION, '<')) {
+        $settings = new My_Plugin_Settings();
+        $settings->save_missing_defaults(); // Only saves new fields
+        update_option('my_plugin_version', MY_PLUGIN_VERSION);
+    }
+}
+add_action('admin_init', 'my_plugin_check_version');
+```
+
+**Why this is better:**
+- ✅ Automatically handles version updates
+- ✅ Only saves missing fields (never overwrites user data)
+- ✅ Simple to maintain
+
+**Don't do this:**
+```php
+// ❌ BAD - Overwrites all user settings!
+$settings->install_defaults(true);
+```
+
+### 5. Check Return Value (If Using install_defaults)
 
 ```php
 // Check if installation was needed
@@ -499,19 +636,6 @@ if ($settings->install_defaults()) {
 } else {
     // Settings already existed
 }
-```
-
-### 5. Use fill_missing_defaults() for New Fields
-
-When adding new fields to existing plugins:
-
-```php
-// Don't force reinstall (loses user data)
-// $settings->install_defaults(true);  ❌
-
-// Instead, merge missing defaults at runtime
-$current = $settings->get_settings();
-$complete = $settings->fill_missing_defaults($current);  ✅
 ```
 
 ---
@@ -581,17 +705,34 @@ if (empty($settings)) {
 
 ## Summary
 
-The default settings system provides:
+**New in v1.2.0:** The default settings system is now fully automatic!
 
-- ✅ **Manual control** - You decide when to install defaults
-- ✅ **Smart merging** - `fill_missing_defaults()` preserves user values
+The framework provides:
+
+- ✅ **Automatic defaults** - Work immediately without any setup (new in v1.2.0)
+- ✅ **Smart merging** - Preserves all user values when adding defaults
 - ✅ **Type-safe** - Normalizes booleans and numbers automatically
-- ✅ **Database-backed** - Accessible via `get_option()` everywhere
-- ✅ **Flexible** - Works on activation, first load, or manual call
+- ✅ **Database-backed** - Can persist defaults when needed
+- ✅ **Version-friendly** - Easy updates with `save_missing_defaults()`
 - ✅ **Hookable** - Actions for installation and reset events
 
-**Recommended workflow:**
-1. Define `'default'` values in your field configuration
-2. Call `install_defaults()` in activation hook
-3. Use `fill_missing_defaults()` when adding new fields to existing installs
-4. Let the framework handle type normalization automatically
+**Recommended workflow (v1.2.0+):**
+
+1. **Define defaults** in your field configuration
+   ```php
+   ['id' => 'my_field', 'type' => 'text', 'default' => 'value']
+   ```
+
+2. **Let defaults work automatically** - They'll appear in UI immediately
+
+3. **For plugin updates**, use version-based migration:
+   ```php
+   if (version_compare(get_option('my_plugin_version'), MY_PLUGIN_VERSION, '<')) {
+       $settings->save_missing_defaults();
+       update_option('my_plugin_version', MY_PLUGIN_VERSION);
+   }
+   ```
+
+4. **Optional:** Call `install_defaults()` on activation if other code needs immediate database access
+
+That's it! The framework handles everything else automatically.

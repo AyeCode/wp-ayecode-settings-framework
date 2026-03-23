@@ -1,0 +1,8 @@
+{
+  "assets/js/src/settings.js": {
+    "file": "js/settings.js",
+    "name": "settings",
+    "src": "assets/js/src/settings.js",
+    "isEntry": true
+  }
+}

@@ -191,6 +191,60 @@ export default function listTableComponent(config) {
             }
         },
 
+        async do_ajax_with_files(tool_action, data = {}) {
+            this.isSaving = true;
+            try {
+                const formData = new FormData();
+                formData.append('action', window.ayecodeSettingsFramework.tool_ajax_action);
+                formData.append('nonce', window.ayecodeSettingsFramework.tool_nonce);
+                formData.append('tool_action', tool_action);
+                formData.append('status', this.currentStatus);
+                formData.append('filters', JSON.stringify(this.currentFilters));
+
+                // Separate file and non-file data
+                const nonFileData = {};
+
+                // Get all file inputs from the modal
+                const fileInputs = this.$refs.editModal.querySelectorAll('input[type="file"]');
+
+                fileInputs.forEach(input => {
+                    // Use either the id or name attribute as the key
+                    const key = input.id || input.name;
+
+                    if (input.files && input.files[0]) {
+                        formData.append(key, input.files[0]);
+                    }
+                });
+
+                // Loop through the data object and collect non-file fields
+                for (const [key, value] of Object.entries(data)) {
+                    const field = this.config.modal_config.fields.find(f => f.id === key);
+                    if (!field || (field.type !== 'file' && field.type !== 'image')) {
+                        nonFileData[key] = value;
+                    }
+                }
+
+                // Append non-file data as JSON string (matching the do_ajax format)
+                formData.append('data', JSON.stringify(nonFileData));
+
+                const response = await fetch(window.ayecodeSettingsFramework.ajax_url, {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (!result.success) {
+                    showNotification(this, result.data?.message || 'An error occurred.', 'error');
+                }
+
+                return result;
+            } catch (error) {
+                showNotification(this, 'A network error occurred during the request.', 'error');
+            } finally {
+                this.isSaving = false;
+            }
+        },
+
         async load_items() {
             this.isLoading = true;
             this.items = [];
@@ -237,6 +291,11 @@ export default function listTableComponent(config) {
         async save_item() {
             // Loop through fields to find any that are required.
             for (const field of this.config.modal_config.fields) {
+                // Skip validation if field is hidden by show_if
+                if (!this.should_show_field(field, this.editingItem)) {
+                    continue;
+                }
+
                 if (field.extra_attributes?.required) {
                     const value = this.editingItem[field.id];
                     // If the value is empty or just whitespace, show an error and stop.
@@ -251,10 +310,19 @@ export default function listTableComponent(config) {
                 ? this.config.modal_config.ajax_action_update
                 : this.config.modal_config.ajax_action_create;
 
-            const result = await this.do_ajax(action, this.editingItem);
+            // Check if there are any file inputs in the modal
+            const hasFileInputs = this.config.modal_config.fields.some(field => field.type === 'file' || field.type === 'image');
+
+            let result;
+            if (hasFileInputs) {
+                result = await this.do_ajax_with_files(action, this.editingItem);
+            } else {
+                result = await this.do_ajax(action, this.editingItem);
+            }
 
             if (result && result.success) {
                 this.modalInstance.hide();
+                // Only show post_create_view if it exists AND this is a new item (not editing)
                 if (!this.isEditing && this.config.post_create_view) {
                     this.postCreateItem = result.data;
                     this.change_view('post_create');
