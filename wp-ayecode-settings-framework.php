@@ -557,8 +557,12 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
     public function handle_demo_tool_action( $tool_action, $post_data ) {
         $api_manager = new \AyeCode\SettingsFramework\AyeCode_API_Key_Manager();
         $data = isset($post_data['data']) ? json_decode(stripslashes($post_data['data']), true) : [];
+        $section_id = isset($post_data['section_id']) ? sanitize_text_field($post_data['section_id']) : '';
         $status = isset($post_data['status']) ? sanitize_text_field($post_data['status']) : 'all';
         $filters = isset($post_data['filters']) ? json_decode(stripslashes($post_data['filters']), true) : [];
+
+        // You can use $section_id to distinguish between multiple list_table sections
+        // For example: if ($section_id === 'api_keys') { ... }
 
         switch ( $tool_action ) {
             // API Key Actions

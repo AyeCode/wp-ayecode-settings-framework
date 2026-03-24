@@ -146,7 +146,7 @@ class Admin_Page {
                                         </template>
 
                                         <?php // View for the new list table ?>
-                                        <template x-if="activePageConfig.type === 'list_table'">
+                                        <template x-if="activePageConfig.type === 'list_table'" :key="activePageConfig.id">
                                             <?php include $templates_dir . 'views/list-table.php'; ?>
                                         </template>
 

@@ -6,7 +6,7 @@
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 ?>
-<div x-data="listTableComponent(activePageConfig)">
+<div x-data="listTableComponent(activePageConfig)" x-init="console.log('[List Table DIV] x-init, config.id:', config.id)">
     <h2 class="h3" x-text="activePageConfig.page_title || activePageConfig.name"></h2>
     <template x-if="activePageConfig.description">
         <p class="text-muted" x-html="activePageConfig.description"></p>
@@ -164,26 +164,28 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
         </div>
     </template>
 
-    <div class="modal fade" tabindex="-1" x-ref="editModal">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" x-text="isEditing ? config.modal_config.title_edit : config.modal_config.title_add"></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php esc_attr_e( 'Close', 'ayecode-connect' ); ?>"></button>
-                </div>
-                <div class="modal-body">
-                    <template x-for="field in config.modal_config.fields" :key="field.id">
-                        <div class="pb-4" x-show="should_show_field(field, editingItem)" x-cloak x-html="render_field(field, 'editingItem')"></div>
-                    </template>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?php esc_html_e( 'Close', 'ayecode-connect' ); ?></button>
-                    <button type="button" class="btn btn-primary" @click="save_item()" :disabled="isSaving">
-                        <span x-show="isSaving" class="spinner-border spinner-border-sm me-1"></span>
-                        <span x-text="isSaving ? '<?php echo esc_js( __( 'Saving...', 'ayecode-connect' ) ); ?>' : '<?php echo esc_js( __( 'Save Changes', 'ayecode-connect' ) ); ?>'"></span>
-                    </button>
+    <template x-if="config.modal_config">
+        <div class="modal fade" tabindex="-1" x-ref="editModal">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" x-text="isEditing ? config.modal_config.title_edit : config.modal_config.title_add"></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php esc_attr_e( 'Close', 'ayecode-connect' ); ?>"></button>
+                    </div>
+                    <div class="modal-body">
+                        <template x-for="field in config.modal_config.fields" :key="field.id">
+                            <div class="pb-4" x-show="should_show_field(field, editingItem)" x-cloak x-html="render_field(field, 'editingItem')"></div>
+                        </template>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?php esc_html_e( 'Close', 'ayecode-connect' ); ?></button>
+                        <button type="button" class="btn btn-primary" @click="save_item()" :disabled="isSaving">
+                            <span x-show="isSaving" class="spinner-border spinner-border-sm me-1"></span>
+                            <span x-text="isSaving ? '<?php echo esc_js( __( 'Saving...', 'ayecode-connect' ) ); ?>' : '<?php echo esc_js( __( 'Save Changes', 'ayecode-connect' ) ); ?>'"></span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </template>
 </div>

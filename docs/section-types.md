@@ -578,7 +578,9 @@ Then switch on the action:
 ```php
 public function handle_tool_action($tool_action, $post_data) {
     $data = json_decode(stripslashes($post_data['data']), true);
+    $section_id = isset($post_data['section_id']) ? sanitize_text_field($post_data['section_id']) : '';
 
+    // Use section_id to distinguish between multiple list_table sections
     switch ($tool_action) {
         case 'create_api_key':
             // Handle creation
@@ -592,6 +594,8 @@ public function handle_tool_action($tool_action, $post_data) {
     }
 }
 ```
+
+**Note:** All AJAX requests now include a `section_id` parameter containing the section's ID. This allows you to distinguish between multiple `list_table` sections when handling AJAX actions.
 
 For progress-based actions, return `next_step` and `progress`:
 

@@ -9,6 +9,7 @@ import { shouldShowField as evaluateShowIf } from '@/utils/conditions';
 export default function listTableComponent(config) {
     return {
         config: config,
+        _lastLoadedSectionId: null, // Track which section we last loaded
         view: 'list', // Can be 'list', 'modal', or 'post_create'
         items: [],
         editingItem: {},
@@ -68,7 +69,12 @@ export default function listTableComponent(config) {
         },
 
         init() {
-            this.modalInstance = new bootstrap.Modal(this.$refs.editModal);
+            console.log('[List Table] init() called for section:', this.config.id, this.config.name);
+
+            // Only initialize modal if modal_config exists
+            if (this.config.modal_config && this.$refs.editModal) {
+                this.modalInstance = new bootstrap.Modal(this.$refs.editModal);
+            }
 
             // THE FIX: Only access statuses properties if the config exists.
             if (this.config.table_config.statuses && this.config.table_config.statuses.status_key) {
@@ -87,15 +93,45 @@ export default function listTableComponent(config) {
                 });
             }
 
+            console.log('[List Table] About to call load_items()...');
             this.load_items();
 
-            this.$refs.editModal.addEventListener('hidden.bs.modal', () => {
-                this.editingItem = {};
-                this.isEditing = false;
-            });
+            // Add event listener only if modal exists
+            if (this.$refs.editModal) {
+                this.$refs.editModal.addEventListener('hidden.bs.modal', () => {
+                    this.editingItem = {};
+                    this.isEditing = false;
+                });
+            }
 
             // Watch for changes in filters and reload the data
             this.$watch('currentFilters', () => this.load_items(), { deep: true });
+
+            // Listen for section change events from parent
+            console.log('[List Table] Setting up section-change listener');
+            window.addEventListener('asf-section-changed', (e) => {
+                console.log('[List Table] Section changed event received!', e.detail);
+                const newSectionId = e.detail.sectionId;
+                const newSectionType = e.detail.sectionType;
+
+                // Only reload if it's a list_table section and different from what we last loaded
+                if (newSectionType === 'list_table' && newSectionId !== this._lastLoadedSectionId) {
+                    console.log('[List Table] Different list_table section detected!');
+                    console.log('[List Table] Last loaded:', this._lastLoadedSectionId, 'New section:', newSectionId);
+
+                    // Update config to new activePageConfig
+                    const newConfig = e.detail.activePageConfig;
+
+                    // Initialize counts object if it doesn't exist to prevent template errors
+                    if (newConfig.table_config?.statuses && !newConfig.table_config.statuses.counts) {
+                        newConfig.table_config.statuses.counts = {};
+                    }
+
+                    this.config = newConfig;
+                    this._lastLoadedSectionId = newSectionId;
+                    this.load_items();
+                }
+            });
         },
 
         filter_by_status(status) {
@@ -166,6 +202,7 @@ export default function listTableComponent(config) {
                         action: window.ayecodeSettingsFramework.tool_ajax_action,
                         nonce: window.ayecodeSettingsFramework.tool_nonce,
                         tool_action: tool_action,
+                        section_id: this.config.id, // Send the section ID to distinguish between multiple list_tables
                         data: JSON.stringify(data),
                         status: this.currentStatus, // Send the current status
                         filters: JSON.stringify(this.currentFilters), // Send the current filters
@@ -198,6 +235,7 @@ export default function listTableComponent(config) {
                 formData.append('action', window.ayecodeSettingsFramework.tool_ajax_action);
                 formData.append('nonce', window.ayecodeSettingsFramework.tool_nonce);
                 formData.append('tool_action', tool_action);
+                formData.append('section_id', this.config.id); // Send the section ID to distinguish between multiple list_tables
                 formData.append('status', this.currentStatus);
                 formData.append('filters', JSON.stringify(this.currentFilters));
 
@@ -246,9 +284,35 @@ export default function listTableComponent(config) {
         },
 
         async load_items() {
+            console.log('[List Table] load_items() called, action:', this.config.table_config.ajax_action_get, 'section:', this.config.id);
+            console.log('[List Table] _lastLoadedSectionId:', this._lastLoadedSectionId, 'config.id:', this.config.id);
+
+            // Check if we've switched to a different section
+            if (this._lastLoadedSectionId && this._lastLoadedSectionId !== this.config.id) {
+                console.log('[List Table] Section changed! Resetting state...');
+                // Reset state for new section
+                this.items = [];
+                this.searchQuery = '';
+                this.sortColumn = '';
+                this.sortDirection = 'asc';
+                this.currentStatus = this.config.table_config.statuses?.default_status || 'all';
+                this.currentFilters = {};
+                this.selectedItems = [];
+
+                // Reinitialize filters
+                if (this.config.table_config.filters) {
+                    this.config.table_config.filters.forEach(filter => {
+                        this.currentFilters[filter.id] = '';
+                    });
+                }
+            }
+
+            this._lastLoadedSectionId = this.config.id;
+
             this.isLoading = true;
             this.items = [];
             const result = await this.do_ajax(this.config.table_config.ajax_action_get);
+            console.log('[List Table] load_items() result:', result);
 
             if (result && result.success) {
                 // THE FIX:

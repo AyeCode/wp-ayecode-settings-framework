@@ -2,6 +2,20 @@
 
 import * as customPageSvc from './customPage';
 
+// Dispatch section change event for list_table components
+function dispatchSectionChangedEvent(ctx) {
+    const pageConfig = activePageConfig(ctx);
+    if (pageConfig) {
+        window.dispatchEvent(new CustomEvent('asf-section-changed', {
+            detail: {
+                sectionId: pageConfig.id,
+                sectionType: pageConfig.type,
+                activePageConfig: pageConfig
+            }
+        }));
+    }
+}
+
 // Hash routing + current page getters (unchanged)
 export function currentSectionData(ctx) {
     return ctx.sections.find(s => s.id === ctx.currentSection);
@@ -22,6 +36,7 @@ export function setInitialSection(ctx) {
         if (sec?.type === 'custom_page' && sec.ajax_content) customPageSvc.loadCustomPageContent(ctx, ctx.currentSection);
     }
     updateUrlHash(ctx);
+    dispatchSectionChangedEvent(ctx);
 }
 export function handleUrlHash(ctx) {
     const hash = window.location.hash.substring(1);
@@ -40,6 +55,7 @@ export function handleUrlHash(ctx) {
         } else {
             ctx.currentSubsection = sec.subsections?.length ? sec.subsections[0].id : '';
         }
+        dispatchSectionChangedEvent(ctx);
     } else {
         setInitialSection(ctx);
     }
@@ -60,6 +76,7 @@ export function goToSection(ctx, sectionId, subsectionId = '') {
         ctx.currentSubsection = subsectionId || (sec?.subsections?.length ? sec.subsections[0].id : '');
         ctx.searchModal?.hide?.();
         updateUrlHash(ctx);
+        dispatchSectionChangedEvent(ctx);
         if (sec?.type === 'custom_page' && sec.ajax_content) customPageSvc.loadCustomPageContent(ctx, sectionId);
     });
 }
@@ -70,6 +87,7 @@ export function switchSection(ctx, sectionId) {
         const sec = ctx.sections.find(s => s.id === sectionId);
         ctx.currentSubsection = sec?.subsections?.length ? sec.subsections[0].id : '';
         updateUrlHash(ctx);
+        dispatchSectionChangedEvent(ctx);
         if (sec?.type === 'custom_page' && sec.ajax_content) customPageSvc.loadCustomPageContent(ctx, sectionId);
     });
 }
@@ -78,5 +96,6 @@ export function switchSubsection(ctx, subsectionId) {
     ctx.changeView(() => {
         ctx.currentSubsection = subsectionId;
         updateUrlHash(ctx);
+        dispatchSectionChangedEvent(ctx);
     });
 }
