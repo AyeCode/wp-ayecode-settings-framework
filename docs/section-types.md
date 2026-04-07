@@ -110,6 +110,18 @@ CRUD interface with data table, modals, filters, and bulk actions.
   - `options` (array) - Filter options
 - **`bulk_actions`** (array, optional) - Bulk action options
   - Format: `'action_key' => 'Action Label'`
+- **`row_actions`** (array, optional) - Custom row action buttons
+  - If not provided, defaults to Edit and Delete buttons
+  - Each action has:
+    - `label` (string) - Button tooltip text
+    - `icon` (string) - Font Awesome icon class (e.g., 'fa-solid fa-pencil')
+    - `action` (string) - Action type: 'edit', 'delete', or custom
+    - `ajax_action` (string, optional) - Custom AJAX action name for server-side operations
+    - `link` (string, optional) - URL to navigate to (supports `{{property}}` placeholders like `{{id}}` or `{{slug}}`)
+    - `target` (string, optional) - Link target: '_blank' to open in new tab (only for link actions)
+    - `show_if` (string, optional) - JavaScript expression to conditionally show action (e.g., "item.status === 'active'")
+    - `confirm` (bool, optional) - Whether to show confirmation dialog (default: true for ajax_action, false for links)
+    - `confirm_message` (string, optional) - Custom confirmation message
 
 ### modal_config Parameters
 
@@ -222,6 +234,60 @@ Optional success screen shown after creating a new item.
     ]
 ]
 ```
+
+### Row Actions Example
+
+Customize the actions column with conditional visibility and custom actions:
+
+```php
+'table_config' => [
+    // ... other config ...
+
+    'row_actions' => [
+        'edit' => [
+            'label' => 'Edit',
+            'icon' => 'fa-solid fa-pencil',
+            'action' => 'edit'
+        ],
+        'delete' => [
+            'label' => 'Delete',
+            'icon' => 'fa-solid fa-trash-can',
+            'action' => 'delete',
+            'show_if' => "item.status !== 'protected'" // Only show if not protected
+        ],
+        'activate' => [
+            'label' => 'Activate',
+            'icon' => 'fa-solid fa-check',
+            'ajax_action' => 'activate_key',
+            'show_if' => "item.status === 'inactive'", // Only show for inactive items
+            'confirm_message' => 'Are you sure you want to activate this key?',
+            'confirm' => true // Show confirmation (default for ajax_action)
+        ],
+        'view_item' => [
+            'label' => 'View on Site',
+            'icon' => 'fa-solid fa-eye',
+            'link' => 'https://example.com/item/{{slug}}', // Use {{property}} for item values
+            'target' => '_blank' // Open in new tab
+        ],
+        'edit_external' => [
+            'label' => 'Edit Externally',
+            'icon' => 'fa-solid fa-external-link',
+            'link' => 'admin.php?page=editor&id={{id}}', // Placeholders replaced with item values
+            'confirm' => true, // Optional: show confirmation for links too
+            'confirm_message' => 'Navigate to external editor?'
+        ]
+    ]
+]
+```
+
+**Row Action Types:**
+- **`edit`** - Opens the edit modal (built-in)
+- **`delete`** - Deletes the item with confirmation (built-in)
+- **Custom AJAX** - Use `ajax_action` to trigger a custom AJAX handler (confirmation default: true)
+- **Link navigation** - Use `link` to navigate to a URL
+  - Use `{{property}}` placeholders (e.g., `{{id}}`, `{{slug}}`) to insert item values
+  - Set `target: '_blank'` to open in new tab
+  - Set `confirm: true` to show confirmation dialog before navigating
 
 ---
 

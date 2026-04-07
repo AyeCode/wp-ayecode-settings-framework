@@ -2,11 +2,14 @@
 
 // 3rd-party init + transitions + events (unchanged)
 export function reinitializePlugins(ctx) {
-    ctx.$nextTick(() => {
-        console.log('Re-initializing...');
-        if (typeof window.aui_init === 'function') window.aui_init();
+    // Use setTimeout to allow Alpine x-transition animations to complete
+    // Alpine default transition is 150ms, adding 50ms buffer = 200ms
+    setTimeout(() => {
+        if (typeof window.aui_init === 'function') {
+            window.aui_init();
+        }
         bindIconPickerModelSync(ctx);
-    });
+    }, 200);
 }
 export function changeView(ctx, updateFn) {
     if (ctx.isChangingView) return;
@@ -163,11 +166,17 @@ function bindIconPickerModelSync(ctx) {
             const id = input.id;
             if (!id) return;
             const value = input.value;
-            // **THE FIX**: Use the same robust check here for safety.
-            if (ctx.editingField && ctx.editingField._uid && Object.prototype.hasOwnProperty.call(ctx.editingField, id)) {
-                if (ctx.editingField[id] !== value) ctx.editingField[id] = value;
+
+            // If we're in form_builder (editingField has _uid), always update editingField
+            if (ctx.editingField && ctx.editingField._uid) {
+                if (ctx.editingField[id] !== value) {
+                    ctx.editingField[id] = value;
+                }
             } else {
-                if (ctx.settings[id] !== value) ctx.settings[id] = value;
+                // Otherwise update settings (standard settings page)
+                if (ctx.settings[id] !== value) {
+                    ctx.settings[id] = value;
+                }
             }
         };
 

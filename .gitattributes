@@ -11,3 +11,10 @@ README.md export-ignore
 /tests/ export-ignore
 /vendor/ export-ignore
 /.idea/ export-ignore
+
+# Development/build files
+/examples/ export-ignore
+/node_modules/ export-ignore
+package.json export-ignore
+vite.config.js export-ignore
+/assets/js/src/ export-ignore

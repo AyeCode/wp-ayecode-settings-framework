@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP AyeCode Settings Framework
  * Description: Modern WordPress settings framework with Alpine.js and Bootstrap 5.
- * Version: 1.2.0
+ * Version: 3.0.0-beta
  * Author: AyeCode Ltd
  * License: GPL v3 or later
  * Text Domain: ayecode-connect
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants.
-define( 'WP_AYECODE_SETTINGS_FRAMEWORK_VERSION', '1.2.0' );
+define( 'WP_AYECODE_SETTINGS_FRAMEWORK_VERSION', '3.0.0-beta' );
 define( 'WP_AYECODE_SETTINGS_FRAMEWORK_PLUGIN_FILE', __FILE__ );
 
 // Load the framework's abstract class.
@@ -48,13 +48,13 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
 
 
         // Include the new manager class for API keys.
-        require_once __DIR__ . '/AyeCode_API_Key_Manager_Example.php';
+        require_once __DIR__ . '/examples/AyeCode_API_Key_Manager_Example.php';
 
         // Load the new Extensions page example class
-        require_once __DIR__ . '/AyeCode_Extensions_Page_Example.php';
+        require_once __DIR__ . '/examples/AyeCode_Extensions_Page_Example.php';
 
         // Load the new Wizard page example class
-        require_once __DIR__ . '/AyeCode_Wizard_Example.php';
+        require_once __DIR__ . '/examples/AyeCode_Wizard_Example.php';
 
 
         // Add hooks for this specific settings page's tools.
@@ -366,6 +366,34 @@ class WP_AyeCode_Framework_Demo_Settings extends \AyeCode\SettingsFramework\Sett
                                         'bulk_actions' => [
                                                 'delete' => 'Delete',
                                         ],
+
+                                        // Example: Custom row actions (commented out by default)
+                                        // 'row_actions' => [
+                                        //         'edit' => [
+                                        //                 'label' => 'Edit',
+                                        //                 'icon' => 'fa-solid fa-pencil',
+                                        //                 'action' => 'edit'
+                                        //         ],
+                                        //         'delete' => [
+                                        //                 'label' => 'Delete',
+                                        //                 'icon' => 'fa-solid fa-trash-can',
+                                        //                 'action' => 'delete',
+                                        //                 'show_if' => "item.permissions !== 'read_write'" // Example: hide delete for read_write keys
+                                        //         ],
+                                        //         'regenerate' => [
+                                        //                 'label' => 'Regenerate',
+                                        //                 'icon' => 'fa-solid fa-rotate',
+                                        //                 'ajax_action' => 'regenerate_api_key',
+                                        //                 'confirm' => true, // Show confirmation dialog
+                                        //                 'confirm_message' => 'Regenerate this API key? The old key will stop working.'
+                                        //         ],
+                                        //         'view_logs' => [
+                                        //                 'label' => 'View Logs',
+                                        //                 'icon' => 'fa-solid fa-file-lines',
+                                        //                 'link' => 'admin.php?page=logs&key_id={{id}}', // Use {{property}} placeholders
+                                        //                 'target' => '_blank' // Open in new tab
+                                        //         ]
+                                        // ],
                                 ],
 
                                 'modal_config' => [
@@ -766,7 +794,7 @@ class WP_AyeCode_Settings_Framework_Loader {
             return;
         }
 
-        require_once __DIR__ . '/Dashboard_Page.php';
+        require_once __DIR__ . '/examples/Dashboard_Page.php';
 
 
         // Initialize the demo settings page using the new extension model.

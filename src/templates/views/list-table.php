@@ -128,12 +128,31 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                             <td x-html="item[columnKey]"></td>
                         </template>
                         <td class="text-end">
-                            <button class="btn btn-sm btn-icon text-muted" @click.prevent="open_modal(item)" data-bs-toggle="tooltip" title="<?php esc_attr_e( 'Edit', 'ayecode-connect' ); ?>">
-                                <i class="fa-solid fa-pencil"></i>
-                            </button>
-                            <button class="btn btn-sm btn-icon text-muted" @click="delete_item(item.id)" data-bs-toggle="tooltip" title="<?php esc_attr_e( 'Delete', 'ayecode-connect' ); ?>">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
+                            <template x-if="config.table_config.row_actions">
+                                <div>
+                                    <template x-for="(action, actionKey) in config.table_config.row_actions" :key="actionKey">
+                                        <button
+                                            x-show="!action.show_if || evaluate_row_action_condition(action.show_if, item)"
+                                            class="btn btn-sm btn-icon text-muted"
+                                            @click.prevent="handle_row_action(action, item)"
+                                            data-bs-toggle="tooltip"
+                                            :title="action.label"
+                                            x-cloak>
+                                            <i :class="action.icon"></i>
+                                        </button>
+                                    </template>
+                                </div>
+                            </template>
+                            <template x-if="!config.table_config.row_actions">
+                                <div>
+                                    <button class="btn btn-sm btn-icon text-muted" @click.prevent="open_modal(item)" data-bs-toggle="tooltip" title="<?php esc_attr_e( 'Edit', 'ayecode-connect' ); ?>">
+                                        <i class="fa-solid fa-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-icon text-muted" @click="delete_item(item.id)" data-bs-toggle="tooltip" title="<?php esc_attr_e( 'Delete', 'ayecode-connect' ); ?>">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
+                            </template>
                         </td>
                     </tr>
                 </template>
@@ -164,7 +183,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
         </div>
     </template>
 
-    <template x-if="config.modal_config">
+    <div x-show="config.modal_config" x-cloak>
         <div class="modal fade" tabindex="-1" x-ref="editModal">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
@@ -187,5 +206,5 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                 </div>
             </div>
         </div>
-    </template>
+    </div>
 </div>

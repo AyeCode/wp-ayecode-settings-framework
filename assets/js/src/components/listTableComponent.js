@@ -71,7 +71,7 @@ export default function listTableComponent(config) {
         init() {
             console.log('[List Table] init() called for section:', this.config.id, this.config.name);
 
-            // Only initialize modal if modal_config exists
+            // Initialize modal - using x-show instead of x-if ensures ref is available
             if (this.config.modal_config && this.$refs.editModal) {
                 this.modalInstance = new bootstrap.Modal(this.$refs.editModal);
             }
@@ -334,6 +334,11 @@ export default function listTableComponent(config) {
         },
 
         open_modal(item = null) {
+            if (!this.modalInstance) {
+                console.error('[List Table] Cannot open modal: modalInstance is null');
+                return;
+            }
+
             if (item) {
                 this.isEditing = true;
                 this.editingItem = JSON.parse(JSON.stringify(item));
@@ -413,6 +418,117 @@ export default function listTableComponent(config) {
             if (newView === 'list') {
                 this.load_items();
             }
+        },
+
+        /**
+         * Evaluates show_if condition for row actions
+         * @param {string|function} condition - The condition to evaluate
+         * @param {object} item - The row item data
+         * @returns {boolean}
+         */
+        evaluate_row_action_condition(condition, item) {
+            if (!condition) return true;
+
+            // If it's a string expression (e.g., "item.status === 'active'")
+            if (typeof condition === 'string') {
+                try {
+                    // Create a function that evaluates the expression with item in scope
+                    const func = new Function('item', `return ${condition}`);
+                    return func(item);
+                } catch (e) {
+                    console.error('[List Table] Error evaluating row action condition:', e);
+                    return true; // Default to showing the action if evaluation fails
+                }
+            }
+
+            // If it's already a function
+            if (typeof condition === 'function') {
+                return condition(item);
+            }
+
+            return true;
+        },
+
+        /**
+         * Handles row action clicks
+         * @param {object} action - The action configuration
+         * @param {object} item - The row item data
+         */
+        async handle_row_action(action, item) {
+            const actionType = action.action;
+
+            // Handle built-in actions
+            if (actionType === 'edit') {
+                this.open_modal(item);
+                return;
+            }
+
+            if (actionType === 'delete') {
+                this.delete_item(item.id);
+                return;
+            }
+
+            // Handle link-based actions
+            if (action.link || action.url) {
+                let url = action.link || action.url;
+
+                // If url is a function, call it with the item
+                if (typeof url === 'function') {
+                    url = url(item);
+                }
+
+                // Replace {{property}} placeholders with item values
+                url = url.replace(/\{\{(\w+)\}\}/g, (match, prop) => item[prop] || '');
+
+                // Check if confirmation is needed
+                if (action.confirm) {
+                    const confirmed = await window.aui_confirm(
+                        action.confirm_message || `Are you sure you want to ${action.label.toLowerCase()}?`,
+                        action.label,
+                        'Cancel',
+                        true,
+                        true
+                    );
+                    if (!confirmed) return;
+                }
+
+                // Open in new tab or current window based on target parameter
+                if (action.target === '_blank') {
+                    window.open(url, '_blank');
+                } else {
+                    window.location.href = url;
+                }
+                return;
+            }
+
+            // Handle custom AJAX actions
+            if (action.ajax_action) {
+                const confirmed = action.confirm !== false ?
+                    await window.aui_confirm(
+                        action.confirm_message || `Are you sure you want to ${action.label.toLowerCase()}?`,
+                        action.label,
+                        'Cancel',
+                        true,
+                        true
+                    ) : true;
+
+                if (confirmed) {
+                    const result = await this.do_ajax(action.ajax_action, { id: item.id, item: item });
+                    if (result && result.success) {
+                        showNotification(this, result.data?.message || `${action.label} completed successfully.`, 'success');
+                        this.load_items();
+                    }
+                }
+                return;
+            }
+
+            // Handle custom callback
+            if (action.callback && typeof action.callback === 'function') {
+                action.callback(item, this);
+                return;
+            }
+
+            console.warn('[List Table] Unknown action type:', actionType, action);
         },
 
         render_field(field, modelPrefix) {
