@@ -41,6 +41,12 @@ registerRenderer('action_button', (field) => {
     }
 
     const buttonClass = field.button_class || 'btn-secondary';
+    const confirmMsg = field.confirm_message ? field.confirm_message.replace(/'/g, "\\'") : '';
+    const needsConfirm = field.confirm || false;
+    const clickHandler = needsConfirm
+        ? `handleActionClick('${field.id}', true, '${confirmMsg}')`
+        : `executeAction('${field.id}')`;
+
     return `
     <div class="row align-items-center rounded" x-ref="action_container_${field.id}">
       <div class="col-md-4">
@@ -52,7 +58,7 @@ registerRenderer('action_button', (field) => {
           <div class="me-3" x-show="${statePath}?.message" x-cloak>
             <span :class="${statePath}?.success ? 'text-success' : 'text-danger'" x-text="${statePath}?.message"></span>
           </div>
-          <button type="button" id="${field.id}" class="btn ${buttonClass}" @click="executeAction('${field.id}')" :disabled="${statePath}?.isLoading">
+          <button type="button" id="${field.id}" class="btn ${buttonClass}" @click="${clickHandler}" :disabled="${statePath}?.isLoading">
             <span x-show="${statePath}?.isLoading" class="spinner-border spinner-border-sm me-2" x-cloak></span>
             <span x-text="${statePath}?.isLoading ? strings.processing : '${field.button_text || 'Run'}'"></span>
           </button>

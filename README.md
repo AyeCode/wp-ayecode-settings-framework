@@ -9,6 +9,8 @@ A modern WordPress settings framework with Alpine.js and Bootstrap 5, designed f
 - 🔍 **Smart Search** - Find and edit settings instantly
 - 📱 **Mobile Responsive** - Works perfectly on all devices
 - 🎛️ **Rich Field Types** - Text, toggles, colors, selects, and more
+- 🔘 **Action Buttons** - AJAX buttons with confirmation dialogs and progress tracking
+- ♻️ **Built-in Reset** - One-line reset to defaults functionality
 - 🔒 **Secure** - Built-in validation and sanitization
 - 🌐 **Translation Ready** - Full i18n support
 - 🚀 **Performance** - Lightweight and fast

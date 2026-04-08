@@ -109,6 +109,19 @@ export async function executeAction(ctx, fieldId) {
     }
     if (!ajaxAction) { console.error('No ajax_action defined for:', fieldId); return; }
 
+    // Special case: reset_settings uses the built-in handler
+    if (ajaxAction === 'reset_settings') {
+        state.isLoading = true; state.message = ''; state.progress = 0; state.success = null;
+        const success = await ctx.resetSettings();
+        state.isLoading = false;
+        state.success = success;
+        state.message = success ? 'Settings reset successfully!' : 'Reset failed';
+        if (success) {
+            setTimeout(() => { state.message = ''; state.success = null; }, 8000);
+        }
+        return;
+    }
+
     state.isLoading = true; state.message = ctx.strings.starting; state.progress = 0; state.success = null;
 
     const input = {};

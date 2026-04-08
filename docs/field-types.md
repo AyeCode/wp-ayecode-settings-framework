@@ -479,13 +479,16 @@ Link styled as a button.
 ```
 
 ### action_button
-AJAX action button with progress tracking.
+AJAX action button with progress tracking and optional confirmation dialog.
 
 **Additional Parameters:**
 - `button_text` (string) - Button label
-- `button_class` (string) - Bootstrap button class
+- `button_class` (string) - Bootstrap button class (e.g., 'btn-primary', 'btn-danger')
 - `ajax_action` (string, required) - AJAX action identifier
+- `confirm` (bool) - Show confirmation dialog before executing (default: false)
+- `confirm_message` (string) - Custom confirmation message
 
+**Basic Example:**
 ```php
 [
     'id' => 'clear_cache',
@@ -496,6 +499,38 @@ AJAX action button with progress tracking.
     'ajax_action' => 'clear_cache_action'
 ]
 ```
+
+**With Confirmation Dialog:**
+```php
+[
+    'id' => 'delete_data',
+    'type' => 'action_button',
+    'label' => 'Delete All Data',
+    'description' => 'Permanently delete all plugin data.',
+    'button_text' => 'Delete All',
+    'button_class' => 'btn-danger',
+    'ajax_action' => 'delete_all_data',
+    'confirm' => true,
+    'confirm_message' => 'Are you sure you want to delete all data? This cannot be undone.'
+]
+```
+
+**Built-in Reset Settings Action:**
+```php
+[
+    'id' => 'reset_settings',
+    'type' => 'action_button',
+    'label' => 'Reset Settings',
+    'description' => 'Reset all settings to their default values.',
+    'button_text' => 'Reset to Defaults',
+    'button_class' => 'btn-danger',
+    'ajax_action' => 'reset_settings',  // Built-in handler
+    'confirm' => true,
+    'confirm_message' => 'Are you sure you want to reset all settings to their default values? This cannot be undone.'
+]
+```
+
+> **Note:** The `reset_settings` ajax_action is a built-in handler that automatically resets all settings to their defaults. No custom PHP handler needed.
 
 ---
 
@@ -709,7 +744,7 @@ Use `show_if` to show/hide fields based on other field values:
 | `alert` | Info alert | `alert_type` |
 | `hidden` | Hidden input | - |
 | `link_button` | Button link | `url`, `button_text` |
-| `action_button` | AJAX button | `ajax_action`, `button_text` |
+| `action_button` | AJAX button | `ajax_action`, `button_text`, `confirm` |
 | `group` | Field container | `fields` |
 | `accordion` | Collapsible panels | `fields`, `default_open` |
 | `gd_map` | Map with lat/lng | `lat_field`, `lng_field` |

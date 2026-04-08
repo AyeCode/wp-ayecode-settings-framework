@@ -1,6 +1,6 @@
 {
   "name": "ayecode/wp-ayecode-settings-framework",
-  "version": "3.0.0-beta",
+  "version": "3.0.1-beta",
   "description": "Modern WordPress settings framework with Alpine.js and Bootstrap 5",
   "type": "library",
   "keywords": [

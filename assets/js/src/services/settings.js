@@ -264,6 +264,53 @@ export async function saveFormBuilder(ctx) {
     }
 }
 
+export async function resetSettings(ctx) {
+    ctx.isLoading = true;
+    try {
+        const res = await fetch(window.ayecodeSettingsFramework.ajax_url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                action: 'reset_' + window.ayecodeSettingsFramework.action.replace('save_', ''),
+                nonce: window.ayecodeSettingsFramework.nonce
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            // Update settings with fresh defaults from server
+            const newSettings = data.data.settings;
+
+            // Remove all old properties
+            Object.keys(ctx.settings).forEach(key => {
+                if (!(key in newSettings)) {
+                    delete ctx.settings[key];
+                }
+            });
+
+            // Add fresh default values
+            Object.keys(newSettings).forEach(key => {
+                ctx.settings[key] = newSettings[key];
+            });
+
+            // Update originalSettings so there are no "unsaved changes"
+            ctx.originalSettings = JSON.parse(JSON.stringify(ctx.settings));
+            ctx.originalImagePreviews = JSON.parse(JSON.stringify(ctx.imagePreviews));
+
+            ctx.showNotification(data.data.message, 'success');
+            return true;
+        } else {
+            ctx.showNotification(data.data?.message || ctx.strings.error, 'error');
+            return false;
+        }
+    } catch (error) {
+        console.error('Reset failed:', error);
+        ctx.showNotification(ctx.strings.error, 'error');
+        return false;
+    } finally {
+        ctx.isLoading = false;
+    }
+}
+
 export async function discardChanges(ctx, useConfirm = true) {
     const performDiscard = () => {
         ctx.settings = JSON.parse(JSON.stringify(ctx.originalSettings));

@@ -268,6 +268,9 @@ export default function alpineApp() {
         async saveSettings() {
             return await settingsSvc.saveSettings(this);
         },
+        async resetSettings() {
+            return await settingsSvc.resetSettings(this);
+        },
         async discardChanges(useConfirm = true) {
             await settingsSvc.discardChanges(this, useConfirm);
         },
@@ -290,6 +293,13 @@ export default function alpineApp() {
         initChoices(fieldId) { pluginsSvc.initChoices(this, fieldId); },
         async executePageAction() { await actionsSvc.executePageAction(this); },
         async executeAction(fieldId) { await actionsSvc.executeAction(this, fieldId); },
+        async handleActionClick(fieldId, needsConfirm, confirmMsg) {
+            if (needsConfirm) {
+                const confirmed = await aui_confirm(confirmMsg || 'Are you sure?', 'Confirm', 'Cancel', true, true);
+                if (!confirmed) return;
+            }
+            await this.executeAction(fieldId);
+        },
         handleFileUpload(e, pid, h) { uploadsSvc.handleFileUpload(this, e, pid, h); },
         async removeUploadedFile(pid, h) { await uploadsSvc.removeUploadedFile(this, pid, h); },
         async loadCustomPageContent(id) { await customPageSvc.loadCustomPageContent(this, id); },
