@@ -105,13 +105,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
                                 <div class="d-flex align-items-center justify-content-end" style="width: 100px;">
                                     <template x-if="field.hasOwnProperty('is_active') && !field.is_active">
-                                        <i class="fas fa-exclamation-triangle text-warning me-2" title="<?php esc_attr_e( 'Inactive', 'ayecode-connect' ); ?>" data-bs-toggle="tooltip"></i>
+                                        <i class="fa-solid fa-triangle-exclamation text-warning me-2" title="<?php esc_attr_e( 'Inactive', 'ayecode-connect' ); ?>" data-bs-toggle="tooltip"></i>
                                     </template>
                                     <template x-if="field.conditions && field.conditions.length > 0">
-                                        <i class="fas fa-eye text-warning me-2" title="<?php esc_attr_e( 'Has conditional logic', 'ayecode-connect' ); ?>" data-bs-toggle="tooltip"></i>
+                                        <i class="fa-solid fa-eye text-warning me-2" title="<?php esc_attr_e( 'Has conditional logic', 'ayecode-connect' ); ?>" data-bs-toggle="tooltip"></i>
                                     </template>
                                     <template x-if="activePageConfig.default_top && parentFields[0]._uid === field._uid">
-                                        <i class="fas fa-check-circle me-2 text-primary" title="<?php esc_attr_e( 'Default option', 'ayecode-connect' ); ?>" data-bs-toggle="tooltip"></i>
+                                        <i class="fa-solid fa-circle-check me-2 text-primary" title="<?php esc_attr_e( 'Default option', 'ayecode-connect' ); ?>" data-bs-toggle="tooltip"></i>
                                     </template>
                                     <button class="btn btn-sm btn-icon text-muted" @click.prevent="editField(field)" data-bs-toggle="tooltip" title="<?php esc_attr_e( 'Edit Field', 'ayecode-connect' ); ?>">
                                         <i class="fa-solid fa-pencil"></i>
@@ -157,10 +157,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
                                             <div class="d-flex align-items-center justify-content-end" style="width: 80px;">
                                                 <template x-if="childField.hasOwnProperty('is_active') && !childField.is_active">
-                                                    <i class="fas fa-exclamation-triangle text-warning me-2" title="<?php esc_attr_e( 'Inactive', 'ayecode-connect' ); ?>" data-bs-toggle="tooltip"></i>
+                                                    <i class="fa-solid fa-triangle-exclamation text-warning me-2" title="<?php esc_attr_e( 'Inactive', 'ayecode-connect' ); ?>" data-bs-toggle="tooltip"></i>
                                                 </template>
                                                 <template x-if="childField.conditions && childField.conditions.length > 0">
-                                                    <i class="fas fa-eye text-warning me-2" title="<?php esc_attr_e( 'Has conditional logic', 'ayecode-connect' ); ?>" data-bs-toggle="tooltip"></i>
+                                                    <i class="fa-solid fa-eye text-warning me-2" title="<?php esc_attr_e( 'Has conditional logic', 'ayecode-connect' ); ?>" data-bs-toggle="tooltip"></i>
                                                 </template>
                                                 <button class="btn btn-sm btn-icon text-muted" @click.prevent="editField(childField)" data-bs-toggle="tooltip" title="<?php esc_attr_e( 'Edit Field', 'ayecode-connect' ); ?>">
                                                     <i class="fa-solid fa-pencil"></i>

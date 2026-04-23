@@ -556,9 +556,10 @@ class System_Status_Handler {
     private function get_post_type_counts() {
         global $wpdb; $counts = [];
         try {
-            // Added more statuses
-            $stati = implode("', '", get_post_stati());
-            $counts = $wpdb->get_results( "SELECT post_type AS 'type', count(1) AS 'count' FROM {$wpdb->posts} WHERE post_status IN ('{$stati}') GROUP BY post_type;" );
+            $stati_list   = array_values( get_post_stati() );
+            $placeholders = implode( ', ', array_fill( 0, count( $stati_list ), '%s' ) );
+            // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+            $counts = $wpdb->get_results( $wpdb->prepare( "SELECT post_type AS 'type', count(1) AS 'count' FROM {$wpdb->posts} WHERE post_status IN ({$placeholders}) GROUP BY post_type;", $stati_list ) );
         } catch (\Throwable $e) { error_log('ASF Status Error (Post Types): ' . $e->getMessage()); }
         return is_array( $counts ) ? $counts : [];
     }

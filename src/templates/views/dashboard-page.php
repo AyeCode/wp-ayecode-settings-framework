@@ -97,7 +97,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                                         </li>
                                     </template>
                                     <li x-show="!widgetData[widget.id]?.items?.length" class="list-group-item px-0 text-muted">
-                                        Could not load feed.
+                                        <?php esc_html_e( 'Could not load feed.', 'ayecode-connect' ); ?>
                                     </li>
                                 </ul>
                             </template>

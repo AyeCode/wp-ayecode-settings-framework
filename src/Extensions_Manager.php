@@ -34,7 +34,7 @@ class Extensions_Manager {
 
 		// if it's an object then convert to an array
 		if(is_object( $product )){
-			$product = json_decode(json_encode($product), true);
+			$product = json_decode( wp_json_encode( $product ), true );
 		}
 		return !empty($product['info']['edd_slug'])
 			? sanitize_key( $product['info']['edd_slug'] )
@@ -208,7 +208,7 @@ class Extensions_Manager {
 	 * It checks the source and delegates to the appropriate method.
 	 */
 	public function handle_install_and_activate_item() {
-		$item_data = isset( $_POST['item_data'] ) ? json_decode( stripslashes( $_POST['item_data'] ) ) : null;
+		$item_data = isset( $_POST['item_data'] ) ? json_decode( wp_unslash( $_POST['item_data'] ) ) : null;
 
 		if ( ! $item_data || ! isset( $item_data->info->source ) ) {
 			wp_send_json_error( [ 'message' => 'Invalid item data provided.' ] );
@@ -269,7 +269,7 @@ class Extensions_Manager {
 			wp_send_json_error( [ 'message' => $message ] );
 		}
 
-		$item_data = isset( $_POST['item_data'] ) ? json_decode( stripslashes( $_POST['item_data'] ) ) : null;
+		$item_data = isset( $_POST['item_data'] ) ? json_decode( wp_unslash( $_POST['item_data'] ) ) : null;
 		$slug = $this->get_slug( $item_data );
 		$type = $item_data->type ?? 'plugin';
 
@@ -315,7 +315,7 @@ class Extensions_Manager {
 	 * @return array|void
 	 */
 	public function handle_activate_item( $return_result = false ) {
-		$item_data = isset( $_POST['item_data'] ) ? json_decode( stripslashes( $_POST['item_data'] ) ) : null;
+		$item_data = isset( $_POST['item_data'] ) ? json_decode( wp_unslash( $_POST['item_data'] ) ) : null;
 		$slug = $this->get_slug( $item_data );
 		$type = $item_data->type ?? 'plugin';
 
@@ -357,7 +357,7 @@ class Extensions_Manager {
 	 * Handles deactivating an active plugin.
 	 */
 	public function handle_deactivate_item() {
-		$item_data = isset( $_POST['item_data'] ) ? json_decode( stripslashes( $_POST['item_data'] ) ) : null;
+		$item_data = isset( $_POST['item_data'] ) ? json_decode( wp_unslash( $_POST['item_data'] ) ) : null;
 		$slug = $this->get_slug( $item_data );
 		$type = $item_data->type ?? 'plugin';
 

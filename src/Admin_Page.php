@@ -44,6 +44,10 @@ class Admin_Page {
         $templates_dir = dirname( __FILE__ ) . '/templates/';
         ?>
         <style>
+            /* try to hide notices on our settings pages */
+            #wpbody-content > .notice {
+                display: none;
+            }
             /* Prevents hidden fields from flashing on load/tab switch */
             [x-cloak] { display: none !important; }
             #wpfooter { display: none; }

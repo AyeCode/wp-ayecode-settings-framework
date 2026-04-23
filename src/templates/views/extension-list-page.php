@@ -112,7 +112,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                             <img :src="item.info.thumbnail" class="card-img-top border-bottom embed-item-cover-xy position-relativex" alt="">
                         </div>
                         <template x-if="item.info.is_new">
-                            <span class="badge text-dangerx bg-danger xbg-danger-subtle position-absolute top-0 end-0 m-2">NEW</span>
+                            <span class="badge text-dangerx bg-danger xbg-danger-subtle position-absolute top-0 end-0 m-2"><?php esc_html_e( 'NEW', 'ayecode-connect' ); ?></span>
                         </template>
                         <span class="badge position-absolute top-0 start-0 m-2"
                               :class="(item.info.price === 0 || item.info.price === '0.00') ? 'bg-success-subtle text-success' : 'bg-primary-subtle text-primary'"
@@ -191,7 +191,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                                 <div class="d-grid">
                                     <button type="button" class="btn btn-primary btn-lg text-start ps-3" @click="connect_site()">
                                         <div class="d-flex align-items-center">
-                                            <i class="fas fa-rocket fa-lg me-3"></i>
+                                            <i class="fa-solid fa-rocket fa-lg me-3"></i>
                                             <div>
                                                 <?php esc_html_e( 'Connect & Install', 'ayecode-connect' ); ?>
                                                 <span class="d-block small opacity-75 fw-normal"><?php esc_html_e( 'One-click install & automatic updates', 'ayecode-connect' ); ?></span>
@@ -218,7 +218,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                                 <div class="d-grid">
                                     <a :href="config.page_config?.membership_url || '#'" target="_blank" class="btn btn-success btn-lg text-start ps-3">
                                         <div class="d-flex align-items-center">
-                                            <i class="fas fa-star fa-lg me-3"></i>
+                                            <i class="fa-solid fa-star fa-lg me-3"></i>
                                             <div>
                                                 <?php esc_html_e( 'View Membership Plans', 'ayecode-connect' ); ?>
                                                 <span class="d-block small opacity-75 fw-normal"><strong><?php esc_html_e( 'Best value', 'ayecode-connect' ); ?></strong> - <?php esc_html_e( 'Unlock everything', 'ayecode-connect' ); ?></span>

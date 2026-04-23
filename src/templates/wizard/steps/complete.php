@@ -87,10 +87,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 				<!-- Default upsell features if none provided -->
 				<template x-if="!step.upsell_features || step.upsell_features.length === 0">
-					<span>• Advanced search filters</span>
-					<span>• Multi-location support</span>
-					<span>• Monetization features</span>
-					<span>• And 26+ more addons</span>
+					<span><?php esc_html_e( '• Advanced search filters', 'ayecode-connect' ); ?></span>
+					<span><?php esc_html_e( '• Multi-location support', 'ayecode-connect' ); ?></span>
+					<span><?php esc_html_e( '• Monetization features', 'ayecode-connect' ); ?></span>
+					<span><?php esc_html_e( '• And 26+ more addons', 'ayecode-connect' ); ?></span>
 				</template>
 			</div>
 

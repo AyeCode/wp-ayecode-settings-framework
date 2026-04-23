@@ -2,6 +2,9 @@
 
 All notable changes to the AyeCode Settings Framework will be documented in this file.
 
+## [3.0.2-beta] - 2026-04-TBD
+- Slight refactor and CLAUDE.md file added - CHANGED
+
 ## [3.0.1-beta] - 2026-04-08
 - Added default reset_settings button functionlaity - ADDED
 - Added confirmation dialogs for action_button field type - ADDED

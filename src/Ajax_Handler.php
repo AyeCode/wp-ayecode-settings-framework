@@ -44,7 +44,7 @@ class Ajax_Handler {
 			] );
 		}
 
-		$posted_settings = isset( $_POST['settings'] ) ? json_decode( stripslashes( $_POST['settings'] ), true ) : [];
+		$posted_settings = isset( $_POST['settings'] ) ? json_decode( wp_unslash( $_POST['settings'] ), true ) : [];
 		$is_partial_save = isset( $_POST['is_partial_save'] ) && $_POST['is_partial_save'] === 'true';
 
 		if ( ! is_array( $posted_settings ) ) {

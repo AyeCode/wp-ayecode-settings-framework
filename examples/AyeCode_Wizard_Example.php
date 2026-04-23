@@ -114,37 +114,37 @@ class AyeCode_Wizard_Example extends \AyeCode\SettingsFramework\Setup_Wizard {
 							'options'     => [
 								'general'     => [
 									'label'       => __( 'General', 'ayecode-connect' ),
-									'icon'        => 'fas fa-folder-open',
+									'icon'        => 'fa-solid fa-folder-open',
 									'icon_color'  => '#6c757d',
 									'description' => __( 'Multi-purpose directory', 'ayecode-connect' ),
 								],
 								'events'      => [
 									'label'       => __( 'Events', 'ayecode-connect' ),
-									'icon'        => 'fas fa-calendar-alt',
+									'icon'        => 'fa-solid fa-calendar-days',
 									'icon_color'  => '#0d6efd',
 									'description' => __( 'Concerts, festivals, activities', 'ayecode-connect' ),
 								],
 								'realestate'  => [
 									'label'       => __( 'Real Estate', 'ayecode-connect' ),
-									'icon'        => 'fas fa-home',
+									'icon'        => 'fa-solid fa-house',
 									'icon_color'  => '#198754',
 									'description' => __( 'Properties & listings', 'ayecode-connect' ),
 								],
 								'automotive'  => [
 									'label'       => __( 'Automotive', 'ayecode-connect' ),
-									'icon'        => 'fas fa-car',
+									'icon'        => 'fa-solid fa-car',
 									'icon_color'  => '#dc3545',
 									'description' => __( 'Cars, dealers, services', 'ayecode-connect' ),
 								],
 								'healthcare'  => [
 									'label'       => __( 'Healthcare', 'ayecode-connect' ),
-									'icon'        => 'fas fa-hospital',
+									'icon'        => 'fa-solid fa-hospital',
 									'icon_color'  => '#d63384',
 									'description' => __( 'Doctors & medical services', 'ayecode-connect' ),
 								],
 								'restaurants' => [
 									'label'       => __( 'Restaurants', 'ayecode-connect' ),
-									'icon'        => 'fas fa-utensils',
+									'icon'        => 'fa-solid fa-utensils',
 									'icon_color'  => '#fd7e14',
 									'description' => __( 'Food & dining', 'ayecode-connect' ),
 								],

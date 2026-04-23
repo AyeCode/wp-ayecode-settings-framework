@@ -31,7 +31,7 @@ class Tool_Ajax_Handler {
 	 * @param array $post_data The $_POST data.
 	 */
 	public function handle_get_dashboard_stats( $post_data ) {
-		$params = isset( $post_data['params'] ) ? json_decode( stripslashes( $post_data['params'] ), true ) : [];
+		$params = isset( $post_data['params'] ) ? json_decode( wp_unslash( $post_data['params'] ), true ) : [];
 		$show   = $params['show'] ?? ['users', 'posts']; // Default stats to show
 		$stats  = [];
 
@@ -54,7 +54,7 @@ class Tool_Ajax_Handler {
 	 */
 	public function handle_get_system_status( $post_data ) {
 		global $wp_version;
-		$params = isset( $post_data['params'] ) ? json_decode( stripslashes( $post_data['params'] ), true ) : [];
+		$params = isset( $post_data['params'] ) ? json_decode( wp_unslash( $post_data['params'] ), true ) : [];
 
 		$min_php = $params['php_version'] ?? '7.4';
 		$min_wp  = $params['wp_version'] ?? $wp_version;
@@ -138,7 +138,7 @@ class Tool_Ajax_Handler {
 	 * @param array $post_data The $_POST data.
 	 */
 	public function handle_get_extension_data( $post_data ) {
-		$data        = isset( $post_data['data'] ) ? json_decode( stripslashes( $post_data['data'] ) ) : new \stdClass();
+		$data        = isset( $post_data['data'] ) ? json_decode( wp_unslash( $post_data['data'] ) ) : new \stdClass();
 		$category    = isset( $data->category ) ? sanitize_key( $data->category ) : '';
 		$item_type   = isset( $data->item_type ) ? sanitize_key( $data->item_type ) : 'plugin';
 		$page_config = $this->framework->get_config_raw()['page_config'] ?? [];
