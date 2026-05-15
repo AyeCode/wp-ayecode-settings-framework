@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	$registry_key = 'ayecode_settings_framework_registry';
 
 	// Must match the Version header in the main plugin file. This drives negotiation.
-	$this_version = '3.0.2-beta';
+	$this_version = '3.0.3-beta';
 
 	$this_path = dirname( __FILE__ );
 

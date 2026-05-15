@@ -2,6 +2,9 @@
 
 All notable changes to the AyeCode Settings Framework will be documented in this file.
 
+## [3.0.3-beta] - 2026-05-15
+- Added filters for filtering settings - ADDED
+- 
 ## [3.0.2-beta] - 2026-04-23
 - Slight refactor and CLAUDE.md file added - CHANGED
 - Refactored loading to the new AyeCode package standards - CHANGED

@@ -215,20 +215,19 @@ function my_custom_validator($value, $field) {
 Your addons can inject settings into existing sections:
 
 ```php
-// In your addon
-add_filter('ayecode_settings_framework_sections', function($sections) {
-    // Add new section
+// In your addon — replace 'my_page_slug' with the consuming plugin's $page_slug value
+add_filter( 'ayecode_settings_framework_sections_my_page_slug', function( $sections, $option_name, $page_slug ) {
     $sections[] = array(
-        'id' => 'my_addon',
-        'name' => 'My Addon Settings',
-        'icon' => 'fa-solid fa-puzzle-piece',
+        'id'     => 'my_addon',
+        'name'   => 'My Addon Settings',
+        'icon'   => 'fa-solid fa-puzzle-piece',
         'fields' => array(
             // Addon fields here
-        )
+        ),
     );
-    
+
     return $sections;
-});
+}, 10, 3 );
 ```
 
 ## Hooks & Filters
@@ -248,11 +247,11 @@ add_action('ayecode_settings_framework_reset', function($option_name) {
 
 ### Filters
 ```php
-// Modify sections before rendering
-add_filter('ayecode_settings_framework_sections', function($sections) {
+// Inject or modify sections for a specific settings page (replace 'my_page_slug' with the target plugin's $page_slug)
+add_filter( 'ayecode_settings_framework_sections_my_page_slug', function( $sections, $option_name, $page_slug ) {
     // Modify or add sections
     return $sections;
-});
+}, 10, 3 );
 ```
 
 ## Styling

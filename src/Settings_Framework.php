@@ -463,6 +463,21 @@ abstract class Settings_Framework {
 		if ( is_null( $this->config ) ) {
 			// call_user_func is used to call the abstract method implemented in the child.
 			$this->config = call_user_func( [ $this, 'get_config' ] );
+
+			/**
+			 * Filters the sections of the settings framework.
+			 *
+			 * @param array  $sections   The sections array.
+			 * @param string $option_name The option name.
+			 * @param string $page_slug  The page slug.
+			 */
+			$this->config['sections'] = apply_filters(
+				'ayecode_settings_framework_sections_' . $this->page_slug,
+				$this->config['sections'] ?? [],
+				$this->option_name,
+				$this->page_slug
+			);
+
 		}
 
 		return $this->config;

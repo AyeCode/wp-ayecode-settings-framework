@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP AyeCode Settings Framework
  * Description: Modern WordPress settings framework with Alpine.js and Bootstrap 5.
- * Version: 3.0.2-beta
+ * Version: 3.0.3-beta
  * Author: AyeCode Ltd
  * License: GPL v3 or later
  * Text Domain: ayecode-connect

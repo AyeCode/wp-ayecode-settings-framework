@@ -75,7 +75,7 @@ Key hooks fired by the framework:
 - `ayecode_settings_framework_saved` — action after save (receives `$settings`, `$option_name`)
 - `ayecode_settings_framework_reset` — action after reset
 - `ayecode_settings_framework_defaults_installed` — action after `install_defaults()`
-- `ayecode_settings_framework_sections` — filter to inject sections from addons
+- `ayecode_settings_framework_sections_{page_slug}` — filter to inject/modify sections for a specific settings page (receives `$sections`, `$option_name`, `$page_slug`)
 - `asf_execute_tool_{page_slug}` — action for child class to handle custom tool actions
 - `asf_render_content_pane_{page_slug}` — action for child class to handle custom content panes
 
