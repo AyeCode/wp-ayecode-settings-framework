@@ -2,6 +2,11 @@
 
 All notable changes to the AyeCode Settings Framework will be documented in this file.
 
+## [3.0.4-beta] — 2026-TBD
+- Added list_table table_config.can_create flag to hide the Add New button while keeping the edit modal - ADDED
+- Fixed tool_page rendering the standard settings view instead of the action page view - FIXED
+- Split docs/section-types.md into per-type docs under docs/sections/ with detailed examples - CHANGED
+
 ## [3.0.3-beta] - 2026-05-15
 - Added filters for filtering settings - ADDED
 - 

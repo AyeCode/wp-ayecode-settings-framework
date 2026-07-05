@@ -130,7 +130,7 @@ class Admin_Page {
                             >                                <template x-if="activePageConfig">
                                     <div>
                                         <?php // Default view for standard settings pages ?>
-                                        <template x-if="!activePageConfig.type || (activePageConfig.type !== 'custom_page' && activePageConfig.type !== 'action_page' && activePageConfig.type !== 'import_page' && activePageConfig.type !== 'form_builder' && activePageConfig.type !== 'list_table' && activePageConfig.type !== 'dashboard' && activePageConfig.type !== 'extension_list_page')">
+                                        <template x-if="!activePageConfig.type || (activePageConfig.type !== 'custom_page' && activePageConfig.type !== 'action_page' && activePageConfig.type !== 'tool_page' && activePageConfig.type !== 'import_page' && activePageConfig.type !== 'form_builder' && activePageConfig.type !== 'list_table' && activePageConfig.type !== 'dashboard' && activePageConfig.type !== 'extension_list_page')">
                                             <?php include $templates_dir . 'views/standard-settings.php'; ?>
                                         </template>
 
@@ -139,8 +139,8 @@ class Admin_Page {
                                             <?php include $templates_dir . 'views/custom-page.php'; ?>
                                         </template>
 
-                                        <?php // View for action pages ?>
-                                        <template x-if="activePageConfig.type === 'action_page'">
+                                        <?php // View for action pages (tool_page is an alias with identical behavior) ?>
+                                        <template x-if="activePageConfig.type === 'action_page' || activePageConfig.type === 'tool_page'">
                                             <?php include $templates_dir . 'views/action-page.php'; ?>
                                         </template>
 

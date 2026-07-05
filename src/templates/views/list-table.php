@@ -41,7 +41,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
             </template>
 
             <div class="ms-auto">
-                <button class="btn btn-primary btn-sm" @click="open_modal()" x-show="config.modal_config">
+                <button class="btn btn-primary btn-sm" @click="open_modal()" x-show="config.modal_config && config.table_config.can_create !== false">
                     <i class="fa-solid fa-plus me-1"></i>
                     <span x-text="'Add ' + (config.table_config.singular || 'Item')"></span>
                 </button>
@@ -94,7 +94,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                 <p x-show="!config.table_config.statuses || currentStatus === 'all'" x-text="'No ' + (config.table_config.plural.toLowerCase() || 'items') + ' found.'"></p>
                 <p x-show="config.table_config.statuses && currentStatus !== 'all'" x-cloak x-text="'No ' + (config.table_config.plural.toLowerCase() || 'items') + ' found in this view.'"></p>
 
-                <button class="btn btn-primary btn-lg" @click="open_modal()" x-show="config.modal_config && (!config.table_config.statuses || currentStatus === 'all')">
+                <button class="btn btn-primary btn-lg" @click="open_modal()" x-show="config.modal_config && config.table_config.can_create !== false && (!config.table_config.statuses || currentStatus === 'all')">
                     <span x-text="'Create Your First ' + (config.table_config.singular || 'Item')"></span>
                 </button>
             </div>
