@@ -12,7 +12,7 @@ These parameters are available for **all or most field types**:
 - **`id`** (string, required) - Unique identifier for the field
 - **`type`** (string, required) - The field type (see Field Types below)
 - **`label`** (string) - Label text displayed for the field
-- **`description`** (string) - Help text displayed below the field (also `desc` alias)
+- **`description`** (string) - Help text displayed below the field
 - **`default`** (mixed) - Default value for the field
 - **`class`** (string) - Additional CSS classes for the input element
 - **`placeholder`** (string) - Placeholder text for input fields
@@ -24,7 +24,7 @@ These parameters are available for **all or most field types**:
 - **`searchable`** (array) - Search terms to make field discoverable
   - Example: `'searchable' => ['google', 'maps', 'api', 'key']`
 - **`show_if`** (string) - Conditional display logic (supports parentheses, &&, ||, comparisons)
-  - Example: `'show_if' => "[%other_field%] == 'value' && [%another%] != ''""`
+  - Example: `'show_if' => "[%other_field%] == 'value' && [%another%] != ''"`
 - **`input_group_right`** (string) - HTML to append to right of input
   - Example: `'input_group_right' => '<span class="input-group-text">%</span>'`
 - **`active_placeholder`** (bool) - Auto-fill placeholder value on focus
@@ -391,13 +391,13 @@ File upload input.
 ]
 ```
 
-### icon
-FontAwesome icon picker (also `font-awesome`).
+### font-awesome
+FontAwesome icon picker.
 
 ```php
 [
     'id' => 'menu_icon',
-    'type' => 'icon',
+    'type' => 'font-awesome',
     'label' => 'Menu Icon',
     'default' => 'fa-solid fa-bars'
 ]
@@ -487,6 +487,7 @@ AJAX action button with progress tracking and optional confirmation dialog.
 - `ajax_action` (string, required) - AJAX action identifier
 - `confirm` (bool) - Show confirmation dialog before executing (default: false)
 - `confirm_message` (string) - Custom confirmation message
+- `toggle_config` (array) - Two-state button (e.g. insert/remove dummy data). Supply `insert` and `remove`, each with its own `ajax_action`; the button swaps state based on the `has_dummy_data` flag returned by the handler.
 
 **Basic Example:**
 ```php
@@ -569,8 +570,6 @@ Collapsible accordion panels.
 - `fields` (array, required) - Panel configurations with:
   - `id` (string, required) - Panel ID
   - `label` (string) - Panel heading
-  - `description` (string) - Panel description
-  - `open` (bool) - Start open
   - `fields` (array, required) - Fields in panel
 - `default_open` (string) - ID of panel to open by default
 
@@ -740,7 +739,7 @@ Use `show_if` to show/hide fields based on other field values:
 | `range` | Range slider | `min`, `max`, `step` |
 | `image` | Image upload | - |
 | `file` | File upload | `accept` |
-| `icon` | Icon picker | - |
+| `font-awesome` | Icon picker | - |
 | `alert` | Info alert | `alert_type` |
 | `hidden` | Hidden input | - |
 | `link_button` | Button link | `url`, `button_text` |

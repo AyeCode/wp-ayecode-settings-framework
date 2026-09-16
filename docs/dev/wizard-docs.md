@@ -718,4 +718,4 @@ Verify both in PHP error logs or by adding debug output.
 
 ---
 
-**Need help?** Check the main [Settings Framework documentation](README.md) for field types and general configuration.
+**Need help?** Check the main [Settings Framework documentation](field-types.md) for field types and general configuration.
