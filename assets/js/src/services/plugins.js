@@ -72,7 +72,10 @@ export function initChoice(ctx, fieldId) {
     setTimeout(() => {
         const el = ctx.$refs[fieldId];
         if (!el) { return; }
-        if (!el.classList.contains('aui-select2')) return;
+        // A 2.x copy of AyeCode UI runs select2 over this class at window load, so the
+        // marker comes off once Choices owns the element. One already owned stays eligible,
+        // which is what lets a redrawn field re-initialise.
+        if (!el.classList.contains('aui-select2') && !window.activeChoicesInstances[fieldId]) return;
 
         if (window.activeChoicesWatchers[fieldId]) {
             window.activeChoicesWatchers[fieldId]();
@@ -88,6 +91,9 @@ export function initChoice(ctx, fieldId) {
 
         const config = window.aui_get_choices_config?.(el);
         const choices = new window.Choices(el, config);
+
+        // Choices owns this select now, so drop the marker select2 matches on.
+        el.classList.remove('aui-select2');
 
         window.activeChoicesInstances[fieldId] = choices;
 
@@ -132,6 +138,9 @@ export function initChoices(ctx, fieldId) {
 
         const config = window.aui_get_choices_config?.(el);
         const choices = new window.Choices(el, config);
+
+        // Choices owns this select now, so drop the marker select2 matches on.
+        el.classList.remove('aui-select2');
 
         window.activeChoicesInstances[fieldId] = choices;
 
